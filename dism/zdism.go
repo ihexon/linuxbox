@@ -42,6 +42,7 @@ var (
 
 	procDismCloseSession  = modDismAPI.NewProc("DismCloseSession")
 	procDismEnableFeature = modDismAPI.NewProc("DismEnableFeature")
+	procDismGetFeatures   = modDismAPI.NewProc("DismGetFeatures")
 	procDismInitialize    = modDismAPI.NewProc("DismInitialize")
 	procDismOpenSession   = modDismAPI.NewProc("DismOpenSession")
 	procDismShutdown      = modDismAPI.NewProc("DismShutdown")
@@ -65,6 +66,14 @@ func DismEnableFeature(Session uint32, FeatureName *uint16, Identifier *uint16, 
 		_p1 = 1
 	}
 	r0, _, _ := syscall.Syscall12(procDismEnableFeature.Addr(), 11, uintptr(Session), uintptr(unsafe.Pointer(FeatureName)), uintptr(unsafe.Pointer(Identifier)), uintptr(unsafe.Pointer(PackageIdentifier)), uintptr(_p0), uintptr(unsafe.Pointer(SourcePaths)), uintptr(SourcePathCount), uintptr(_p1), uintptr(unsafe.Pointer(CancelEvent)), uintptr(Progress), uintptr(UserData), 0)
+	if r0 != 0 {
+		e = syscall.Errno(r0)
+	}
+	return
+}
+
+func DismGetFeatures(Session uint32, Identifier *uint16, PackageIdentifier *DismPackageIdentifier, Feature *[]byte, Count *uint32) (e error) {
+	r0, _, _ := syscall.Syscall6(procDismGetFeatures.Addr(), 5, uintptr(Session), uintptr(unsafe.Pointer(Identifier)), uintptr(unsafe.Pointer(PackageIdentifier)), uintptr(unsafe.Pointer(Feature)), uintptr(unsafe.Pointer(Count)), 0)
 	if r0 != 0 {
 		e = syscall.Errno(r0)
 	}

@@ -106,9 +106,40 @@ func (s Session) EnableFeature(
 	return s.checkError(DismEnableFeature(*s.Handle, StringToPtrOrNil(feature), StringToPtrOrNil(optIdentifier), optPackageIdentifier, false, nil, 0, enableAll, cancelEvent, progressCallback, nil))
 }
 
+func (s Session) GetFeatures() error {
+
+	var (
+		Count uint32 = 1024
+		buf          = make([]byte, Count*((uint32)(unsafe.Sizeof(_DismFeature{}))))
+	)
+
+	err := DismGetFeatures(*s.Handle, nil, nil, &buf, &Count)
+	if err != nil {
+		fmt.Printf("Failed to get features: %v\n", err)
+		return err
+	}
+
+	for i := uint32(0); i < Count; i++ {
+		pDismFeature := (*_DismFeature)(unsafe.Pointer(uintptr(unsafe.Pointer(&buf[0])) + uintptr(i*12)))
+		pname := pDismFeature.FeatureName
+		statee := pDismFeature.State
+
+		str := windows.UTF16PtrToString(pname)
+		fmt.Printf("Feature Name: %s, \tFeatureState: %d \n", str, statee)
+	}
+
+	return nil
+}
+
+type _DismFeature struct {
+	FeatureName *uint16
+	State       uint32
+}
+
 //go:generate go run golang.org/x/sys/windows/mkwinsyscall -output zdism.go dism.go
 //sys DismInitialize(LogLevel DismLogLevel, LogFilePath *uint16, ScratchDirectory *uint16) (e error) = DismAPI.DismInitialize
 //sys DismOpenSession(ImagePath *uint16, WindowsDirectory *uint16, SystemDrive *uint16, Session *uint32) (e error) = DismAPI.DismOpenSession
 //sys DismCloseSession(Session uint32) (e error) = DismAPI.DismCloseSession
 //sys DismEnableFeature(Session uint32, FeatureName *uint16, Identifier *uint16, PackageIdentifier *DismPackageIdentifier, LimitAccess bool, SourcePaths *string, SourcePathCount uint32, EnableAll bool, CancelEvent *windows.Handle, Progress unsafe.Pointer, UserData unsafe.Pointer) (e error) = DismAPI.DismEnableFeature
 //sys DismShutdown() (e error) = DismAPI.DismShutdown
+//sys DismGetFeatures(Session uint32, Identifier *uint16, PackageIdentifier *DismPackageIdentifier, Feature *[]byte, Count *uint32) (e error) = DismAPI.DismGetFeatures

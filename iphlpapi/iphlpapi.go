@@ -83,7 +83,6 @@ func GetExtendedTcpTable() error {
 		row_i := (*mibTCPRowOwnerPid)(row_i_pointer)
 		fmt.Println(row_i)
 	}
-
 	return nil
 
 }
