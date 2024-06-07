@@ -3,6 +3,7 @@
 package dism
 
 import (
+	"errors"
 	"fmt"
 	"golang.org/x/sys/windows"
 	"syscall"
@@ -13,13 +14,6 @@ type (
 	DismLogLevel          uint32
 	DismPackageIdentifier uint32
 )
-
-type Session struct {
-	Handle         *uint32
-	imagePath      string
-	optWindowsDir  string
-	optSystemDrive string
-}
 
 const (
 	DISM_ONLINE_IMAGE                                     = "DISM_{53BFAE52-B167-4E2F-A258-0A37B57FF845}"
@@ -32,6 +26,15 @@ const (
 	// DismLogErrorsWarningsInfo logs errors, warnings, and additional information.
 	DismLogErrorsWarningsInfo DismLogLevel = 2
 )
+
+type Session struct {
+	Handle         *uint32
+	imagePath      string
+	optWindowsDir  string
+	optSystemDrive string
+	optLogFilePath string
+	optScratchDir  string
+}
 
 func StringToPtrOrNil(in string) (out *uint16) {
 	if in != "" {
@@ -75,6 +78,7 @@ func (s Session) Close() error {
 // Ref: https://docs.microsoft.com/en-us/windows-hardware/manufacture/desktop/dism/disminitialize-function
 //
 // Ref: https://docs.microsoft.com/en-us/windows-hardware/manufacture/desktop/dism/dismopensession-function
+
 func OpenSession(imagePath, optWindowsDir, optSystemDrive string, logLevel DismLogLevel, optLogFilePath, optScratchDir string) (Session, error) {
 
 	var handleVal uint32
@@ -83,19 +87,31 @@ func OpenSession(imagePath, optWindowsDir, optSystemDrive string, logLevel DismL
 		imagePath:      imagePath,
 		optWindowsDir:  optWindowsDir,
 		optSystemDrive: optSystemDrive,
+		optLogFilePath: optLogFilePath,
+		optScratchDir:  optScratchDir,
 	}
 
-	if err := DismInitialize(logLevel, StringToPtrOrNil(optLogFilePath), StringToPtrOrNil(optScratchDir)); err != nil {
+	if err := DismInitialize(logLevel, StringToPtrOrNil(session.optLogFilePath), StringToPtrOrNil(session.optScratchDir)); err != nil {
 		return session, fmt.Errorf("DismInitialize: %w", err)
 	}
 
-	if err := DismOpenSession(StringToPtrOrNil(imagePath), StringToPtrOrNil(""), StringToPtrOrNil(""), session.Handle); err != nil {
+	// If the value of WindowsDirectory is NULL, the default value of "Windows" is used.
+	//
+	// The WindowsDirectory parameter cannot be used when the ImagePath parameter is set to DISM_ONLINE_IMAGE.
+	//
+	// If SystemDrive is NULL, the default value of the drive containing the mount point is used.
+	//
+	//The SystemDrive parameter cannot be used when the ImagePath parameter is set to DISM_ONLINE_IMAGE.
+	if err := DismOpenSession(StringToPtrOrNil(imagePath), StringToPtrOrNil(session.optWindowsDir), StringToPtrOrNil(session.optSystemDrive), session.Handle); err != nil {
 		return session, fmt.Errorf("DismOpenSession: %w", err)
 	}
 	return session, nil
 }
 
-func (s Session) EnableFeature(
+// EnableFeatureA : Enable a Feature
+//
+// Ref: https://learn.microsoft.com/en-us/windows-hardware/manufacture/desktop/dism/dismenablefeature-function?view=windows-11
+func (s Session) EnableFeatureA(
 	feature string,
 	optIdentifier string,
 	optPackageIdentifier *DismPackageIdentifier,
@@ -106,32 +122,60 @@ func (s Session) EnableFeature(
 	return s.checkError(DismEnableFeature(*s.Handle, StringToPtrOrNil(feature), StringToPtrOrNil(optIdentifier), optPackageIdentifier, false, nil, 0, enableAll, cancelEvent, progressCallback, nil))
 }
 
-func (s Session) GetFeatures() error {
+func (s Session) EnableFeature(features []string) error {
+
+	for _, f := range features {
+		err := s.EnableFeatureA(f, "", nil, true, nil, nil)
+		if err != nil {
+			needReboot := errors.Is(err, windows.ERROR_SUCCESS_REBOOT_REQUIRED) || errors.Is(err, windows.ERROR_SUCCESS_RESTART_REQUIRED)
+			return fmt.Errorf("err > %v, %v", err, needReboot)
+			if !needReboot {
+				return fmt.Errorf(err.Error())
+			}
+		}
+	}
+	return nil
+}
+
+func (s Session) GetFeatures() ([]FeatureList, error) {
 
 	var (
-		Count uint32 = 1024
-		buf          = make([]byte, Count*((uint32)(unsafe.Sizeof(_DismFeature{}))))
+		Count        uint32 = 1024
+		buf                 = make([]byte, Count*((uint32)(unsafe.Sizeof(_DismFeatureA{}))))
+		sizeOfStruct        = unsafe.Sizeof(_DismFeatureA{}.FeatureName) + unsafe.Sizeof(_DismFeatureA{}.State)
 	)
 
 	err := DismGetFeatures(*s.Handle, nil, nil, &buf, &Count)
 	if err != nil {
 		fmt.Printf("Failed to get features: %v\n", err)
-		return err
+		return nil, err
 	}
+
+	buf = buf[:Count*((uint32)(sizeOfStruct))]
+	pbuf := &buf[0]
+
+	featStructList := make([]FeatureList, Count)
 
 	for i := uint32(0); i < Count; i++ {
-		pDismFeature := (*_DismFeature)(unsafe.Pointer(uintptr(unsafe.Pointer(&buf[0])) + uintptr(i*12)))
-		pname := pDismFeature.FeatureName
-		statee := pDismFeature.State
-
-		str := windows.UTF16PtrToString(pname)
-		fmt.Printf("Feature Name: %s, \tFeatureState: %d \n", str, statee)
+		pDismFeature := (*_DismFeatureA)(unsafe.Pointer(uintptr(unsafe.Pointer(pbuf)) + uintptr(i*(uint32(sizeOfStruct)))))
+		pfeatName := pDismFeature.FeatureName
+		featStatee := pDismFeature.State
+		featName := windows.UTF16PtrToString(pfeatName)
+		featStructList[i] = FeatureList{
+			FeatureName: featName,
+			State:       featStatee,
+		}
+		//fmt.Printf("%d:%v\n", i, featStructList[i])
 	}
-
-	return nil
+	return featStructList, nil
 }
 
-type _DismFeature struct {
+type FeatureList struct {
+	FeatureName string
+	State       uint32
+}
+
+type _DismFeatureA struct {
 	FeatureName *uint16
 	State       uint32
 }
