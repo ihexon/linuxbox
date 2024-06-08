@@ -204,32 +204,6 @@ func AttachVirtualDisk(
 	return nil
 }
 
-// AttachVhd attaches a virtual hard disk at `path` for use. Attaches using version 2
-// of the ATTACH_VIRTUAL_DISK_PARAMETERS.
-//
-//revive:disable-next-line:var-naming VHD, not Vhd
-func AttachVhd(path string) (err error) {
-	handle, err := OpenVirtualDisk(
-		path,
-		VirtualDiskAccessNone,
-		OpenVirtualDiskFlagCachedIO|OpenVirtualDiskFlagIgnoreRelativeParentLocator,
-	)
-	if err != nil {
-		return err
-	}
-
-	defer syscall.CloseHandle(handle) //nolint:errcheck
-	params := AttachVirtualDiskParameters{Version: 2}
-	if err := AttachVirtualDisk(
-		handle,
-		AttachVirtualDiskFlagNone,
-		&params,
-	); err != nil {
-		return fmt.Errorf("failed to attach virtual disk: %w", err)
-	}
-	return nil
-}
-
 // OpenVirtualDisk obtains a handle to a VHD opened with supplied access mask and flags.
 func OpenVirtualDisk(
 	vhdPath string,
@@ -321,53 +295,6 @@ func CreateVirtualDisk(
 		return handle, fmt.Errorf("failed to create virtual disk: %w", err)
 	}
 	return handle, nil
-}
-
-// GetVirtualDiskPhysicalPath takes a handle to a virtual hard disk and returns the physical
-// path of the disk on the machine. This path is in the form \\.\PhysicalDriveX where X is an integer
-// that represents the particular enumeration of the physical disk on the caller's system.
-func GetVirtualDiskPhysicalPath(handle syscall.Handle) (_ string, err error) {
-	var (
-		diskPathSizeInBytes uint32 = 256 * 2 // max path length 256 wide chars
-		diskPhysicalPathBuf [256]uint16
-	)
-	if err := getVirtualDiskPhysicalPath(
-		handle,
-		&diskPathSizeInBytes,
-		&diskPhysicalPathBuf[0],
-	); err != nil {
-		return "", fmt.Errorf("failed to get disk physical path: %w", err)
-	}
-	return windows.UTF16ToString(diskPhysicalPathBuf[:]), nil
-}
-
-// CreateDiffVhd is a helper function to create a differencing virtual disk.
-//
-//revive:disable-next-line:var-naming VHD, not Vhd
-func CreateDiffVhd(diffVhdPath, baseVhdPath string, blockSizeInMB uint32) error {
-	// Setting `ParentPath` is how to signal to create a differencing disk.
-	createParams := &CreateVirtualDiskParameters{
-		Version: 2,
-		Version2: CreateVersion2{
-			ParentPath:       windows.StringToUTF16Ptr(baseVhdPath),
-			BlockSizeInBytes: blockSizeInMB * 1024 * 1024,
-			OpenFlags:        uint32(OpenVirtualDiskFlagCachedIO),
-		},
-	}
-
-	vhdHandle, err := CreateVirtualDisk(
-		diffVhdPath,
-		VirtualDiskAccessNone,
-		CreateVirtualDiskFlagNone,
-		createParams,
-	)
-	if err != nil {
-		return fmt.Errorf("failed to create differencing vhd: %w", err)
-	}
-	if err := syscall.CloseHandle(vhdHandle); err != nil {
-		return fmt.Errorf("failed to close differencing vhd handle: %w", err)
-	}
-	return nil
 }
 
 //sys createVirtualDisk(virtualStorageType *VirtualStorageType, path string, virtualDiskAccessMask uint32, securityDescriptor *uintptr, createVirtualDiskFlags uint32, providerSpecificFlags uint32, parameters *CreateVirtualDiskParameters, overlapped *syscall.Overlapped, handle *syscall.Handle) (win32err error) = virtdisk.CreateVirtualDisk

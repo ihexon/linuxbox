@@ -1,3 +1,1 @@
-Golang Wrapper of `Deployment Image Servicing and Management (DISM) API`
-
-UNSTABLE and need test! Do not use!
+> It is like the game with toy blocks

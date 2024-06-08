@@ -3,9 +3,10 @@
  * Copyright (C) 2019-2022 WireGuard LLC. All Rights Reserved.
  */
 
-package elevate
+package shell
 
 import (
+	"errors"
 	"path/filepath"
 	"runtime"
 	"syscall"
@@ -99,11 +100,6 @@ func ShellExecute(program, arguments, directory string, show int32) (err error) 
 			err = windows.ShellExecute(0, windows.StringToUTF16Ptr("runas"), program16, arguments16, directory16, show)
 		}
 	}()
-
-	//if !version.IsRunningEVSigned() {
-	//	err = windows.ERROR_INSUFFICIENT_LOGON_INFO
-	//	return
-	//}
 
 	var processToken windows.Token
 	err = windows.OpenProcessToken(windows.CurrentProcess(), windows.TOKEN_QUERY|windows.TOKEN_DUPLICATE, &processToken)
@@ -203,4 +199,37 @@ func ShellExecute(program, arguments, directory string, show int32) (err error) 
 
 	err = nil
 	return
+}
+
+func DropAllPrivilegesExcept() error {
+
+	var processToken windows.Token
+	err := windows.OpenProcessToken(windows.CurrentProcess(), windows.TOKEN_READ|windows.TOKEN_WRITE, &processToken)
+	if err != nil {
+		return err
+	}
+	defer processToken.Close()
+
+	var bufferSizeRequired uint32
+	windows.GetTokenInformation(processToken, windows.TokenPrivileges, nil, 0, &bufferSizeRequired)
+	if bufferSizeRequired == 0 || bufferSizeRequired < uint32(unsafe.Sizeof(windows.Tokenprivileges{}.PrivilegeCount)) {
+		return errors.New("GetTokenInformation failed to provide a buffer size")
+	}
+	buffer := make([]byte, bufferSizeRequired)
+	var bytesWritten uint32
+	err = windows.GetTokenInformation(processToken, windows.TokenPrivileges, &buffer[0], uint32(len(buffer)), &bytesWritten)
+	if err != nil {
+		return err
+	}
+	if bytesWritten != bufferSizeRequired {
+		return errors.New("GetTokenInformation returned incomplete data")
+	}
+	tokenPrivileges := (*windows.Tokenprivileges)(unsafe.Pointer(&buffer[0]))
+	for i := uint32(0); i < tokenPrivileges.PrivilegeCount; i++ {
+		item := (*windows.LUIDAndAttributes)(unsafe.Add(unsafe.Pointer(&tokenPrivileges.Privileges[0]), unsafe.Sizeof(tokenPrivileges.Privileges[0])*uintptr(i)))
+		item.Attributes = windows.SE_PRIVILEGE_REMOVED
+	}
+	err = windows.AdjustTokenPrivileges(processToken, false, tokenPrivileges, 0, nil, nil)
+	runtime.KeepAlive(buffer)
+	return err
 }
