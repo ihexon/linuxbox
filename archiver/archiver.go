@@ -10,7 +10,8 @@ type Decompressor interface {
 	Decompress(in io.Reader, out io.Writer) error
 }
 
-func DecompressFile(source, destination string) error {
+func DecompressFile(source, destination string, overwrite bool) error {
+
 	cIface, err := ByExt(source)
 	if err != nil {
 		return err
@@ -19,7 +20,7 @@ func DecompressFile(source, destination string) error {
 	if !ok {
 		return fmt.Errorf("format specified by source filename is not a recognized compression algorithm: %s", source)
 	}
-	return FileCompressor{Decompressor: c}.DecompressFile(source, destination)
+	return FileCompressor{Decompressor: c}.DecompressFile(source, destination, overwrite)
 }
 
 func fileExists(name string) bool {
@@ -80,10 +81,11 @@ type FileCompressor struct {
 // The destination must have a matching extension.
 
 // DecompressFile reads the source file and decompresses it to destination.
-func (fc FileCompressor) DecompressFile(source, destination string) error {
+func (fc FileCompressor) DecompressFile(source, destination string, overwrite bool) error {
 	if fc.Decompressor == nil {
 		return fmt.Errorf("no decompressor specified")
 	}
+	fc.OverwriteExisting = overwrite
 	if !fc.OverwriteExisting && fileExists(destination) {
 		return fmt.Errorf("file exists: %s", destination)
 	}

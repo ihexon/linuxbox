@@ -7,7 +7,6 @@ import (
 	"path/filepath"
 )
 
-
 type Zstd struct {
 	DecoderOptions []zstd.DOption
 }
