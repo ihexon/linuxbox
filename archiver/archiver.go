@@ -28,14 +28,6 @@ func fileExists(name string) bool {
 	return !os.IsNotExist(err)
 }
 
-func getFormat(filename string) (interface{}, error) {
-	f, err := ByExt(filename)
-	if err != nil {
-		return nil, err
-	}
-	return f, nil
-}
-
 type Archiver struct {
 	// Compress 未实现
 	Decompressor
@@ -77,16 +69,12 @@ type FileCompressor struct {
 	OverwriteExisting bool
 }
 
-// CompressFile reads the source file and compresses it to destination.
-// The destination must have a matching extension.
-
-// DecompressFile reads the source file and decompresses it to destination.
 func (fc FileCompressor) DecompressFile(source, destination string, overwrite bool) error {
 	if fc.Decompressor == nil {
 		return fmt.Errorf("no decompressor specified")
 	}
 	fc.OverwriteExisting = overwrite
-	if !fc.OverwriteExisting && fileExists(destination) {
+	if fileExists(destination) && !fc.OverwriteExisting {
 		return fmt.Errorf("file exists: %s", destination)
 	}
 
