@@ -3,9 +3,8 @@ module MyGoPj
 go 1.22
 
 require (
-	golang.org/x/net v0.26.0
+	github.com/klauspost/compress v1.17.8
+	github.com/ulikunitz/xz v0.5.12
 	golang.org/x/sys v0.21.0
 
 )
-
-require golang.org/x/text v0.16.0 // indirect
