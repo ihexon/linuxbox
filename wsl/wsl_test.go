@@ -1,6 +1,7 @@
 package wsl
 
 import (
+	"MyGoPj/wsl/internal"
 	"fmt"
 	"testing"
 )
@@ -15,10 +16,21 @@ func TestWslExec(t *testing.T) {
 }
 
 func TestWslState(t *testing.T) {
-	out, err := WslState("Ubuntu")
+	distroName := "Ubuntu"
+	statee, err := WslState(distroName)
 	if err == nil {
-		t.Logf("Stat: %d", out)
+		t.Logf("%s Stat: %d, %s", distroName, statee, internal.Code2State(statee))
 		return
 	}
-	t.Fatalf("Stat: %d,\nError: %v", out, err)
+	t.Fatalf("Stat: %d, %s,\nError: %v", statee, internal.Code2State(statee), err)
+}
+
+func TestIsRegist(t *testing.T) {
+	distroName := "Ubuntu"
+	ret, err := IsRegist(distroName)
+	if err != nil {
+		t.Fatalf(err.Error())
+		return
+	}
+	t.Logf("%s IsRegist: %t", distroName, ret)
 }
