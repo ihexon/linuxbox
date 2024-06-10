@@ -2,6 +2,7 @@ package wsl
 
 import (
 	"MyGoPj/wsl/internal"
+	"context"
 	"fmt"
 	"testing"
 )
@@ -26,11 +27,19 @@ func TestWslState(t *testing.T) {
 }
 
 func TestIsRegist(t *testing.T) {
-	distroName := "Ubuntu"
-	ret, err := IsRegist(distroName)
+	distroName := "Ubuntus"
+	ret, err := IsRegist(context.Background(), distroName)
 	if err != nil {
 		t.Fatalf(err.Error())
 		return
 	}
 	t.Logf("%s IsRegist: %t", distroName, ret)
+}
+
+func TestImportDistro(t *testing.T) {
+	err := ImportDistro(context.Background(), true, "alpine1", "C:\\Users\\localuser\\Documents", "C:\\Users\\localuser\\Documents\\alpine-minirootfs-3.20.0-x86_64.tar.gz")
+	if err != nil {
+		t.Fatalf(err.Error())
+		return
+	}
 }

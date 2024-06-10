@@ -7,6 +7,8 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"os"
+	"path/filepath"
 	"strings"
 )
 
@@ -35,6 +37,11 @@ func Terminate(distroName string) error {
 		return fmt.Errorf("could not terminate distro %q: %w", distroName, err)
 	}
 	return nil
+}
+
+func vhdxDiskExists(name string) bool {
+	_, err := os.Stat(name)
+	return !os.IsNotExist(err)
 }
 
 // WslState If distroName not find, return internal.NotRegistered
@@ -93,7 +100,19 @@ func WslState(distroName string) (state int, err error) {
 }
 
 // TODO: We need `Force import distro` at sometime:(
-func ImportDistro(ctx context.Context, distroName, installPath, rootfs string) error {
+func ImportDistro(ctx context.Context, overwrite bool, distroName, installPath, rootfs string) error {
+	if overwrite {
+		if b, _ := IsRegist(ctx, distroName); b == true {
+			if err := Unregister(ctx, distroName); err != nil {
+				return err
+			}
+		}
+	}
+
+	if b := vhdxDiskExists(filepath.Join(installPath, "ext4.vhdx")); b == true {
+		return fmt.Errorf("%s exist, You need delete it first", filepath.Join(installPath, "ext4.vhdx"))
+	}
+
 	_, err := WslExec(ctx, "--import", distroName, installPath, rootfs)
 	if err != nil {
 		return fmt.Errorf("import %s failed: %v", rootfs, err)
@@ -101,7 +120,17 @@ func ImportDistro(ctx context.Context, distroName, installPath, rootfs string) e
 	return nil
 }
 
-func IsRegist(distroName string) (registered bool, err error) {
+func Unregister(ctx context.Context, distroName string) error {
+	_, err := WslExec(ctx, "--unregister", distroName)
+	if err != nil {
+		return fmt.Errorf("unregister %s failed: %v", distroName, err)
+	}
+	return nil
+}
+
+// distroName registered: true
+// distroName unregistered : false
+func IsRegist(ctx context.Context, distroName string) (registered bool, err error) {
 	statee, _ := WslState(distroName)
 	if statee == internal.Error {
 		return false, fmt.Errorf("unknown state: %s", distroName)
