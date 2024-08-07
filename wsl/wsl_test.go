@@ -1,7 +1,7 @@
 package wsl
 
 import (
-	"MyGoPj/wsl/internal"
+	"bzlkuyozk/wsl/internal"
 	"context"
 	"fmt"
 	"testing"

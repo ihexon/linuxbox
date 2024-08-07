@@ -1,10 +1,10 @@
 package wsl
 
 import (
-	"MyGoPj/shell"
-	"MyGoPj/wsl/internal"
 	"bufio"
 	"bytes"
+	"bzlkuyozk/shell"
+	"bzlkuyozk/wsl/internal"
 	"context"
 	"fmt"
 	"os"
@@ -77,8 +77,6 @@ func WslState(distroName string) (state int, err error) {
 			if len(arrayStr) == 4 {
 				arrayStr = arrayStr[1:]
 			}
-
-			//fmt.Printf("[%d]: %s\n", line_number, arrayStr)
 			if arrayStr[0] == distroName {
 				switch arrayStr[1] {
 				case "Running":
@@ -128,10 +126,11 @@ func Unregister(ctx context.Context, distroName string) error {
 	return nil
 }
 
-// distroName registered: true
-// distroName unregistered : false
 func IsRegist(ctx context.Context, distroName string) (registered bool, err error) {
-	statee, _ := WslState(distroName)
+	statee, err := WslState(distroName)
+	if err != nil {
+		return false, err
+	}
 	if statee == internal.Error {
 		return false, fmt.Errorf("unknown state: %s", distroName)
 	}

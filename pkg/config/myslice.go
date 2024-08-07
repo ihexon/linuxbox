@@ -1,0 +1,18 @@
+package config
+
+type Slice struct { // A "mixed-type array" in TOML.
+	// Note that the fields below _must_ be exported.  Otherwise the TOML
+	// encoder would fail during type reflection.
+	Values     []string
+	Attributes struct { // Using a struct allows for adding more attributes in the future.
+		Append *bool // Nil if not set by the user
+	}
+}
+
+// Get returns the Slice values or an empty string slice.
+func (a *Slice) Get() []string {
+	if a.Values == nil {
+		return []string{}
+	}
+	return a.Values
+}
