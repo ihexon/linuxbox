@@ -26,4 +26,7 @@ func addCommand(c registry.CliCommand) {
 		parent = c.Parent
 	}
 	parent.AddCommand(c.Command)
+	c.Command.SetHelpTemplate(helpTemplate)
+	c.Command.SetUsageTemplate(usageTemplate)
+	c.Command.DisableFlagsInUseLine = true
 }

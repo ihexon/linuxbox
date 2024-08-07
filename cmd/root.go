@@ -9,10 +9,35 @@ import (
 	"strings"
 )
 
+const helpTemplate = `{{.Short}}
+
+Description:
+  {{.Long}}
+
+{{if or .Runnable .HasSubCommands}}{{.UsageString}}{{end}}`
+
+const usageTemplate = `Usage:{{if (and .Runnable (not .HasAvailableSubCommands))}}
+  {{.UseLine}}{{end}}{{if .HasAvailableSubCommands}}
+  {{.UseLine}} [command]{{end}}{{if gt (len .Aliases) 0}}
+
+Aliases:
+  {{.NameAndAliases}}{{end}}{{if .HasExample}}
+
+Examples:
+  {{.Example}}{{end}}{{if .HasAvailableSubCommands}}
+
+Available Commands:{{range .Commands}}{{if (or .IsAvailableCommand (eq .Name "help"))}}
+  {{rpad .Name .NamePadding }} {{.Short}}{{end}}{{end}}{{end}}{{if .HasAvailableLocalFlags}}
+
+Options:
+{{.LocalFlags.FlagUsages | trimTrailingWhitespaces}}{{end}}{{if .HasAvailableInheritedFlags}}
+{{end}}
+`
+
 var (
 	rootCmd = &cobra.Command{
 		Use:                   filepath.Base(os.Args[0]) + " [options]",
-		Long:                  "Manage pods, containers and images",
+		Long:                  "Manage your bugbox",
 		SilenceUsage:          true,
 		SilenceErrors:         true,
 		TraverseChildren:      true,
@@ -24,6 +49,10 @@ var (
 
 	requireCleanup = true
 )
+
+func init() {
+	rootCmd.SetUsageTemplate(usageTemplate)
+}
 
 func Execute() {
 	rootCmd.Execute()
