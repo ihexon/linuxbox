@@ -10,6 +10,7 @@ const (
 	decompressedFileFlag = os.O_CREATE | os.O_TRUNC | os.O_WRONLY
 )
 
+// decompressedFilePath is a full path with contain file name !!
 func Decompress(compressedVMFile *define.VMFile, decompressedFilePath string) error {
 	compressedFilePath := compressedVMFile.GetPath()
 	var (
@@ -20,7 +21,6 @@ func Decompress(compressedVMFile *define.VMFile, decompressedFilePath string) er
 		return err
 	}
 	return runDecompression(d, decompressedFilePath)
-
 }
 
 func newDecompressor(compressedFilePath string) (decompressor, error) {

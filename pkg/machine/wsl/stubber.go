@@ -4,6 +4,7 @@ import (
 	"bauklotze/pkg/machine/define"
 	"bauklotze/pkg/machine/env"
 	"bauklotze/pkg/machine/shim/diskpull"
+	"bauklotze/pkg/ovmdisk"
 )
 
 type WSLStubber struct {
@@ -18,14 +19,17 @@ func (w WSLStubber) VMType() define.VMType {
 	return define.WSLVirt
 }
 
-// 优先选择 userInputPath 指向的 rootfs
 func (w WSLStubber) GetDisk(userInputPath string, mc *define.MachineConfig) error {
+	var (
+		myDisk ovmdisk.Disker
+	)
+	// 现阶段，userInputPath 一定不为空
 	if userInputPath != "" {
 		// userInputPath 是用户指定的 rootfs 路径
-		// mc.ImagePath 实际上是 rootfs 的路径
+		// mc.ImagePath 实际上是用户指定的 rootfs 路径解压后的 rootfs 的路径
 		return diskpull.GetDisk(userInputPath, mc.Dirs, mc.ImagePath, w.VMType(), mc.Name)
 	}
-	return nil
+	return myDisk.Get()
 }
 
 // TODO: checkAndInstallWSL
@@ -55,7 +59,6 @@ func isRunning(name string) (bool, error) {
 	//		return false, err
 	//	}
 	// }
-
 	return running, err
 }
 

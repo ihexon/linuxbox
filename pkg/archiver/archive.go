@@ -22,7 +22,7 @@ type File struct {
 
 type FileHandler func(ctx context.Context, f File) error
 
-// Decompress : Departed, will be delete next version
+// Decompress : Departed, will be deleted next version
 func Decompress(compressedVMFile *define.VMFile, targetPathStr string) error {
 	compressedFileNameWithFullPath := compressedVMFile.GetPath()
 	file, err := os.OpenFile(compressedFileNameWithFullPath, os.O_RDONLY, 0)

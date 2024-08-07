@@ -111,7 +111,7 @@ type InitOptions struct {
 type VMProvider interface { //nolint:interfacebloat
 	VMType() VMType
 	Exists(name string) (bool, error)
-	GetDisk(userInputPath string, dirs *MachineDirs, mc *MachineConfig) error
+	GetDisk(userInputPath string, mc *MachineConfig) error
 	CreateVM(opts CreateVMOpts, mc *MachineConfig) error
 	StopVM(mc *MachineConfig, hardStop bool) error
 }

@@ -68,7 +68,7 @@ func Init(opts define.InitOptions, mp define.VMProvider) error {
 	mc.ImagePath = imagePath
 
 	// TODO: 实现 GetDisk， 下载 rootfs
-	if err := mp.GetDisk(opts.Image, dirs, mc); err != nil {
+	if err := mp.GetDisk(opts.Image, mc); err != nil {
 		return err
 	}
 

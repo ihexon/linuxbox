@@ -1,6 +1,7 @@
 package archiver
 
 import (
+	"bauklotze/pkg/archiver/decompress"
 	"bauklotze/pkg/machine/define"
 	"github.com/mholt/archiver/v4"
 	"io"
@@ -90,7 +91,9 @@ func TestDecompress(t *testing.T) {
 			f := &define.VMFile{
 				Path: tt.filename,
 			}
-			err := Decompress(f, "test_file/decompress_dir")
+			// Wed Aug  7 04:33:19 PM HKT 2024
+			// This should be ok for now :)
+			err := decompress.Decompress(f, "test_file/decompress_dir")
 			if err != nil {
 				t.Fatal(err)
 			}
