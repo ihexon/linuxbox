@@ -1,5 +1,9 @@
 package config
 
+func NewSlice(values []string) Slice {
+	return Slice{Values: values}
+}
+
 type Slice struct { // A "mixed-type array" in TOML.
 	// Note that the fields below _must_ be exported.  Otherwise the TOML
 	// encoder would fail during type reflection.

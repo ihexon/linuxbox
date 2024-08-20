@@ -6,6 +6,7 @@ import (
 	"bauklotze/pkg/machine/define"
 	provider2 "bauklotze/pkg/machine/provider"
 	"bauklotze/pkg/machine/shim"
+	"bauklotze/pkg/machine/vmconfigs"
 	"fmt"
 	"github.com/spf13/cobra"
 )
@@ -90,7 +91,7 @@ func machinePreRunE(c *cobra.Command, args []string) error {
 func initMachine(c *cobra.Command, args []string) error {
 	initOpts.Name = defaultMachineName
 	// Check if machine already exists
-	_, exists, err := shim.VMExists(initOpts.Name, []define.VMProvider{provider})
+	_, exists, err := shim.VMExists(initOpts.Name, []vmconfigs.VMProvider{provider})
 	if err != nil {
 		return err
 	}

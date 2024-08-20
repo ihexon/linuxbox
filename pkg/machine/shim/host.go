@@ -1,11 +1,11 @@
 package shim
 
 import (
-	fileutils "bauklotze/pkg/ioutils"
 	"bauklotze/pkg/machine"
 	"bauklotze/pkg/machine/define"
 	"bauklotze/pkg/machine/env"
-	"bauklotze/pkg/machine/vmconfig"
+	"bauklotze/pkg/machine/vmconfigs"
+	"bauklotze/pkg/utils"
 	"errors"
 	"fmt"
 	"github.com/hashicorp/go-multierror"
@@ -14,7 +14,7 @@ import (
 	"runtime"
 )
 
-func VMExists(name string, vmstubbers []define.VMProvider) (*define.MachineConfig, bool, error) {
+func VMExists(name string, vmstubbers []vmconfigs.VMProvider) (*vmconfigs.MachineConfig, bool, error) {
 	// Check with the provider hypervisor
 	for _, vmstubber := range vmstubbers {
 		exists, err := vmstubber.Exists(name)
@@ -28,7 +28,7 @@ func VMExists(name string, vmstubbers []define.VMProvider) (*define.MachineConfi
 	return nil, false, nil
 }
 
-func Init(opts define.InitOptions, mp define.VMProvider) error {
+func Init(opts define.InitOptions, mp vmconfigs.VMProvider) error {
 	var (
 		imageExtension string
 		err            error
@@ -44,7 +44,7 @@ func Init(opts define.InitOptions, mp define.VMProvider) error {
 		return err
 	}
 
-	mc, err := vmconfig.NewMachineConfig(opts, dirs, mp.VMType())
+	mc, err := vmconfigs.NewMachineConfig(opts, dirs, mp.VMType())
 	if err != nil {
 		return err
 	}
@@ -83,7 +83,7 @@ func Init(opts define.InitOptions, mp define.VMProvider) error {
 	return mc.Write()
 }
 
-func Reset(mps []define.VMProvider) error {
+func Reset(mps []vmconfigs.VMProvider) error {
 	var resetErrors *multierror.Error
 	// 注意 define 是配置模板，不存储数据
 	var removeDirs []*define.MachineDirs
@@ -103,11 +103,11 @@ func Reset(mps []define.VMProvider) error {
 	}
 
 	for _, dir := range removeDirs {
-		dataDirErr := fileutils.GuardedRemoveAll(filepath.Dir(dir.DataDir.GetPath()))
+		dataDirErr := utils.GuardedRemoveAll(filepath.Dir(dir.DataDir.GetPath()))
 		if !errors.Is(dataDirErr, os.ErrNotExist) {
 			resetErrors = multierror.Append(resetErrors, dataDirErr)
 		}
-		confDirErr := fileutils.GuardedRemoveAll(filepath.Dir(dir.ConfigDir.GetPath()))
+		confDirErr := utils.GuardedRemoveAll(filepath.Dir(dir.ConfigDir.GetPath()))
 		if !errors.Is(confDirErr, os.ErrNotExist) {
 			resetErrors = multierror.Append(resetErrors, confDirErr)
 		}

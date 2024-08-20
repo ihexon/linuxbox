@@ -21,7 +21,7 @@ func defaultMachineConfig() MachineConfig {
 		DiskSize: 100,
 		Image:    "",
 		Memory:   2048,
-		Volumes:  Slice{Values: getEmptyMachineVolumes()},
+		Volumes:  NewSlice(getDefaultMachineVolumes()),
 		User:     getDefaultMachineUser(), // I tell u a joke :)
 	}
 }

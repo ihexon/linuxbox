@@ -8,7 +8,7 @@ import (
 )
 
 func GetMachineDirs(vmType define.VMType) (*define.MachineDirs, error) {
-	rtDir, err := GetRuntimeDir()
+	rtDir, err := getRuntimeDir()
 	if err != nil {
 		return nil, err
 	}
@@ -34,8 +34,8 @@ func GetMachineDirs(vmType define.VMType) (*define.MachineDirs, error) {
 	return &dirs, err
 }
 
-func GetRuntimeDir() (string, error) {
-	tmpDir, _ := GetRuntimePrefix()
+func GetTmpDir() (string, error) {
+	tmpDir, _ := getRuntimeDir()
 	runtimeDir := filepath.Join(tmpDir, "oomol", "ovm")
 	return runtimeDir, nil
 }

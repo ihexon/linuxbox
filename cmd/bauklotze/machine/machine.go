@@ -5,12 +5,12 @@ package machine
 import (
 	"bauklotze/cmd/bauklotze/validata"
 	"bauklotze/cmd/registry"
-	"bauklotze/pkg/machine/define"
+	"bauklotze/pkg/machine/vmconfigs"
 	"github.com/spf13/cobra"
 )
 
 var (
-	provider define.VMProvider
+	provider vmconfigs.VMProvider
 )
 
 var machineCmd = &cobra.Command{

@@ -15,7 +15,3 @@ func getDefaultMachineVolumes() []string {
 	hostMnt := filepath.ToSlash(strings.TrimPrefix(hd, vol))
 	return []string{fmt.Sprintf("%s:%s", hd, hostMnt)}
 }
-
-func getEmptyMachineVolumes() []string {
-	return []string{fmt.Sprintf("%s:%s", nil, nil)}
-}
