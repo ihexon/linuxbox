@@ -33,7 +33,7 @@ func init() {
 }
 
 func reset(_ *cobra.Command, _ []string) error {
-	providers := provider2.GetAll()
+	providers := provider2.GetAll(true)
 	return shim.Reset(providers)
 }
 

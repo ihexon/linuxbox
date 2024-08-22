@@ -47,6 +47,8 @@ type MachineConfig struct {
 	imageDescription machineImage
 	Version          uint
 	Lock             *lockfile.LockFile
+
+	AppleHypervisor *AppleHVConfig `json:",omitempty"`
 }
 
 func (mc *MachineConfig) RemoveRuntimeFiles() ([]string, func() error, error) {

@@ -9,7 +9,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-// GetAll get all VMProvider of current platform
+// GetAll get all VMProvider of current platform, windows using wsl.WSLStubber
 func GetAll() []define.VMProvider {
 	providers := []define.VMProvider{
 		// Windows only support wsl

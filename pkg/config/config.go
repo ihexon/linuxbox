@@ -22,6 +22,14 @@ type MachineConfig struct {
 	Provider string `toml:"provider,omitempty"`
 }
 
+type VirtualMachine struct {
+	Vcpus       uint           `json:"vcpus"`
+	MemoryBytes uint64         `json:"memoryBytes"`
+	Bootloader  Bootloader     `json:"bootloader"`
+	Devices     []VirtioDevice `json:"devices,omitempty"`
+	Timesync    *TimeSync      `json:"timesync,omitempty"`
+}
+
 type Config struct {
 	Machine MachineConfig `toml:"machine"`
 }
