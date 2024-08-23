@@ -2,6 +2,7 @@ package apple
 
 import (
 	"bauklotze/pkg/machine/define"
+	"bauklotze/pkg/machine/shim/diskpull"
 	"bauklotze/pkg/machine/vmconfigs"
 )
 
@@ -13,16 +14,17 @@ func (a AppleHVStubber) VMType() define.VMType {
 	return define.AppleHvVirt
 }
 
-func (H AppleHVStubber) Exists(name string) (bool, error) {
+func (a AppleHVStubber) Exists(name string) (bool, error) {
 	return false, nil
 }
 
-func (H AppleHVStubber) GetDisk(userInputPath string, mc *vmconfigs.MachineConfig) error {
+func (a AppleHVStubber) GetDisk(userInputPath string, dirs *define.MachineDirs, mc *vmconfigs.MachineConfig) error {
+	return diskpull.GetDisk(userInputPath, dirs, mc.ImagePath, a.VMType(), mc.Name)
 
 }
 
-func (H AppleHVStubber) CreateVM(opts define.CreateVMOpts, mc *vmconfigs.MachineConfig) error {
-
+func (a AppleHVStubber) CreateVM(opts define.CreateVMOpts, mc *vmconfigs.MachineConfig) error {
+	return nil
 }
 
 func (a *AppleHVStubber) StopVM(mc *vmconfigs.MachineConfig, _ bool) error {

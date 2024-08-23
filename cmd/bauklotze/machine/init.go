@@ -80,7 +80,8 @@ func init() {
 
 // machinePreRunE: Status ok
 func machinePreRunE(c *cobra.Command, args []string) error {
-	provider, err := provider2.Get()
+	var err error = nil
+	provider, err = provider2.Get()
 	if err != nil {
 		return err
 	}

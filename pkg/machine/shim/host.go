@@ -67,8 +67,12 @@ func Init(opts define.InitOptions, mp vmconfigs.VMProvider) error {
 	imagePath, err = dirs.DataDir.AppendToNewVMFile(fmt.Sprintf("%s-%s%s", opts.Name, runtime.GOARCH, imageExtension))
 	mc.ImagePath = imagePath
 
-	// TODO: 实现 GetDisk， 下载 rootfs
-	if err := mp.GetDisk(opts.Image, mc); err != nil {
+	dirs, err = env.GetMachineDirs(mp.VMType())
+	if err != nil {
+		return err
+	}
+
+	if err := mp.GetDisk(opts.Image, dirs, mc); err != nil {
 		return err
 	}
 

@@ -5,6 +5,7 @@ go 1.22
 require (
 	github.com/Microsoft/go-winio v0.6.2
 	github.com/containers/storage v1.55.0
+	github.com/crc-org/vfkit v0.5.1
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/klauspost/compress v1.17.9
 	github.com/mholt/archiver/v4 v4.0.0-alpha.8.0.20240701211641-c341cc08a3ea

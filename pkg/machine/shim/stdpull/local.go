@@ -2,8 +2,8 @@ package stdpull
 
 import (
 	"bauklotze/pkg/archiver/decompress"
-	fileutils "bauklotze/pkg/ioutils"
 	"bauklotze/pkg/machine/define"
+	"github.com/containers/storage/pkg/fileutils"
 	"github.com/sirupsen/logrus"
 )
 

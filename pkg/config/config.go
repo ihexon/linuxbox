@@ -1,6 +1,8 @@
 package config
 
-import "github.com/spf13/pflag"
+import (
+	"github.com/spf13/pflag"
+)
 
 // This is a higher-level configuration structure that includes more general settings for the virtual machine.
 //
@@ -20,14 +22,6 @@ type MachineConfig struct {
 	Volumes Slice `toml:"volumes,omitempty"`
 	// Provider is the virtualization provider used to run podman-machine VM
 	Provider string `toml:"provider,omitempty"`
-}
-
-type VirtualMachine struct {
-	Vcpus       uint           `json:"vcpus"`
-	MemoryBytes uint64         `json:"memoryBytes"`
-	Bootloader  Bootloader     `json:"bootloader"`
-	Devices     []VirtioDevice `json:"devices,omitempty"`
-	Timesync    *TimeSync      `json:"timesync,omitempty"`
 }
 
 type Config struct {
