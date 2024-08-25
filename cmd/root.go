@@ -56,6 +56,7 @@ func init() {
 
 func Execute() {
 	rootCmd.Execute()
+	os.Exit(0)
 }
 
 func persistentPreRunE(cmd *cobra.Command, args []string) error {

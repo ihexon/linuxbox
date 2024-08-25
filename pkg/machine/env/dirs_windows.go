@@ -1,3 +1,5 @@
+//go:build !darwin && windows && !linux
+
 package env
 
 func getRuntimeDir() (string, error) {

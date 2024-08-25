@@ -1,7 +1,11 @@
+//go:build darwin && !windows && !linux
+
 package env
 
 import "os"
 
+// os.LookupEnv("TMPDIR") in macos return the path like `/var/folders/cc/5844tzj53ljcm_ph48hqlr8w0000gn/T/`,
+// not /tmp !!
 func getRuntimeDir() (string, error) {
 	tmpDir, ok := os.LookupEnv("TMPDIR")
 	if !ok {

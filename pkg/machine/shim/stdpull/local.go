@@ -8,18 +8,17 @@ import (
 )
 
 type StdDiskPull struct {
-	// all define.VMFile are not dir, the full path contained file name
+	// all define.VMFile are not dir instead the full path contained file name
 	inputPath *define.VMFile
 	finalPath *define.VMFile
 }
 
-// 填充 StdDiskPull 结构体
 func NewStdDiskPull(inputPath string, finalpath *define.VMFile) (*StdDiskPull, error) {
 	inputImage, err := define.NewMachineFile(inputPath)
 	if err != nil {
 		return nil, err
 	}
-	return &StdDiskPull{inputPath: inputImage, finalPath: inputImage}, nil
+	return &StdDiskPull{inputPath: inputImage, finalPath: finalpath}, nil
 }
 
 // Get StdDiskPull: Get just decompress the `inputPath *define.VMFile` to `finalPath *define.VMFile`
