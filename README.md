@@ -23,3 +23,5 @@
     - [ ] 实现 appleHV 的 getDisk 方法
 
 ## 淦 ！
+
+# 2024-08-25 VFKIT EFI BOOT 模式方式并不能启动常规的 Linux 发行版，并且连自家的 Fedora Core 也启动不来，原因未知

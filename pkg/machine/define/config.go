@@ -1,6 +1,7 @@
 package define
 
 import (
+	strongunits "bauklotze/pkg/storage"
 	"os"
 )
 
@@ -26,9 +27,9 @@ type ResourceConfig struct {
 	// CPUs to be assigned to the VM
 	CPUs uint64
 	// Disk size in gigabytes assigned to the vm
-	DiskSize GiB
+	DiskSize strongunits.GiB
 	// Memory in megabytes assigned to the vm
-	Memory MiB
+	Memory strongunits.MiB
 }
 
 type MachineDirs struct {

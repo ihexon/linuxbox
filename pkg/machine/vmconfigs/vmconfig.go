@@ -35,6 +35,16 @@ type machineImage interface { //nolint:unused
 	path() string
 }
 
+type Mount struct {
+	OriginalInput string
+	ReadOnly      bool
+	Source        string
+	Tag           string
+	Target        string
+	Type          string
+	VSockNumber   *uint64
+}
+
 type MachineConfig struct {
 	Created          time.Time
 	Dirs             *define.MachineDirs
@@ -47,8 +57,8 @@ type MachineConfig struct {
 	imageDescription machineImage
 	Version          uint
 	Lock             *lockfile.LockFile
-
-	AppleHypervisor *AppleHVConfig `json:",omitempty"`
+	Mounts           []*Mount
+	AppleHypervisor  *AppleVfkitConfig `json:",omitempty"`
 }
 
 func (mc *MachineConfig) RemoveRuntimeFiles() ([]string, func() error, error) {

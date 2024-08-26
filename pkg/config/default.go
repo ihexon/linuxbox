@@ -12,6 +12,7 @@ func Default() (*Config, error) {
 	return config, nil
 }
 
+// defaultConfig return a &Config
 func defaultConfig() (*Config, error) {
 	return &Config{
 		Machine: defaultMachineConfig(),
