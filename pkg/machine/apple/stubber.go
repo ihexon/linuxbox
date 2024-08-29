@@ -2,7 +2,7 @@ package apple
 
 import (
 	"bauklotze/pkg/machine"
-	"bauklotze/pkg/machine/apple/vfkit"
+	"bauklotze/pkg/machine/apple/hvhelper"
 	"bauklotze/pkg/machine/define"
 	"bauklotze/pkg/machine/shim/diskpull"
 	"bauklotze/pkg/machine/vmconfigs"
@@ -30,7 +30,7 @@ func (a AppleHVStubber) GetDisk(userInputPath string, dirs *define.MachineDirs, 
 }
 
 func (a AppleHVStubber) CreateVM(opts define.CreateVMOpts, mc *vmconfigs.MachineConfig) error {
-	mc.AppleHypervisor.Vfkit = vfkit.Helper{}
+	mc.AppleHypervisor.Vfkit = hvhelper.Helper{}
 	bl := vfConfig.NewEFIBootloader(fmt.Sprintf("%s/efi-bl-%s", opts.Dirs.DataDir.GetPath(), opts.Name), true)
 	mc.AppleHypervisor.Vfkit.VirtualMachine = vfConfig.NewVirtualMachine(
 		uint(mc.Resources.CPUs),

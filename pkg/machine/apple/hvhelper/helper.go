@@ -1,4 +1,4 @@
-package vfkit
+package hvhelper
 
 import (
 	"bauklotze/pkg/machine/define"
@@ -37,7 +37,7 @@ const (
 type VZMachineState string
 type Endpoint string
 
-// Helper describes the use of vfkit: cmdline and endpoint
+// Helper describes the use of hvhelper: cmdline and endpoint
 type Helper struct {
 	LogLevel       logrus.Level
 	Endpoint       string
@@ -89,7 +89,7 @@ func ToMachineStatus(val string) (define.Status, error) {
 	return "", fmt.Errorf("unknown machine state: %s", val)
 }
 
-// getRawState asks vfkit for virtual machine state unmodified (see state())
+// getRawState asks hvhelper for virtual machine state unmodified (see state())
 func (vf *Helper) getRawState() (define.Status, error) {
 	var response rest.VMState
 	endPoint := vf.Endpoint + state

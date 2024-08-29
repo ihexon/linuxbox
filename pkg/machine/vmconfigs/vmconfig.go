@@ -2,6 +2,7 @@ package vmconfigs
 
 import (
 	"bauklotze/pkg/machine/define"
+	strongunits "bauklotze/pkg/storage"
 	"encoding/json"
 	"fmt"
 	"github.com/containers/storage/pkg/lockfile"
@@ -46,19 +47,20 @@ type Mount struct {
 }
 
 type MachineConfig struct {
-	Created          time.Time
-	Dirs             *define.MachineDirs
-	Name             string
-	ImagePath        *define.VMFile // 实际上是 rootfs 的路径
-	WSLHypervisor    *WSLConfig     `json:",omitempty"`
-	Starting         bool
-	ConfigPath       *define.VMFile
-	Resources        define.ResourceConfig
-	imageDescription machineImage
-	Version          uint
-	Lock             *lockfile.LockFile
-	Mounts           []*Mount
-	AppleHypervisor  *AppleVfkitConfig `json:",omitempty"`
+	Created                time.Time
+	Dirs                   *define.MachineDirs
+	Name                   string
+	ImagePath              *define.VMFile // 实际上是 rootfs 的路径
+	WSLHypervisor          *WSLConfig     `json:",omitempty"`
+	Starting               bool
+	ConfigPath             *define.VMFile
+	Resources              define.ResourceConfig
+	imageDescription       machineImage
+	Version                uint
+	Lock                   *lockfile.LockFile
+	Mounts                 []*Mount
+	AppleHypervisor        *AppleVfkitConfig   `json:",omitempty"`
+	AppleKrunkitHypervisor *AppleKrunkitConfig `json:",omitempty"`
 }
 
 func (mc *MachineConfig) RemoveRuntimeFiles() ([]string, func() error, error) {
@@ -80,8 +82,8 @@ func NewMachineConfig(opts define.InitOptions, dirs *define.MachineDirs, vmtype 
 	// System Resources
 	mrc := define.ResourceConfig{
 		CPUs:     opts.CPUS,
-		DiskSize: define.GiB(opts.DiskSize),
-		Memory:   define.MiB(opts.Memory),
+		DiskSize: strongunits.GiB(opts.DiskSize),
+		Memory:   strongunits.MiB(opts.Memory),
 	}
 	mc.Resources = mrc
 	mc.Created = time.Now()
