@@ -43,6 +43,11 @@ func Init(opts define.InitOptions, mp vmconfigs.VMProvider) error {
 	if err != nil {
 		return err
 	}
+	sshIdentityPath, err := env.GetSSHIdentityPath(define.DefaultIdentityName)
+	if err != nil {
+		return err
+	}
+	machine.GetSSHKeys(sshIdentityPath)
 
 	mc, err := vmconfigs.NewMachineConfig(opts, dirs, mp.VMType())
 	if err != nil {
@@ -77,12 +82,6 @@ func Init(opts define.InitOptions, mp vmconfigs.VMProvider) error {
 	}
 
 	callbackFuncs.Add(mc.ImagePath.Delete)
-
-	// TODO: CreateVM
-	//err = mp.CreateVM(createOpts, mc, &ignBuilder)
-	//if err != nil {
-	//	return err
-	//}
 
 	return mc.Write()
 }

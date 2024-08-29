@@ -4,7 +4,9 @@ import (
 	"bauklotze/pkg/machine/define"
 	strongunits "bauklotze/pkg/storage"
 	"encoding/json"
+	"errors"
 	"fmt"
+	gvproxy "github.com/containers/gvisor-tap-vsock/pkg/types"
 	"github.com/containers/storage/pkg/lockfile"
 	"github.com/sirupsen/logrus"
 	"io/fs"
@@ -52,7 +54,6 @@ type MachineConfig struct {
 	Name                   string
 	ImagePath              *define.VMFile // 实际上是 rootfs 的路径
 	WSLHypervisor          *WSLConfig     `json:",omitempty"`
-	Starting               bool
 	ConfigPath             *define.VMFile
 	Resources              define.ResourceConfig
 	imageDescription       machineImage
@@ -61,6 +62,16 @@ type MachineConfig struct {
 	Mounts                 []*Mount
 	AppleHypervisor        *AppleVfkitConfig   `json:",omitempty"`
 	AppleKrunkitHypervisor *AppleKrunkitConfig `json:",omitempty"`
+	GvProxy                gvproxy.GvproxyCommand
+	Starting               bool
+}
+
+// RuntimeDir is simple helper function to obtain the runtime dir
+func (mc *MachineConfig) RuntimeDir() (*define.VMFile, error) {
+	if mc.Dirs == nil || mc.Dirs.RuntimeDir == nil {
+		return nil, errors.New("no runtime directory set")
+	}
+	return mc.Dirs.RuntimeDir, nil
 }
 
 func (mc *MachineConfig) RemoveRuntimeFiles() ([]string, func() error, error) {

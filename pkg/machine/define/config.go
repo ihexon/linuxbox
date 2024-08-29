@@ -5,6 +5,7 @@ import (
 	"os"
 )
 
+const DefaultIdentityName = "machine"
 const MachineConfigVersion = 1
 
 type CreateVMOpts struct {

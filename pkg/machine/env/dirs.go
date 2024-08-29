@@ -51,7 +51,7 @@ func GetDataHomeOfVM(vmType define.VMType) (string, error) {
 	return dataDir, mkdirErr
 }
 
-// GetDataHomePrefix return $HOME/.local/share
+// GetDataHomePrefix return $HOME/.local/share/oomol/ovm/
 func GetDataHomePrefix() (string, error) {
 	home, err := GetHomePath()
 	if err != nil {
@@ -103,4 +103,29 @@ func WithBugBoxPrefix(name string) string {
 		name = prefix_str + name
 	}
 	return name
+}
+
+func DataDirPrefix() (string, error) {
+	data, err := GetDataHomePrefix()
+	if err != nil {
+		return "", err
+	}
+	dataDir := filepath.Join(data, "containers", "podman", "machine")
+	return dataDir, nil
+}
+func GetGlobalDataDir() (string, error) {
+	dataDir, err := DataDirPrefix()
+	if err != nil {
+		return "", err
+	}
+	return dataDir, os.MkdirAll(dataDir, 0755)
+}
+
+// GetSSHIdentityPath returns the path to the expected SSH private key
+func GetSSHIdentityPath(name string) (string, error) {
+	datadir, err := GetGlobalDataDir()
+	if err != nil {
+		return "", err
+	}
+	return filepath.Join(datadir, name), nil
 }

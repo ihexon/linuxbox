@@ -3,6 +3,7 @@ package utils
 import (
 	"fmt"
 	"net"
+	"os"
 	"strconv"
 )
 
@@ -22,4 +23,11 @@ func GetRandomPort() (int, error) {
 		return 0, fmt.Errorf("unable to convert random port to int: %w", err)
 	}
 	return rp, nil
+}
+
+func GuardedRemoveAll(path string) error {
+	if path == "" || path == "/" {
+		return fmt.Errorf("refusing to recursively delete `%s`", path)
+	}
+	return os.RemoveAll(path)
 }
