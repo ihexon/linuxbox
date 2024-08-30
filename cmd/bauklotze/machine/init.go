@@ -3,12 +3,16 @@ package machine
 import (
 	"bauklotze/cmd/registry"
 	"bauklotze/pkg/completion"
+	"bauklotze/pkg/events"
 	"bauklotze/pkg/machine/define"
 	provider2 "bauklotze/pkg/machine/provider"
 	"bauklotze/pkg/machine/shim"
 	"bauklotze/pkg/machine/vmconfigs"
+	strongunits "bauklotze/pkg/storage"
 	"fmt"
+	"github.com/shirou/gopsutil/v3/mem"
 	"github.com/spf13/cobra"
+	"os"
 )
 
 var (
@@ -92,7 +96,7 @@ func machinePreRunE(c *cobra.Command, args []string) error {
 	return nil
 }
 
-func initMachine(c *cobra.Command, args []string) error {
+func initMachine(cmd *cobra.Command, args []string) error {
 	initOpts.Name = defaultMachineName
 	// Check if machine already exists
 	// In macos_arm64 shim.VMExist always false
@@ -105,9 +109,33 @@ func initMachine(c *cobra.Command, args []string) error {
 		return fmt.Errorf("%s: %w", initOpts.Name, define.ErrVMAlreadyExists)
 	}
 
+	for idx, vol := range initOpts.Volumes {
+		initOpts.Volumes[idx] = os.ExpandEnv(vol)
+	}
+
+	if cmd.Flags().Changed("memory") {
+		if err := checkMaxMemory(strongunits.MiB(initOpts.Memory)); err != nil {
+			return err
+		}
+	}
+
 	err = shim.Init(initOpts, provider)
 	if err != nil {
 		return err
+	}
+	newMachineEvent(events.Init, events.Event{Name: initOpts.Name})
+	return nil
+}
+
+// checkMaxMemory gets the total system memory and compares it to the variable.  if the variable
+// is larger than the total memory, it returns an error
+func checkMaxMemory(newMem strongunits.MiB) error {
+	memStat, err := mem.VirtualMemory()
+	if err != nil {
+		return err
+	}
+	if total := strongunits.B(memStat.Total); strongunits.B(memStat.Total) < newMem.ToBytes() {
+		return fmt.Errorf("requested amount of memory (%d MB) greater than total system memory (%d MB)", newMem, total)
 	}
 	return nil
 }

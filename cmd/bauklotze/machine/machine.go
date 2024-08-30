@@ -5,9 +5,15 @@ package machine
 import (
 	"bauklotze/cmd/bauklotze/validata"
 	"bauklotze/cmd/registry"
+	"bauklotze/pkg/events"
 	"bauklotze/pkg/machine/vmconfigs"
 	"github.com/spf13/cobra"
 )
+
+// TODO: newMachineEvent
+func newMachineEvent(status events.Status, event events.Event) {
+
+}
 
 var (
 	provider vmconfigs.VMProvider
