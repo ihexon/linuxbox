@@ -3,6 +3,7 @@ package vmconfigs
 import (
 	"bauklotze/pkg/lockfile"
 	"bauklotze/pkg/machine/define"
+	"bauklotze/pkg/machine/ports"
 	strongunits "bauklotze/pkg/storage"
 	"encoding/json"
 	"errors"
@@ -89,7 +90,7 @@ func (mc *MachineConfig) RemoveRuntimeFiles() ([]string, func() error, error) {
 	return nil, nil, nil
 }
 
-func NewMachineConfig(opts define.InitOptions, dirs *define.MachineDirs, vmtype define.VMType) (*MachineConfig, error) {
+func NewMachineConfig(opts define.InitOptions, dirs *define.MachineDirs, sshIdentityPath string, mtype define.VMType) (*MachineConfig, error) {
 	mc := new(MachineConfig)
 	mc.Name = opts.Name
 	mc.Dirs = dirs
@@ -108,7 +109,21 @@ func NewMachineConfig(opts define.InitOptions, dirs *define.MachineDirs, vmtype 
 		Memory:   strongunits.MiB(opts.Memory),
 	}
 	mc.Resources = mrc
+
+	sshPort, err := ports.AllocateMachinePort()
+	if err != nil {
+		return nil, err
+	}
+
+	sshConfig := SSHConfig{
+		IdentityPath:   sshIdentityPath,
+		Port:           sshPort,
+		RemoteUsername: opts.Username,
+	}
+	mc.SSH = sshConfig
+
 	mc.Created = time.Now()
+
 	return mc, nil
 }
 

@@ -27,7 +27,9 @@ func VMExists(name string, vmstubbers []vmconfigs.VMProvider) (*vmconfigs.Machin
 	}
 	return nil, false, nil
 }
+func emptyfunc(p string) {
 
+}
 func Init(opts define.InitOptions, mp vmconfigs.VMProvider) error {
 	var (
 		imageExtension string
@@ -47,9 +49,13 @@ func Init(opts define.InitOptions, mp vmconfigs.VMProvider) error {
 	if err != nil {
 		return err
 	}
-	machine.GetSSHKeys(sshIdentityPath)
+	sshKey, err := machine.GetSSHKeys(sshIdentityPath)
+	if err != nil {
+		return err
+	}
+	emptyfunc(sshKey)
 
-	mc, err := vmconfigs.NewMachineConfig(opts, dirs, mp.VMType())
+	mc, err := vmconfigs.NewMachineConfig(opts, dirs, sshIdentityPath, mp.VMType())
 	if err != nil {
 		return err
 	}
