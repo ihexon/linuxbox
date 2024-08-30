@@ -3,9 +3,15 @@ package main
 import (
 	_ "bauklotze/cmd/bauklotze/machine"
 	"bauklotze/cmd/registry"
+	"fmt"
 	"github.com/spf13/cobra"
 	"os"
 )
+
+func flagErrorFuncfunc(c *cobra.Command, e error) error {
+	e = fmt.Errorf("%w\nSee '%s --help'", e, c.CommandPath())
+	return e
+}
 
 func main() {
 	rootCmd = parseCommands()
@@ -17,6 +23,7 @@ func parseCommands() *cobra.Command {
 	for _, c := range registry.Commands {
 		addCommand(c)
 	}
+	rootCmd.SetFlagErrorFunc(flagErrorFuncfunc)
 	return rootCmd
 }
 

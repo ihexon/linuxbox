@@ -2,6 +2,7 @@ package main
 
 import (
 	"bauklotze/cmd/bauklotze/validata"
+	"fmt"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"os"
@@ -55,8 +56,24 @@ func init() {
 }
 
 func Execute() {
-	rootCmd.Execute()
+	err := rootCmd.Execute()
+	if err != nil {
+		fmt.Fprintln(os.Stderr, formatError(err))
+	}
 	os.Exit(0)
+}
+
+func formatError(err error) string {
+	var message string
+	switch {
+	default:
+		if logrus.IsLevelEnabled(logrus.TraceLevel) {
+			message = fmt.Sprintf("Error: %+v", err)
+		} else {
+			message = fmt.Sprintf("Error: %v", err)
+		}
+	}
+	return message
 }
 
 func persistentPreRunE(cmd *cobra.Command, args []string) error {
