@@ -19,11 +19,11 @@ func GetDisk(userInputPath string, dirs *define.MachineDirs, imagePath *define.V
 
 	switch {
 	case userInputPath == "":
-		fmt.Errorf("Please --image [IMAGE_PATH]")
+		return fmt.Errorf("Please --image [IMAGE_PATH]")
 	case strings.HasPrefix(userInputPath, "http"):
-		fmt.Errorf("Do not support download image from http(s)://")
+		return fmt.Errorf("Do not support download image from http(s)://")
 	case strings.HasPrefix(userInputPath, "docker://"):
-		fmt.Errorf("Do not support download image from docker://")
+		return fmt.Errorf("Do not support download image from docker://")
 	default:
 		mydisk, err = stdpull.NewStdDiskPull(userInputPath, imagePath)
 	}

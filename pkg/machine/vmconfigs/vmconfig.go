@@ -1,13 +1,13 @@
 package vmconfigs
 
 import (
+	"bauklotze/pkg/lockfile"
 	"bauklotze/pkg/machine/define"
 	strongunits "bauklotze/pkg/storage"
 	"encoding/json"
 	"errors"
 	"fmt"
 	gvproxy "github.com/containers/gvisor-tap-vsock/pkg/types"
-	"github.com/containers/storage/pkg/lockfile"
 	"github.com/sirupsen/logrus"
 	"io/fs"
 	"path/filepath"
@@ -63,7 +63,18 @@ type MachineConfig struct {
 	AppleHypervisor        *AppleVfkitConfig   `json:",omitempty"`
 	AppleKrunkitHypervisor *AppleKrunkitConfig `json:",omitempty"`
 	GvProxy                gvproxy.GvproxyCommand
+	SSH                    SSHConfig
 	Starting               bool
+}
+
+// SSHConfig contains remote access information for SSH
+type SSHConfig struct {
+	// IdentityPath is the fq path to the ssh priv key
+	IdentityPath string
+	// SSH port for user networking
+	Port int
+	// RemoteUsername of the vm user
+	RemoteUsername string
 }
 
 // RuntimeDir is simple helper function to obtain the runtime dir

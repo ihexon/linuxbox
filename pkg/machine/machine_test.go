@@ -12,13 +12,13 @@ func TestMachine(t *testing.T) {
 	}
 	t.Log(rtDir)
 
-	dataDirOfVM, err := env.GetDataHomeOfVM(0)
+	dataDirOfVM, err := env.GetVMDataDir(0)
 	if err != nil {
 		t.Fatalf(err.Error())
 	}
 	t.Log(dataDirOfVM)
 
-	confDirOfVM, err := env.GetConfDirOfVM(0)
+	confDirOfVM, err := env.GetVMConfDir(0)
 	if err != nil {
 		t.Fatalf(err.Error())
 	}

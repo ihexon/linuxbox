@@ -6,7 +6,7 @@ import "os"
 
 // os.LookupEnv("TMPDIR") in macos return the path like `/var/folders/cc/5844tzj53ljcm_ph48hqlr8w0000gn/T/`,
 // not /tmp !!
-func getRuntimeDir() (string, error) {
+func getTMPDir() (string, error) {
 	tmpDir, ok := os.LookupEnv("TMPDIR")
 	if !ok {
 		tmpDir = "/tmp"

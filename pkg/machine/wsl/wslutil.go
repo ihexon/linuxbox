@@ -1,3 +1,5 @@
+//go:build !drawin && !linux && windows
+
 package wsl
 
 import (

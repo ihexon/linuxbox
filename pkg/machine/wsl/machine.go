@@ -1,3 +1,5 @@
+//go:build !drawin && !linux && windows
+
 package wsl
 
 import (
@@ -17,7 +19,7 @@ import (
 )
 
 func getElevatedOutputFileName() (string, error) {
-	dir, err := env.GetDataHomeOfVM(0)
+	dir, err := env.GetVMDataDir(0)
 	if err != nil {
 		return "", err
 	}

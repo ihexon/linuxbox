@@ -37,7 +37,7 @@ func init() {
 	})
 
 	flags := initCmd.Flags()
-	cfg := registry.PodmanConfig()
+	cfg := registry.OvmConfig()
 
 	flags.BoolVar(
 		&initOpts.ReExec,

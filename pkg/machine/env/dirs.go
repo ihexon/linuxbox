@@ -7,62 +7,45 @@ import (
 	"strings"
 )
 
+const prefix_str = "donaldtrump"
+
 func GetMachineDirs(vmType define.VMType) (*define.MachineDirs, error) {
-	rtDir, err := getRuntimeDir()
+	tmpDir, err := getTMPDir()
 	if err != nil {
 		return nil, err
 	}
-	rtDirOfVM := define.VMFile{Path: rtDir}
+	tmpDir = filepath.Join(tmpDir, "ovm")
+	ovmTMPDir := define.VMFile{Path: tmpDir}
 
-	confDirOfVM, err := GetConfDirOfVM(vmType)
+	vmconfDir, err := GetVMConfDir(vmType)
 	if err != nil {
 		return nil, err
 	}
-	configDir := define.VMFile{Path: confDirOfVM}
+	configDir := define.VMFile{Path: vmconfDir}
 
-	dataDirOfVM, err := GetDataHomeOfVM(vmType)
+	vmdataDir, err := GetVMDataDir(vmType)
 	if err != nil {
 		return nil, err
 	}
-	dataDir := define.VMFile{Path: dataDirOfVM}
+	dataDir := define.VMFile{Path: vmdataDir}
 
 	dirs := define.MachineDirs{
 		ConfigDir:  &configDir,
 		DataDir:    &dataDir,
-		RuntimeDir: &rtDirOfVM,
+		RuntimeDir: &ovmTMPDir,
 	}
 	return &dirs, err
 }
 
-func GetTmpDir() (string, error) {
-	tmpDir, _ := getRuntimeDir()
-	runtimeDir := filepath.Join(tmpDir, "oomol", "ovm")
-	return runtimeDir, nil
+// GetConfigHome return $HOME/.config
+func getConfigHome() (string, error) {
+	homeDir, _ := getHomePath()
+	return filepath.Join(homeDir, ".config"), nil
 }
 
-// GetDataHomeOfVM return $HOME/.local/share/oomol/ovm/wsl
-func GetDataHomeOfVM(vmType define.VMType) (string, error) {
-	dataHomePrefix, err := GetDataHomePrefix()
-	if err != nil {
-		return "", err
-	}
-	dataDir := filepath.Join(dataHomePrefix, vmType.String())
-	mkdirErr := os.MkdirAll(dataDir, 0755)
-	return dataDir, mkdirErr
-}
-
-// GetDataHomePrefix return $HOME/.local/share/oomol/ovm/
-func GetDataHomePrefix() (string, error) {
-	home, err := GetHomePath()
-	if err != nil {
-		return "", err
-	}
-	return filepath.Join(home, ".local", "share", "oomol", "ovm"), nil
-}
-
-// GetConfDirOfVM return $HOME/.config/oomol/ovm/machine/{wsl,qemu}
-func GetConfDirOfVM(vmType define.VMType) (string, error) {
-	confDirPrefix, err := GetConfigDirOfMachine()
+// GetVMConfDir return $HOME/.config/oomol/ovm/machine/{wsl,qemu,libkrun,applehv}
+func GetVMConfDir(vmType define.VMType) (string, error) {
+	confDirPrefix, err := getMachineDir()
 	if err != nil {
 		return "", err
 	}
@@ -71,32 +54,26 @@ func GetConfDirOfVM(vmType define.VMType) (string, error) {
 	return confDir, mkdirErr
 }
 
-// GetConfigDirOfMachine return $HOME/.config/oomol/ovm/machine
-func GetConfigDirOfMachine() (string, error) {
-	configDirOfMachine, err := GetConfigHome()
+// getMachineDir return $HOME/.config/oomol/ovm/machine
+func getMachineDir() (string, error) {
+	// configDirOfMachine ~/.config/
+	configDirOfMachine, err := getConfigHome()
 	if err != nil {
 		return "", err
 	}
+	// ~/.config/oomol/ovm/machine/
 	configDirOfMachine = filepath.Join(configDirOfMachine, "oomol", "ovm", "machine")
 	return configDirOfMachine, nil
 }
 
-// GetConfigHome return $HOME/.config
-func GetConfigHome() (string, error) {
-	homeDir, _ := GetHomePath()
-	return filepath.Join(homeDir, ".config"), nil
-}
-
-// GetHomePath return $HOME
-func GetHomePath() (string, error) {
+// getHomePath return $HOME
+func getHomePath() (string, error) {
 	home, err := os.UserHomeDir()
 	if err != nil {
 		return "", err
 	}
 	return home, nil
 }
-
-const prefix_str = "donaldtrump"
 
 func WithBugBoxPrefix(name string) string {
 	if !strings.HasPrefix(name, prefix_str) {
@@ -105,16 +82,39 @@ func WithBugBoxPrefix(name string) string {
 	return name
 }
 
-func DataDirPrefix() (string, error) {
-	data, err := GetDataHomePrefix()
+// GetVMDataDir return $HOME/.local/share/oomol/ovm/machine/wsl
+func GetVMDataDir(vmType define.VMType) (string, error) {
+	dataHomePrefix, err := DataDirMachine()
 	if err != nil {
 		return "", err
 	}
-	dataDir := filepath.Join(data, "containers", "podman", "machine")
+	dataDir := filepath.Join(dataHomePrefix, vmType.String())
+	mkdirErr := os.MkdirAll(dataDir, 0755)
+	return dataDir, mkdirErr
+}
+
+// DataDirMachine return $HOME/.local/share/oomol/ovm/machine/
+func DataDirMachine() (string, error) {
+	data, err := GetDataDirPrefix()
+	if err != nil {
+		return "", err
+	}
+	dataDir := filepath.Join(data, "machine")
 	return dataDir, nil
 }
+
+// GetDataDirPrefix return $HOME/.local/share/oomol/ovm/
+func GetDataDirPrefix() (string, error) {
+	home, err := getHomePath()
+	if err != nil {
+		return "", err
+	}
+	return filepath.Join(home, ".local", "share", "oomol", "ovm"), nil
+}
+
+// GetGlobalDataDir return $HOME/.local/share/oomol/ovm/machine/
 func GetGlobalDataDir() (string, error) {
-	dataDir, err := DataDirPrefix()
+	dataDir, err := DataDirMachine()
 	if err != nil {
 		return "", err
 	}

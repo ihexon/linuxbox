@@ -21,11 +21,24 @@ type MachineConfig struct {
 	Volumes Slice `toml:"volumes,omitempty"`
 	// Provider is the virtualization provider used to run podman-machine VM
 	Provider string `toml:"provider,omitempty"`
+	// HelperPath is the
+	HelperBinariesDir Slice `toml:"helper_path,omitempty"`
 }
 
 type Config struct {
 	Machine MachineConfig `toml:"machine"`
 }
+
+//func (c *Config) FindHelperBinary(name string, searchPATH bool) (string, error) {
+//	dirList := c.Machine.HelperBinariesDir.Get()
+//	bindirPath := ""
+//	bindirSearched := false
+//	// If set, search this directory first. This is used in testing.
+//	if dir, found := os.LookupEnv("CONTAINERS_HELPER_BINARY_DIR"); found {
+//		dirList = append([]string{dir}, dirList...)
+//	}
+//
+//}
 
 type PodmanConfig struct {
 	*pflag.FlagSet

@@ -20,3 +20,8 @@ func (a *Slice) Get() []string {
 	}
 	return a.Values
 }
+
+// Set overrides the values of the Slice.
+func (a *Slice) Set(values []string) {
+	a.Values = values
+}

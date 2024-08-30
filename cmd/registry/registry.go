@@ -18,10 +18,10 @@ var (
 	podmanSync sync.Once
 	// Commands All commands will be registin here
 	Commands      []CliCommand
-	podmanOptions entities.PodmanConfig
+	podmanOptions entities.OvmConfig
 )
 
-func PodmanConfig() *entities.PodmanConfig {
+func OvmConfig() *entities.OvmConfig {
 	podmanSync.Do(newPodmanConfig)
 	return &podmanOptions
 }
@@ -36,6 +36,6 @@ func newPodmanConfig() {
 		os.Exit(1)
 	}
 
-	podmanOptions = entities.PodmanConfig{ContainersConfRW: &config.Config{}, ContainersConfDefaultsRO: defaultConfig}
+	podmanOptions = entities.OvmConfig{ContainersConfRW: &config.Config{}, ContainersConfDefaultsRO: defaultConfig}
 
 }

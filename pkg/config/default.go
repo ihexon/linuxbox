@@ -12,11 +12,10 @@ func Default() (*Config, error) {
 	return config, nil
 }
 
-// defaultConfig return a &Config
 func defaultConfig() (*Config, error) {
-	return &Config{
-		Machine: defaultMachineConfig(),
-	}, nil
+	c := &Config{Machine: defaultMachineConfig()}
+	c.Machine.HelperBinariesDir.Set(defaultHelperBinariesDir)
+	return c, nil
 }
 
 func getDefaultMachineUser() string {

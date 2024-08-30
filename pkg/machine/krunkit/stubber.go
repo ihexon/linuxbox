@@ -18,6 +18,10 @@ type LibKrunStubber struct {
 	vmconfigs.AppleKrunkitConfig
 }
 
+func (l LibKrunStubber) StopVM(mc *vmconfigs.MachineConfig, hardStop bool) error {
+	return mc.AppleKrunkitHypervisor.Krunkit.Stop(hardStop, true)
+}
+
 const (
 	krunkitBinary = "krunkit"
 	localhostURI  = "http://localhost"
