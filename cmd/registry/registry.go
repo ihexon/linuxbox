@@ -16,6 +16,7 @@ type CliCommand struct {
 
 var (
 	podmanSync sync.Once
+	exitCode   = 0
 	// Commands All commands will be registin here
 	Commands      []CliCommand
 	podmanOptions entities.OvmConfig
@@ -38,4 +39,13 @@ func newPodmanConfig() {
 
 	podmanOptions = entities.OvmConfig{ContainersConfRW: &config.Config{}, ContainersConfDefaultsRO: defaultConfig}
 
+}
+
+var ()
+
+func SetExitCode(code int) {
+	exitCode = code
+}
+func GetExitCode() int {
+	return exitCode
 }

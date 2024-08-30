@@ -2,6 +2,7 @@ package main
 
 import (
 	"bauklotze/cmd/bauklotze/validata"
+	"bauklotze/cmd/registry"
 	"fmt"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -60,7 +61,7 @@ func Execute() {
 	if err != nil {
 		fmt.Fprintln(os.Stderr, formatError(err))
 	}
-	os.Exit(0)
+	os.Exit(registry.GetExitCode())
 }
 
 func formatError(err error) string {
