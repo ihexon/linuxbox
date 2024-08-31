@@ -109,6 +109,10 @@ func Init(opts define.InitOptions, mp vmconfigs.VMProvider) error {
 	return mc.Write()
 }
 
+func Start(mc *vmconfigs.MachineConfig, mp vmconfigs.VMProvider, dirs *define.MachineDirs, opts machine.StartOptions) error {
+	return nil
+}
+
 func Reset(mps []vmconfigs.VMProvider) error {
 	var resetErrors *multierror.Error
 	// 注意 define 是配置模板，不存储数据

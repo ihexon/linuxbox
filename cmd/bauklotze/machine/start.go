@@ -44,10 +44,11 @@ func start(_ *cobra.Command, args []string) error {
 	if !startOpts.Quiet {
 		fmt.Printf("Starting machine %q\n", vmName)
 	}
-	// TODO:
+	// TODO
 	if err := shim.Start(mc, provider, dirs, startOpts); err != nil {
 		return err
 	}
 	fmt.Printf("Machine %q started successfully\n", vmName)
 	return nil
+
 }
