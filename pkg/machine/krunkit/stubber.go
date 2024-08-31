@@ -35,9 +35,7 @@ func (l LibKrunStubber) Exists(name string) (bool, error) {
 	// not applicable for libkrun (same as applehv)
 	return false, nil
 }
-func (l LibKrunStubber) MountType() vmconfigs.VolumeMountType {
-	return vmconfigs.VirtIOFS
-}
+
 func (l LibKrunStubber) MountVolumesToVM(mc *vmconfigs.MachineConfig, quiet bool) error {
 	return nil
 }
@@ -72,6 +70,9 @@ func (l LibKrunStubber) UpdateSSHPort(mc *vmconfigs.MachineConfig, port int) err
 }
 func (l LibKrunStubber) GetRosetta(mc *vmconfigs.MachineConfig) (bool, error) {
 	return false, nil
+}
+func (l LibKrunStubber) MountType() vmconfigs.VolumeMountType {
+	return vmconfigs.VirtIOFS
 }
 
 func (l LibKrunStubber) CreateVM(opts define.CreateVMOpts, mc *vmconfigs.MachineConfig) error {

@@ -62,6 +62,11 @@ func Init(opts define.InitOptions, mp vmconfigs.VMProvider) error {
 
 	mc.Version = define.MachineConfigVersion
 
+	createOpts := define.CreateVMOpts{
+		Name: opts.Name,
+		Dirs: dirs,
+	}
+
 	switch mp.VMType() {
 	case define.QemuVirt:
 		imageExtension = ".qcow2"
@@ -87,7 +92,19 @@ func Init(opts define.InitOptions, mp vmconfigs.VMProvider) error {
 		return err
 	}
 
+	// Mounts
+	if mp.VMType() != define.WSLVirt {
+		mc.Mounts = CmdLineVolumesToMounts(opts.Volumes, mp.MountType())
+	}
+
 	callbackFuncs.Add(mc.ImagePath.Delete)
+
+	// Need to support ignBuilder
+	// err = mp.CreateVM(createOpts, mc, &ignBuilder)
+	err = mp.CreateVM(createOpts, mc)
+	if err != nil {
+		return err
+	}
 
 	return mc.Write()
 }

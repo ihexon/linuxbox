@@ -3,16 +3,15 @@ package vmconfigs
 import (
 	"bauklotze/pkg/lockfile"
 	"bauklotze/pkg/machine/define"
+	"bauklotze/pkg/machine/lock"
 	"bauklotze/pkg/machine/ports"
 	strongunits "bauklotze/pkg/storage"
 	"encoding/json"
 	"errors"
 	"fmt"
 	gvproxy "github.com/containers/gvisor-tap-vsock/pkg/types"
-	"github.com/sirupsen/logrus"
 	"io/fs"
 	"path/filepath"
-	"strings"
 	"time"
 )
 
@@ -32,6 +31,7 @@ type VMProvider interface { //nolint:interfacebloat
 	GetDisk(userInputPath string, dirs *define.MachineDirs, mc *MachineConfig) error
 	CreateVM(opts define.CreateVMOpts, mc *MachineConfig) error
 	StopVM(mc *MachineConfig, hardStop bool) error
+	MountType() VolumeMountType
 }
 
 type machineImage interface { //nolint:unused
@@ -53,19 +53,19 @@ type MachineConfig struct {
 	Created                time.Time
 	Dirs                   *define.MachineDirs
 	Name                   string
-	ImagePath              *define.VMFile // 实际上是 rootfs 的路径
-	WSLHypervisor          *WSLConfig     `json:",omitempty"`
+	ImagePath              *define.VMFile
+	WSLHypervisor          *WSLConfig `json:",omitempty"`
 	ConfigPath             *define.VMFile
 	Resources              define.ResourceConfig
 	imageDescription       machineImage
 	Version                uint
-	Lock                   *lockfile.LockFile
 	Mounts                 []*Mount
 	AppleHypervisor        *AppleVfkitConfig   `json:",omitempty"`
 	AppleKrunkitHypervisor *AppleKrunkitConfig `json:",omitempty"`
 	GvProxy                gvproxy.GvproxyCommand
 	SSH                    SSHConfig
 	Starting               bool
+	lock                   *lockfile.LockFile
 }
 
 // SSHConfig contains remote access information for SSH
@@ -121,14 +121,10 @@ func NewMachineConfig(opts define.InitOptions, dirs *define.MachineDirs, sshIden
 		RemoteUsername: opts.Username,
 	}
 	mc.SSH = sshConfig
-
 	mc.Created = time.Now()
-
 	return mc, nil
 }
 
-// loadMachineFromFQPath stub function for loading a JSON configuration file and returning
-// a machineconfig.  this should only be called if you know what you are doing.
 func loadMachineFromFQPath(path *define.VMFile) (*MachineConfig, error) {
 	mc := new(MachineConfig)
 	b, err := path.Read()
@@ -139,42 +135,37 @@ func loadMachineFromFQPath(path *define.VMFile) (*MachineConfig, error) {
 	if err = json.Unmarshal(b, mc); err != nil {
 		return nil, fmt.Errorf("unable to load machine config file: %q", err)
 	}
-
+	lock, err := lock.GetMachineLock(mc.Name, filepath.Dir(path.GetPath()))
+	mc.lock = lock
 	return mc, err
 }
 
-// LoadMachinesInDir returns all the machineconfigs located in given dir
-func LoadMachinesInDir(machinedirs *define.MachineDirs) (map[string]*MachineConfig, error) {
-	mcs := make(map[string]*MachineConfig)
-	if err := filepath.WalkDir(
-		machinedirs.ConfigDir.GetPath(),
-		func(path string, d fs.DirEntry, err error) error {
-			if strings.HasSuffix(d.Name(), ".json") {
-				fullPath, err := machinedirs.ConfigDir.AppendToNewVMFile(d.Name())
-				if err != nil {
-					return err
-				}
-				mc, err := loadMachineFromFQPath(fullPath)
-				if err != nil {
-					return err
-				}
-				// if we find an incompatible machine configuration file, we emit and error
-				//
-				if mc.Version == 0 {
-					tmpErr := &define.ErrIncompatibleMachineConfig{
-						Name: mc.Name,
-						Path: fullPath.GetPath(),
-					}
-					logrus.Error(tmpErr)
-					return nil
-				}
-				mc.ConfigPath = fullPath
-				mc.Dirs = machinedirs
-				mcs[mc.Name] = mc
-			}
-			return nil
-		}); err != nil {
+// The LoadMachinesInDir function loads all machine configurations from a specified directory.
+// It walks through the directory, identifies JSON configuration files, and loads each machine configuration using loadMachineFromFQPath.
+// It also handles incompatible machine configurations by logging an error.
+func LoadMachineByName(name string, dirs *define.MachineDirs) (*MachineConfig, error) {
+	fullPath, err := dirs.ConfigDir.AppendToNewVMFile(name + ".json")
+	if err != nil {
 		return nil, err
 	}
-	return mcs, nil
+	mc, err := loadMachineFromFQPath(fullPath)
+	if err != nil {
+		if errors.Is(err, fs.ErrNotExist) {
+			return nil, &define.ErrVMDoesNotExist{Name: name}
+		}
+		return nil, err
+	}
+	mc.Dirs = dirs
+	mc.ConfigPath = fullPath
+
+	// If we find an incompatible configuration, we return a hard
+	// error because the user wants to deal directly with this
+	// machine
+	if mc.Version == 0 {
+		return mc, &define.ErrIncompatibleMachineConfig{
+			Name: name,
+			Path: fullPath.GetPath(),
+		}
+	}
+	return mc, nil
 }
