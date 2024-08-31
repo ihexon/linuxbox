@@ -1,7 +1,7 @@
 package env
 
 import (
-	"bauklotze/pkg/machine/define"
+	"bauklotze/pkg/machine/machineDefine"
 	"os"
 	"path/filepath"
 	"strings"
@@ -9,27 +9,27 @@ import (
 
 const prefix_str = "donaldtrump"
 
-func GetMachineDirs(vmType define.VMType) (*define.MachineDirs, error) {
+func GetMachineDirs(vmType machineDefine.VMType) (*machineDefine.MachineDirs, error) {
 	tmpDir, err := getTMPDir()
 	if err != nil {
 		return nil, err
 	}
 	tmpDir = filepath.Join(tmpDir, "ovm")
-	ovmTMPDir := define.VMFile{Path: tmpDir}
+	ovmTMPDir := machineDefine.VMFile{Path: tmpDir}
 
 	vmconfDir, err := GetVMConfDir(vmType)
 	if err != nil {
 		return nil, err
 	}
-	configDir := define.VMFile{Path: vmconfDir}
+	configDir := machineDefine.VMFile{Path: vmconfDir}
 
 	vmdataDir, err := GetVMDataDir(vmType)
 	if err != nil {
 		return nil, err
 	}
-	dataDir := define.VMFile{Path: vmdataDir}
+	dataDir := machineDefine.VMFile{Path: vmdataDir}
 
-	dirs := define.MachineDirs{
+	dirs := machineDefine.MachineDirs{
 		ConfigDir:  &configDir,
 		DataDir:    &dataDir,
 		RuntimeDir: &ovmTMPDir,
@@ -38,13 +38,13 @@ func GetMachineDirs(vmType define.VMType) (*define.MachineDirs, error) {
 }
 
 // GetConfigHome return $HOME/.config
-func getConfigHome() (string, error) {
-	homeDir, _ := getHomePath()
+func GetConfigHome() (string, error) {
+	homeDir, _ := GetHomePath()
 	return filepath.Join(homeDir, ".config"), nil
 }
 
 // GetVMConfDir return $HOME/.config/oomol/ovm/machine/{wsl,qemu,libkrun,applehv}
-func GetVMConfDir(vmType define.VMType) (string, error) {
+func GetVMConfDir(vmType machineDefine.VMType) (string, error) {
 	confDirPrefix, err := getMachineDir()
 	if err != nil {
 		return "", err
@@ -57,7 +57,7 @@ func GetVMConfDir(vmType define.VMType) (string, error) {
 // getMachineDir return $HOME/.config/oomol/ovm/machine
 func getMachineDir() (string, error) {
 	// configDirOfMachine ~/.config/
-	configDirOfMachine, err := getConfigHome()
+	configDirOfMachine, err := GetConfigHome()
 	if err != nil {
 		return "", err
 	}
@@ -66,8 +66,8 @@ func getMachineDir() (string, error) {
 	return configDirOfMachine, nil
 }
 
-// getHomePath return $HOME
-func getHomePath() (string, error) {
+// GetHomePath return $HOME
+func GetHomePath() (string, error) {
 	home, err := os.UserHomeDir()
 	if err != nil {
 		return "", err
@@ -83,7 +83,7 @@ func WithBugBoxPrefix(name string) string {
 }
 
 // GetVMDataDir return $HOME/.local/share/oomol/ovm/machine/wsl
-func GetVMDataDir(vmType define.VMType) (string, error) {
+func GetVMDataDir(vmType machineDefine.VMType) (string, error) {
 	dataHomePrefix, err := DataDirMachine()
 	if err != nil {
 		return "", err
@@ -105,7 +105,7 @@ func DataDirMachine() (string, error) {
 
 // GetDataDirPrefix return $HOME/.local/share/oomol/ovm/
 func GetDataDirPrefix() (string, error) {
-	home, err := getHomePath()
+	home, err := GetHomePath()
 	if err != nil {
 		return "", err
 	}

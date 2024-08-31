@@ -2,7 +2,7 @@ package archiver
 
 import (
 	"bauklotze/pkg/archiver/decompress"
-	"bauklotze/pkg/machine/define"
+	"bauklotze/pkg/machine/machineDefine"
 	"github.com/mholt/archiver/v4"
 	"io"
 	"os"
@@ -88,7 +88,7 @@ func TestDecompress(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			f := &define.VMFile{
+			f := &machineDefine.VMFile{
 				Path: tt.filename,
 			}
 			// Wed Aug  7 04:33:19 PM HKT 2024

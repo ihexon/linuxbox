@@ -21,6 +21,21 @@ const (
 	portLockFileName  = "port-alloc.lck"
 )
 
+func ReleaseMachinePort(port int) error {
+	lock, err := acquirePortLock()
+	if err != nil {
+		return err
+	}
+	defer lock.Unlock()
+	ports, err := loadPortAllocations()
+	if err != nil {
+		return err
+	}
+
+	delete(ports, port)
+	return storePortAllocations(ports)
+}
+
 func acquirePortLock() (*lockfile.LockFile, error) {
 	lockDir, err := env.GetGlobalDataDir()
 	if err != nil {

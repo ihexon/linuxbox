@@ -4,7 +4,7 @@ import (
 	"bauklotze/cmd/registry"
 	"bauklotze/pkg/completion"
 	"bauklotze/pkg/events"
-	"bauklotze/pkg/machine/define"
+	"bauklotze/pkg/machine/machineDefine"
 	provider2 "bauklotze/pkg/machine/provider"
 	"bauklotze/pkg/machine/shim"
 	"bauklotze/pkg/machine/vmconfigs"
@@ -26,8 +26,8 @@ var (
 		Example:           `podman machine init podman-machine-default`,
 		ValidArgsFunction: completion.AutocompleteNone,
 	}
-	initOpts           = define.InitOptions{}
-	defaultMachineName = define.DefaultMachineName
+	initOpts           = machineDefine.InitOptions{}
+	defaultMachineName = machineDefine.DefaultMachineName
 )
 
 type InitOptionalFlags struct {
@@ -106,7 +106,7 @@ func initMachine(cmd *cobra.Command, args []string) error {
 	}
 
 	if exists {
-		return fmt.Errorf("%s: %w", initOpts.Name, define.ErrVMAlreadyExists)
+		return fmt.Errorf("%s: %w", initOpts.Name, machineDefine.ErrVMAlreadyExists)
 	}
 
 	for idx, vol := range initOpts.Volumes {

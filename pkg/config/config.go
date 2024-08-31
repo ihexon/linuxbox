@@ -4,6 +4,30 @@ import (
 	"github.com/spf13/pflag"
 )
 
+type FarmConfig struct {
+	// Default is the default farm to be used when farming out builds
+	Default string `json:",omitempty" toml:"default,omitempty"`
+	// List is a map of farms created where key=farm-name and value=list of connections
+	List map[string][]string `json:",omitempty" toml:"list,omitempty"`
+}
+
+type ConnectionConfig struct {
+	Default     string                 `json:",omitempty"`
+	Connections map[string]Destination `json:",omitempty"`
+}
+
+// Destination represents destination for remote service
+type Destination struct {
+	// URI, required. Example: ssh://root@example.com:22/run/podman/podman.sock
+	URI string `toml:"uri"`
+
+	// Identity file with ssh key, optional
+	Identity string `json:",omitempty" toml:"identity,omitempty"`
+
+	// isMachine describes if the remote destination is a machine.
+	IsMachine bool `json:",omitempty" toml:"is_machine,omitempty"`
+}
+
 // This is a higher-level configuration structure that includes more general settings for the virtual machine.
 // It's used for overall machine management and configuration.
 type MachineConfig struct {

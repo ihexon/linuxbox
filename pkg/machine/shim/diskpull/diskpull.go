@@ -2,17 +2,17 @@ package diskpull
 
 import (
 	"bauklotze/cmd/registry"
-	"bauklotze/pkg/machine/define"
+	"bauklotze/pkg/machine/machineDefine"
 	"bauklotze/pkg/machine/shim/stdpull"
 	"bauklotze/pkg/ovmdisk"
 	"fmt"
 	"strings"
 )
 
-// GetDisk For now we don't need dirs *define.MachineDirs,vmType define.VMType, name string
+// GetDisk For now we don't need dirs *machineDefine.MachineDirs,vmType machineDefine.VMType, name string
 // But I prefer the function signature same as podman original, so the VMProvider same as podman.
 // We can just import any libraries from containers/* because we have the same function signature :)
-func GetDisk(userInputPath string, dirs *define.MachineDirs, imagePath *define.VMFile, vmType define.VMType, name string) error {
+func GetDisk(userInputPath string, dirs *machineDefine.MachineDirs, imagePath *machineDefine.VMFile, vmType machineDefine.VMType, name string) error {
 	var (
 		err    error
 		mydisk ovmdisk.Disker

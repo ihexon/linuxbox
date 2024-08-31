@@ -1,7 +1,7 @@
 package archiver
 
 import (
-	"bauklotze/pkg/machine/define"
+	"bauklotze/pkg/machine/machineDefine"
 	"context"
 	"github.com/mholt/archiver/v4"
 	"github.com/sirupsen/logrus"
@@ -23,7 +23,7 @@ type File struct {
 type FileHandler func(ctx context.Context, f File) error
 
 // Decompress : Departed, will be deleted next version
-func Decompress(compressedVMFile *define.VMFile, targetPathStr string) error {
+func Decompress(compressedVMFile *machineDefine.VMFile, targetPathStr string) error {
 	compressedFileNameWithFullPath := compressedVMFile.GetPath()
 	file, err := os.OpenFile(compressedFileNameWithFullPath, os.O_RDONLY, 0)
 	if err != nil {

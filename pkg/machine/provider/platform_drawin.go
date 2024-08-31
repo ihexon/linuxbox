@@ -5,8 +5,8 @@ package provider
 import (
 	"bauklotze/pkg/config"
 	"bauklotze/pkg/machine/apple"
-	"bauklotze/pkg/machine/define"
 	"bauklotze/pkg/machine/krunkit"
+	"bauklotze/pkg/machine/machineDefine"
 	"bauklotze/pkg/machine/vmconfigs"
 	"fmt"
 	"os"
@@ -23,9 +23,9 @@ func Get() (vmconfigs.VMProvider, error) {
 	if providerOverride, found := os.LookupEnv("OVM_PROVIDER"); found {
 		provider = providerOverride
 	}
-	resolvedVMType, err := define.ParseVMType(provider, define.AppleHvVirt)
+	resolvedVMType, err := machineDefine.ParseVMType(provider, machineDefine.AppleHvVirt)
 	switch resolvedVMType {
-	case define.AppleHvVirt:
+	case machineDefine.AppleHvVirt:
 		return new(krunkit.LibKrunStubber), nil
 	default:
 		return nil, fmt.Errorf("unsupported virtualization provider: `%s`", resolvedVMType.String())

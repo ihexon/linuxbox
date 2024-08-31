@@ -1,9 +1,11 @@
+//go:build darwin && arm64
+
 package apple
 
 import (
 	"bauklotze/pkg/machine"
 	"bauklotze/pkg/machine/apple/hvhelper"
-	"bauklotze/pkg/machine/define"
+	"bauklotze/pkg/machine/machineDefine"
 	"bauklotze/pkg/machine/shim/diskpull"
 	"bauklotze/pkg/machine/vmconfigs"
 	"bauklotze/pkg/network"
@@ -16,8 +18,8 @@ type AppleHVStubber struct {
 	vmconfigs.AppleVfkitConfig
 }
 
-func (a AppleHVStubber) VMType() define.VMType {
-	return define.AppleHvVirt
+func (a AppleHVStubber) VMType() machineDefine.VMType {
+	return machineDefine.AppleHvVirt
 }
 
 func (a AppleHVStubber) Exists(name string) (bool, error) {
@@ -25,11 +27,11 @@ func (a AppleHVStubber) Exists(name string) (bool, error) {
 }
 
 // GetDisk : status ok !
-func (a AppleHVStubber) GetDisk(userInputPath string, dirs *define.MachineDirs, mc *vmconfigs.MachineConfig) error {
+func (a AppleHVStubber) GetDisk(userInputPath string, dirs *machineDefine.MachineDirs, mc *vmconfigs.MachineConfig) error {
 	return diskpull.GetDisk(userInputPath, dirs, mc.ImagePath, a.VMType(), mc.Name)
 }
 
-func (a AppleHVStubber) CreateVM(opts define.CreateVMOpts, mc *vmconfigs.MachineConfig) error {
+func (a AppleHVStubber) CreateVM(opts machineDefine.CreateVMOpts, mc *vmconfigs.MachineConfig) error {
 	mc.AppleHypervisor.Vfkit = hvhelper.Helper{}
 	bl := vfConfig.NewEFIBootloader(fmt.Sprintf("%s/efi-bl-%s", opts.Dirs.DataDir.GetPath(), opts.Name), true)
 	mc.AppleHypervisor.Vfkit.VirtualMachine = vfConfig.NewVirtualMachine(

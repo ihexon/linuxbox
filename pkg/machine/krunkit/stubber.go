@@ -1,10 +1,12 @@
+//go:build darwin && arm64
+
 package krunkit
 
 import (
 	"bauklotze/pkg/machine"
 	"bauklotze/pkg/machine/apple"
 	"bauklotze/pkg/machine/apple/hvhelper"
-	"bauklotze/pkg/machine/define"
+	"bauklotze/pkg/machine/machineDefine"
 	"bauklotze/pkg/machine/shim/diskpull"
 	"bauklotze/pkg/machine/vmconfigs"
 	"bauklotze/pkg/utils"
@@ -18,6 +20,10 @@ type LibKrunStubber struct {
 	vmconfigs.AppleKrunkitConfig
 }
 
+func (l LibKrunStubber) State(mc *vmconfigs.MachineConfig, bypass bool) (machineDefine.Status, error) {
+	return mc.AppleKrunkitHypervisor.Krunkit.State()
+}
+
 func (l LibKrunStubber) StopVM(mc *vmconfigs.MachineConfig, hardStop bool) error {
 	return mc.AppleKrunkitHypervisor.Krunkit.Stop(hardStop, true)
 }
@@ -27,7 +33,7 @@ const (
 	localhostURI  = "http://localhost"
 )
 
-func (l LibKrunStubber) GetDisk(userInputPath string, dirs *define.MachineDirs, mc *vmconfigs.MachineConfig) error {
+func (l LibKrunStubber) GetDisk(userInputPath string, dirs *machineDefine.MachineDirs, mc *vmconfigs.MachineConfig) error {
 	return diskpull.GetDisk(userInputPath, dirs, mc.ImagePath, l.VMType(), mc.Name)
 }
 
@@ -43,7 +49,7 @@ func (l LibKrunStubber) MountVolumesToVM(mc *vmconfigs.MachineConfig, quiet bool
 func (l LibKrunStubber) Remove(mc *vmconfigs.MachineConfig) ([]string, func() error, error) {
 	return []string{}, func() error { return nil }, nil
 }
-func (l LibKrunStubber) RemoveAndCleanMachines(dirs *define.MachineDirs) error {
+func (l LibKrunStubber) RemoveAndCleanMachines(dirs *machineDefine.MachineDirs) error {
 	return nil
 }
 
@@ -57,6 +63,7 @@ func (l LibKrunStubber) PostStartNetworking(mc *vmconfigs.MachineConfig, noInfo 
 func (l LibKrunStubber) UserModeNetworkEnabled(mc *vmconfigs.MachineConfig) bool {
 	return true
 }
+
 func (l LibKrunStubber) UseProviderNetworkSetup() bool {
 	return false
 }
@@ -75,7 +82,7 @@ func (l LibKrunStubber) MountType() vmconfigs.VolumeMountType {
 	return vmconfigs.VirtIOFS
 }
 
-func (l LibKrunStubber) CreateVM(opts define.CreateVMOpts, mc *vmconfigs.MachineConfig) error {
+func (l LibKrunStubber) CreateVM(opts machineDefine.CreateVMOpts, mc *vmconfigs.MachineConfig) error {
 	mc.AppleKrunkitHypervisor = new(vmconfigs.AppleKrunkitConfig)
 	mc.AppleKrunkitHypervisor.Krunkit = hvhelper.Helper{}
 	bl := vfConfig.NewEFIBootloader(fmt.Sprintf("%s/efi-bl-%s", opts.Dirs.DataDir.GetPath(), opts.Name), true)
@@ -97,6 +104,6 @@ func (l LibKrunStubber) CreateVM(opts define.CreateVMOpts, mc *vmconfigs.Machine
 	return apple.ResizeDisk(mc, mc.Resources.DiskSize)
 }
 
-func (l LibKrunStubber) VMType() define.VMType {
-	return define.LibKrun
+func (l LibKrunStubber) VMType() machineDefine.VMType {
+	return machineDefine.LibKrun
 }

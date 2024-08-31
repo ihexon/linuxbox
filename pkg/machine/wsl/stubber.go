@@ -3,25 +3,25 @@
 package wsl
 
 import (
-	"bauklotze/pkg/machine/define"
 	"bauklotze/pkg/machine/env"
+	"bauklotze/pkg/machine/machineDefine"
 	"bauklotze/pkg/machine/shim/diskpull"
 	"bauklotze/pkg/ovmdisk"
 )
 
 type WSLStubber struct {
-	define.WSLConfig
+	machineDefine.WSLConfig
 }
 
 func (w WSLStubber) Exists(name string) (bool, error) {
 	return isWSLExist(env.WithBugBoxPrefix(name))
 }
 
-func (w WSLStubber) VMType() define.VMType {
-	return define.WSLVirt
+func (w WSLStubber) VMType() machineDefine.VMType {
+	return machineDefine.WSLVirt
 }
 
-func (w WSLStubber) GetDisk(userInputPath string, mc *define.MachineConfig) error {
+func (w WSLStubber) GetDisk(userInputPath string, mc *machineDefine.MachineConfig) error {
 	var (
 		myDisk ovmdisk.Disker
 	)
@@ -35,12 +35,12 @@ func (w WSLStubber) GetDisk(userInputPath string, mc *define.MachineConfig) erro
 }
 
 // TODO: checkAndInstallWSL
-func (w WSLStubber) CreateVM(opts define.CreateVMOpts, mc *define.MachineConfig) error {
+func (w WSLStubber) CreateVM(opts machineDefine.CreateVMOpts, mc *machineDefine.MachineConfig) error {
 	checkAndInstallWSL(opts.ReExec)
 	return nil
 }
 
-func (w WSLStubber) StopVM(mc *define.MachineConfig, hardStop bool) error {
+func (w WSLStubber) StopVM(mc *machineDefine.MachineConfig, hardStop bool) error {
 	dist := env.WithBugBoxPrefix(mc.Name)
 	return terminateDist(dist)
 }
@@ -64,7 +64,7 @@ func isRunning(name string) (bool, error) {
 	return running, err
 }
 
-func (w WSLStubber) Remove(mc *define.MachineConfig) ([]string, func() error, error) {
+func (w WSLStubber) Remove(mc *machineDefine.MachineConfig) ([]string, func() error, error) {
 
 	wslRemoveFunc := func() error {
 		if err := runCmdPassThrough(FindWSL(), "--unregister", env.WithBugBoxPrefix(mc.Name)); err != nil {

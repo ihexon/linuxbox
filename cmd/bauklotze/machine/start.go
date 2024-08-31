@@ -1,6 +1,7 @@
 package machine
 
 import (
+	"bauklotze/cmd/registry"
 	"bauklotze/pkg/machine"
 	"bauklotze/pkg/machine/env"
 	"bauklotze/pkg/machine/shim"
@@ -22,6 +23,20 @@ var (
 	}
 	startOpts = machine.StartOptions{}
 )
+
+func init() {
+	registry.Commands = append(registry.Commands, registry.CliCommand{
+		Command: startCmd,
+		Parent:  machineCmd,
+	})
+
+	flags := startCmd.Flags()
+	noInfoFlagName := "no-info"
+	flags.BoolVar(&startOpts.NoInfo, noInfoFlagName, false, "Suppress informational tips")
+
+	quietFlagName := "quiet"
+	flags.BoolVarP(&startOpts.Quiet, quietFlagName, "q", false, "Suppress machine starting status output")
+}
 
 func start(_ *cobra.Command, args []string) error {
 	var (

@@ -2,26 +2,26 @@ package stdpull
 
 import (
 	"bauklotze/pkg/archiver/decompress"
-	"bauklotze/pkg/machine/define"
+	"bauklotze/pkg/machine/machineDefine"
 	"github.com/containers/storage/pkg/fileutils"
 	"github.com/sirupsen/logrus"
 )
 
 type StdDiskPull struct {
-	// all define.VMFile are not dir instead the full path contained file name
-	inputPath *define.VMFile
-	finalPath *define.VMFile
+	// all machineDefine.VMFile are not dir instead the full path contained file name
+	inputPath *machineDefine.VMFile
+	finalPath *machineDefine.VMFile
 }
 
-func NewStdDiskPull(inputPath string, finalpath *define.VMFile) (*StdDiskPull, error) {
-	inputImage, err := define.NewMachineFile(inputPath)
+func NewStdDiskPull(inputPath string, finalpath *machineDefine.VMFile) (*StdDiskPull, error) {
+	inputImage, err := machineDefine.NewMachineFile(inputPath)
 	if err != nil {
 		return nil, err
 	}
 	return &StdDiskPull{inputPath: inputImage, finalPath: finalpath}, nil
 }
 
-// Get StdDiskPull: Get just decompress the `inputPath *define.VMFile` to `finalPath *define.VMFile`
+// Get StdDiskPull: Get just decompress the `inputPath *machineDefine.VMFile` to `finalPath *machineDefine.VMFile`
 // Nothing interesting at all
 func (s *StdDiskPull) Get() error {
 	if err := fileutils.Exists(s.inputPath.GetPath()); err != nil {
