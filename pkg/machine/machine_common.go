@@ -26,7 +26,11 @@ issues with non-podman clients, you can switch using the following command:
 func WaitAPIAndPrintInfo(forwardState APIForwardingState, name, forwardSock string, noInfo, rootful bool) {
 
 	var fmtString string
-	
+
+	if name != machineDefine.DefaultMachineName {
+
+	}
+
 	if forwardState == NoForwarding {
 		return
 	}
@@ -58,7 +62,6 @@ address can't be used by podman. `
 following command in your terminal session:
 
         %s
-
 `
 			prefix := ""
 			if !strings.Contains(forwardSock, "://") {

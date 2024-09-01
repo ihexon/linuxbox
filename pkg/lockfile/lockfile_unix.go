@@ -3,7 +3,7 @@
 package lockfile
 
 import (
-	"github.com/containers/storage/pkg/system"
+	"bauklotze/pkg/system"
 	"golang.org/x/sys/unix"
 	"time"
 )

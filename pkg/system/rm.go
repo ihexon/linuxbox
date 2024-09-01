@@ -3,11 +3,11 @@ package system
 import (
 	"errors"
 	"fmt"
+	"github.com/containers/storage/pkg/mount"
 	"os"
 	"syscall"
 	"time"
 
-	"github.com/containers/storage/pkg/mount"
 	"github.com/sirupsen/logrus"
 )
 

@@ -10,12 +10,13 @@ import (
 const prefix_str = "donaldtrump"
 
 func GetMachineDirs(vmType machineDefine.VMType) (*machineDefine.MachineDirs, error) {
-	tmpDir, err := getTMPDir()
+	rtDir, err := getRuntimeDir()
 	if err != nil {
 		return nil, err
 	}
-	tmpDir = filepath.Join(tmpDir, "ovm")
-	ovmTMPDir := machineDefine.VMFile{Path: tmpDir}
+	rtDir = filepath.Join(rtDir, "ovm")
+
+	rtDirFile := machineDefine.VMFile{rtDir}
 
 	vmconfDir, err := GetVMConfDir(vmType)
 	if err != nil {
@@ -29,12 +30,40 @@ func GetMachineDirs(vmType machineDefine.VMType) (*machineDefine.MachineDirs, er
 	}
 	dataDir := machineDefine.VMFile{Path: vmdataDir}
 
-	dirs := machineDefine.MachineDirs{
-		ConfigDir:  &configDir,
-		DataDir:    &dataDir,
-		RuntimeDir: &ovmTMPDir,
+	imageCacheDir, err := GetImageCacheDir(vmType)
+	if err != nil {
+		return nil, err
 	}
+	cacheDir := machineDefine.VMFile{Path: imageCacheDir}
+
+	dirs := machineDefine.MachineDirs{
+		ConfigDir:     &configDir,
+		DataDir:       &dataDir,
+		RuntimeDir:    &rtDirFile,
+		ImageCacheDir: &cacheDir,
+	}
+
+	// make sure all machine dirs are present
+	if err := os.MkdirAll(rtDirFile.Path, 0755); err != nil {
+		return nil, err
+	}
+	if err := os.MkdirAll(configDir.Path, 0755); err != nil {
+		return nil, err
+	}
+
+	// Because this is a mkdirall, we make the image cache dir
+	// which is a subdir of datadir (so the datadir is made anyway)
+	err = os.MkdirAll(cacheDir.GetPath(), 0755)
+
 	return &dirs, err
+}
+
+func GetImageCacheDir(vmType machineDefine.VMType) (string, error) {
+	p, err := GetVMDataDir(vmType)
+	if err != nil {
+		return "", err
+	}
+	return filepath.Join(p, "cache"), nil
 }
 
 // GetConfigHome return $HOME/.config
@@ -82,7 +111,7 @@ func WithBugBoxPrefix(name string) string {
 	return name
 }
 
-// GetVMDataDir return $HOME/.local/share/oomol/ovm/machine/wsl
+// GetVMDataDir return $HOME/.local/share/oomol/ovm/machine/{wsl,libkrun}
 func GetVMDataDir(vmType machineDefine.VMType) (string, error) {
 	dataHomePrefix, err := DataDirMachine()
 	if err != nil {
