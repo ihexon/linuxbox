@@ -57,12 +57,14 @@ var (
 )
 
 type InitOptions struct {
-	CPUS     uint64
-	DiskSize uint64
-	Image    string
-	Volumes  []string
-	Memory   uint64
-	Name     string
-	Username string
-	ReExec   bool
+	IsDefault bool
+	CPUS      uint64
+	DiskSize  uint64
+	Image     string
+	Volumes   []string
+	Memory    uint64
+	Name      string
+	Username  string
+	Rootful   bool
+	ReExec    bool
 }

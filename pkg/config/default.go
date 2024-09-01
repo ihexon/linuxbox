@@ -19,7 +19,7 @@ func defaultConfig() (*Config, error) {
 }
 
 func getDefaultMachineUser() string {
-	return "donaldtrump"
+	return "root"
 }
 
 // defaultMachineConfig returns the default machine configuration.

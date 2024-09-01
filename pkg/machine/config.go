@@ -8,6 +8,18 @@ type StartOptions struct {
 	Rosetta bool
 }
 
+var (
+	ForwarderBinaryName = "gvproxy"
+)
+
+const (
+	NoForwarding APIForwardingState = iota
+	ClaimUnsupported
+	NotInstalled
+	MachineLocal
+	DockerGlobal
+)
+
 type StopOptions struct{}
 
 type RemoveOptions struct {

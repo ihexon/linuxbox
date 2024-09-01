@@ -3,17 +3,14 @@
 package connection
 
 import (
+	"bauklotze/pkg/machine/machineDefine"
 	"fmt"
 	"strconv"
 )
 
 // AddSSHConnectionsToPodmanSocket adds SSH connections to the podman socket if
 // no ignition path is provided
-func AddSSHConnectionsToPodmanSocket(uid, port int, identityPath, name, remoteUsername string, opts define.InitOptions) error {
-	if len(opts.IgnitionPath) > 0 {
-		fmt.Println("An ignition path was provided.  No SSH connection was added to Podman")
-		return nil
-	}
+func AddSSHConnectionsToPodmanSocket(uid, port int, identityPath, name, remoteUsername string, opts machineDefine.InitOptions) error {
 
 	cons := createConnections(name, uid, port, remoteUsername)
 

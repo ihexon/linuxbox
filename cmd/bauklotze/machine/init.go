@@ -84,6 +84,9 @@ func init() {
 	ImageFlagName := "image"
 	flags.StringVar(&initOpts.Image, ImageFlagName, cfg.ContainersConfDefaultsRO.Machine.Image, "Bootable image for machine")
 	_ = initCmd.RegisterFlagCompletionFunc(ImageFlagName, completion.AutocompleteDefault)
+
+	rootfulFlagName := "rootful"
+	flags.BoolVar(&initOpts.Rootful, rootfulFlagName, true, "Whether this machine should prefer rootful container execution")
 }
 
 // machinePreRunE: Status ok

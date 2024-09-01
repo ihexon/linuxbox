@@ -11,6 +11,7 @@ import (
 	"fmt"
 	gvproxy "github.com/containers/gvisor-tap-vsock/pkg/types"
 	"io/fs"
+	"os"
 	"path/filepath"
 	"time"
 )
@@ -54,9 +55,20 @@ type Mount struct {
 	VSockNumber   *uint64
 }
 
+// HostUser describes the host user
+type HostUser struct {
+	// Whether this machine should run in a rootful or rootless manner
+	Rootful bool
+	// UID is the numerical id of the user that called machine
+	UID int
+	// Whether one of these fields has changed and actions should be taken
+	Modified bool `json:"HostUserModified"`
+}
+
 type MachineConfig struct {
 	Created                time.Time
 	Dirs                   *machineDefine.MachineDirs
+	HostUser               HostUser
 	Name                   string
 	ImagePath              *machineDefine.VMFile
 	WSLHypervisor          *WSLConfig `json:",omitempty"`
@@ -127,7 +139,14 @@ func NewMachineConfig(opts machineDefine.InitOptions, dirs *machineDefine.Machin
 	}
 	mc.SSH = sshConfig
 	mc.Created = time.Now()
+
+	mc.HostUser = HostUser{UID: getHostUID(), Rootful: opts.Rootful}
+
 	return mc, nil
+}
+
+func getHostUID() int {
+	return os.Getuid()
 }
 
 func loadMachineFromFQPath(path *machineDefine.VMFile) (*MachineConfig, error) {

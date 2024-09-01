@@ -3,6 +3,7 @@
 # VM Provider（但全都没实现）
 - ~~support MacOS via vfkit (aarch64)~~
 - ~~Support Linux via Qemu-KVM (aarch64, x86_64)~~
+- support MacOS via krunkit (aarch64)
 - Support Windows via WSL (x86_64)
 
 # 全是问题

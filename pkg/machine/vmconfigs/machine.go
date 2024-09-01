@@ -18,6 +18,19 @@ func (mc *MachineConfig) GVProxySocket() (*machineDefine.VMFile, error) {
 	return gvProxySocket(mc.Name, machineRuntimeDir)
 }
 
+func (mc *MachineConfig) APISocket() (*machineDefine.VMFile, error) {
+	machineRuntimeDir, err := mc.RuntimeDir()
+	if err != nil {
+		return nil, err
+	}
+	return apiSocket(mc.Name, machineRuntimeDir)
+}
+
+func apiSocket(name string, socketDir *machineDefine.VMFile) (*machineDefine.VMFile, error) {
+	socketName := name + "-api.sock"
+	return socketDir.AppendToNewVMFile(socketName)
+}
+
 func (mc *MachineConfig) Lock() {
 	mc.lock.Lock()
 }

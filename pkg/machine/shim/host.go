@@ -2,6 +2,7 @@ package shim
 
 import (
 	"bauklotze/pkg/machine"
+	"bauklotze/pkg/machine/connection"
 	"bauklotze/pkg/machine/env"
 	"bauklotze/pkg/machine/lock"
 	"bauklotze/pkg/machine/machineDefine"
@@ -98,6 +99,11 @@ func Init(opts machineDefine.InitOptions, mp vmconfigs.VMProvider) error {
 	// Mounts
 	if mp.VMType() != machineDefine.WSLVirt {
 		mc.Mounts = CmdLineVolumesToMounts(opts.Volumes, mp.MountType())
+	}
+
+	// TODO AddSSHConnectionToPodmanSocket could take an machineconfig instead
+	if err := connection.AddSSHConnectionsToPodmanSocket(mc.HostUser.UID, mc.SSH.Port, mc.SSH.IdentityPath, mc.Name, mc.SSH.RemoteUsername, opts); err != nil {
+		return err
 	}
 
 	callbackFuncs.Add(mc.ImagePath.Delete)
@@ -214,7 +220,7 @@ func Start(mc *vmconfigs.MachineConfig, mp vmconfigs.VMProvider, dirs *machineDe
 		return err
 	}
 
-	callBackFuncs := machine.CleanUp()
+	callBackFuncs := machine.CleanupFuncs()
 	defer callBackFuncs.CleanIfErr(&err)
 	go callBackFuncs.CleanOnSignal()
 
