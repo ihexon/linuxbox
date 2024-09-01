@@ -10,12 +10,33 @@ import (
 	"bauklotze/pkg/machine/vmconfigs"
 	"bauklotze/pkg/network"
 	"fmt"
+	gvproxy "github.com/containers/gvisor-tap-vsock/pkg/types"
 	vfConfig "github.com/crc-org/vfkit/pkg/config"
 	"strconv"
 )
 
 type AppleHVStubber struct {
 	vmconfigs.AppleVfkitConfig
+}
+
+func (a AppleHVStubber) State(mc *vmconfigs.MachineConfig, bypass bool) (machineDefine.Status, error) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (a AppleHVStubber) UpdateSSHPort(mc *vmconfigs.MachineConfig, port int) error {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (a AppleHVStubber) UseProviderNetworkSetup() bool {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (a AppleHVStubber) StartNetworking(mc *vmconfigs.MachineConfig, cmd *gvproxy.GvproxyCommand) error {
+	//TODO implement me
+	panic("implement me")
 }
 
 func (a AppleHVStubber) VMType() machineDefine.VMType {
@@ -58,4 +79,8 @@ func (a AppleHVStubber) MountType() vmconfigs.VolumeMountType {
 
 func (a *AppleHVStubber) StopVM(mc *vmconfigs.MachineConfig, _ bool) error {
 	return mc.AppleHypervisor.Vfkit.Stop(false, true)
+}
+
+func (l AppleHVStubber) RequireExclusiveActive() bool {
+	return true
 }
