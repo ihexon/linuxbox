@@ -56,7 +56,7 @@ func init() {
 	rootCmd.SetUsageTemplate(usageTemplate)
 }
 
-func Execute() {
+func RootCmdExecute() {
 	err := rootCmd.Execute()
 	if err != nil {
 		fmt.Fprintln(os.Stderr, formatError(err))

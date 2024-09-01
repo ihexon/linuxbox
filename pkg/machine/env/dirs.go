@@ -45,7 +45,7 @@ func GetConfigHome() (string, error) {
 
 // GetVMConfDir return $HOME/.config/oomol/ovm/machine/{wsl,qemu,libkrun,applehv}
 func GetVMConfDir(vmType machineDefine.VMType) (string, error) {
-	confDirPrefix, err := getMachineDir()
+	confDirPrefix, err := GetMachineConfDir()
 	if err != nil {
 		return "", err
 	}
@@ -54,8 +54,8 @@ func GetVMConfDir(vmType machineDefine.VMType) (string, error) {
 	return confDir, mkdirErr
 }
 
-// getMachineDir return $HOME/.config/oomol/ovm/machine
-func getMachineDir() (string, error) {
+// GetMachineConfDir return $HOME/.config/oomol/ovm/machine
+func GetMachineConfDir() (string, error) {
 	// configDirOfMachine ~/.config/
 	configDirOfMachine, err := GetConfigHome()
 	if err != nil {

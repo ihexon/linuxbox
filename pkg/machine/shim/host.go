@@ -87,11 +87,6 @@ func Init(opts machineDefine.InitOptions, mp vmconfigs.VMProvider) error {
 	imagePath, err = dirs.DataDir.AppendToNewVMFile(fmt.Sprintf("%s-%s%s", opts.Name, runtime.GOARCH, imageExtension))
 	mc.ImagePath = imagePath
 
-	dirs, err = env.GetMachineDirs(mp.VMType())
-	if err != nil {
-		return err
-	}
-
 	if err := mp.GetDisk(opts.Image, dirs, mc); err != nil {
 		return err
 	}

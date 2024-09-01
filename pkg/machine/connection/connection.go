@@ -26,9 +26,9 @@ func addConnection(cons []connection, identity string, isDefault bool) error {
 
 	return config.EditConnectionConfig(func(cfg *config.ConnectionsFile) error {
 		for i, con := range cons {
-			if _, ok := cfg.Connection.Connections[con.name]; ok {
-				return fmt.Errorf("cannot overwrite connection %q", con.name)
-			}
+			//if _, ok := cfg.Connection.Connections[con.name]; ok {
+			//	return fmt.Errorf("cannot overwrite connection %q", con.name)
+			//}
 
 			dst := config.Destination{
 				URI:       con.uri.String(),

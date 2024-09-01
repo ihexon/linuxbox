@@ -10,13 +10,6 @@ import (
 	"strings"
 )
 
-type FarmConfig struct {
-	// Default is the default farm to be used when farming out builds
-	Default string `json:",omitempty" toml:"default,omitempty"`
-	// List is a map of farms created where key=farm-name and value=list of connections
-	List map[string][]string `json:",omitempty" toml:"list,omitempty"`
-}
-
 type ConnectionConfig struct {
 	Default     string                 `json:",omitempty"`
 	Connections map[string]Destination `json:",omitempty"`

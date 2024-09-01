@@ -1,13 +1,11 @@
 //go:build !windows
-// +build !windows
 
 package lockfile
 
 import (
-	"time"
-
 	"github.com/containers/storage/pkg/system"
 	"golang.org/x/sys/unix"
+	"time"
 )
 
 type fileHandle uintptr

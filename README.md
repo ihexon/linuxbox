@@ -7,8 +7,10 @@
 - Support Windows via WSL (x86_64)(没完成，写了一半，很多地方没跑通)
 
 # 主线任务
-- [ ] 试图正确配置及运行 gvproxy 
-- [ ] 写入 gvproxy 配置到 .config/oomol/ovm/ovm-connection.json
+- [x] 解压 image.xz 到 `/Users/danhexon/.local/share/oomol/ovm/machine/libkrun`
+- [X] 试图正确配置及运行 gvproxy，`.config/oomol/ovm/machine/libkrun/bugbox-machine-default.json`
+- [X] 写入 gvproxy fordward 配置到 `~/.config/oomol/ovm/machine/bugbox-connections.json`
+- [X] 生成 ssh keys 到 `/Users/danhexon/.local/share/oomol/ovm/machine`
 
 ## 淦 ！
 

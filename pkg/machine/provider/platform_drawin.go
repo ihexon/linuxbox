@@ -1,4 +1,4 @@
-//go:build darwin && !linux && !windows
+//go:build darwin && arm64
 
 package provider
 
@@ -23,9 +23,9 @@ func Get() (vmconfigs.VMProvider, error) {
 	if providerOverride, found := os.LookupEnv("OVM_PROVIDER"); found {
 		provider = providerOverride
 	}
-	resolvedVMType, err := machineDefine.ParseVMType(provider, machineDefine.AppleHvVirt)
+	resolvedVMType, err := machineDefine.ParseVMType(provider, machineDefine.LibKrun)
 	switch resolvedVMType {
-	case machineDefine.AppleHvVirt:
+	case machineDefine.LibKrun:
 		return new(krunkit.LibKrunStubber), nil
 	default:
 		return nil, fmt.Errorf("unsupported virtualization provider: `%s`", resolvedVMType.String())

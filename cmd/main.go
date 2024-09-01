@@ -15,7 +15,7 @@ func flagErrorFuncfunc(c *cobra.Command, e error) error {
 
 func main() {
 	rootCmd = parseCommands()
-	Execute()
+	RootCmdExecute()
 	os.Exit(0)
 }
 

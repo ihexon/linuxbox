@@ -12,11 +12,10 @@ import (
 	"path/filepath"
 )
 
-const connectionsFile = "podman-connections.json"
+const connectionsFile = "bugbox-connections.json"
 
 type ConnectionsFile struct {
 	Connection ConnectionConfig `json:",omitempty"`
-	Farm       FarmConfig       `json:",omitempty"`
 }
 
 // connectionsConfigFile returns the path to the rw connections config file
@@ -24,12 +23,13 @@ func connectionsConfigFile() (string, error) {
 	if path, found := os.LookupEnv("PODMAN_CONNECTIONS_CONF"); found {
 		return path, nil
 	}
-	path, err := env.GetConfigHome()
+	path, err := env.GetMachineConfDir()
 	if err != nil {
 		return "", err
 	}
 	// file is stored next to containers.conf
-	return filepath.Join(filepath.Dir(path), connectionsFile), nil
+	p := filepath.Join(path, connectionsFile)
+	return p, nil
 }
 
 func readConnectionConf(path string) (*ConnectionsFile, error) {
@@ -90,9 +90,6 @@ func EditConnectionConfig(callback func(cfg *ConnectionsFile) error) error {
 	conf, err := readConnectionConf(path)
 	if err != nil {
 		return fmt.Errorf("read connections file: %w", err)
-	}
-	if conf.Farm.List == nil {
-		conf.Farm.List = make(map[string][]string)
 	}
 
 	if err := callback(conf); err != nil {
