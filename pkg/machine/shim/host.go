@@ -102,9 +102,7 @@ func Init(opts machineDefine.InitOptions, mp vmconfigs.VMProvider) error {
 	}
 
 	callbackFuncs.Add(mc.ImagePath.Delete)
-
-	// Need to support ignBuilder
-	// err = mp.CreateVM(createOpts, mc, &ignBuilder)
+	
 	err = mp.CreateVM(createOpts, mc)
 	if err != nil {
 		return err

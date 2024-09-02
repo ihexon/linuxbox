@@ -4,7 +4,6 @@ package provider
 
 import (
 	"bauklotze/pkg/config"
-	"bauklotze/pkg/machine/apple"
 	"bauklotze/pkg/machine/krunkit"
 	"bauklotze/pkg/machine/machineDefine"
 	"bauklotze/pkg/machine/vmconfigs"
@@ -34,6 +33,6 @@ func Get() (vmconfigs.VMProvider, error) {
 
 func GetAll(_ bool) ([]vmconfigs.VMProvider, error) {
 	return []vmconfigs.VMProvider{
-		new(apple.AppleHVStubber),
+		new(krunkit.LibKrunStubber),
 	}, nil
 }

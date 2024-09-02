@@ -8,12 +8,23 @@ import (
 	provider2 "bauklotze/pkg/machine/provider"
 	"bauklotze/pkg/machine/shim"
 	"bauklotze/pkg/machine/vmconfigs"
+	"bauklotze/pkg/regexp"
 	strongunits "bauklotze/pkg/storage"
+	"errors"
 	"fmt"
 	"github.com/shirou/gopsutil/v3/mem"
 	"github.com/spf13/cobra"
 	"os"
 )
+
+var (
+	NameRegex     = regexp.Delayed("^[a-zA-Z0-9][a-zA-Z0-9_.-]*$")
+	RegexError    = fmt.Errorf("names must match [a-zA-Z0-9][a-zA-Z0-9_.-]*: %w", ErrInvalidArg) // nolint:revive // This lint is new and we do not want to break the API.
+	ErrInvalidArg = errors.New("invalid argument")
+	NotHexRegex   = regexp.Delayed(`[^0-9a-fA-F]`)
+)
+
+const maxMachineNameSize = 30
 
 var (
 	initCmd = &cobra.Command{
@@ -101,6 +112,17 @@ func machinePreRunE(c *cobra.Command, args []string) error {
 
 func initMachine(cmd *cobra.Command, args []string) error {
 	initOpts.Name = defaultMachineName
+	if len(args) > 0 {
+		if len(args[0]) > maxMachineNameSize {
+			return fmt.Errorf("machine name %q must be %d characters or less", args[0], maxMachineNameSize)
+		}
+		initOpts.Name = args[0]
+
+		if !NameRegex.MatchString(initOpts.Name) {
+			return fmt.Errorf("invalid name %q: %w", initOpts.Name, RegexError)
+		}
+	}
+
 	// Check if machine already exists
 	// In macos_arm64 shim.VMExist always false
 	_, exists, err := shim.VMExists(initOpts.Name, []vmconfigs.VMProvider{provider})

@@ -6,6 +6,13 @@
 - support MacOS via krunkit (aarch64)
 - Support Windows via WSL (x86_64)(没完成，写了一半，很多地方没跑通)
 
+# 子命令
+- [X] `machine init [vm_name]` 初始化虚拟机
+- [ ] `machine start [vm_name]` 启动虚拟机
+- [ ] `machine stop  [vm_name]` 停止虚拟机
+- [ ] `machine rm    [vm_name]` 删除虚拟机
+- [ ] `machine reset`  重置所有系统
+
 # 主线任务
 - [x] 解压 image.xz 到 `/Users/danhexon/.local/share/oomol/ovm/machine/libkrun`
 - [X] 试图正确配置及运行 gvproxy，`.config/oomol/ovm/machine/libkrun/bugbox-machine-default.json`

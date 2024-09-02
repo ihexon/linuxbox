@@ -65,8 +65,26 @@ type HostUser struct {
 	Modified bool `json:"HostUserModified"`
 }
 
+// DataDir is a simple helper function to obtain the machine data dir
+func (mc *MachineConfig) DataDir() (*machineDefine.VMFile, error) {
+	if mc.Dirs == nil || mc.Dirs.DataDir == nil {
+		return nil, errors.New("no data directory set")
+	}
+	return mc.Dirs.DataDir, nil
+}
+
+func (mc *MachineConfig) IsFirstBoot() (bool, error) {
+	never, err := time.Parse(time.RFC3339, "0001-01-01T00:00:00Z")
+	if err != nil {
+		return false, err
+	}
+	return mc.LastUp == never, nil
+}
+
 type MachineConfig struct {
-	Created                time.Time
+	Created time.Time
+	LastUp  time.Time
+
 	Dirs                   *machineDefine.MachineDirs
 	HostUser               HostUser
 	Name                   string
@@ -77,7 +95,6 @@ type MachineConfig struct {
 	imageDescription       machineImage
 	Version                uint
 	Mounts                 []*Mount
-	AppleHypervisor        *AppleVfkitConfig   `json:",omitempty"`
 	AppleKrunkitHypervisor *AppleKrunkitConfig `json:",omitempty"`
 	GvProxy                gvproxy.GvproxyCommand
 	SSH                    SSHConfig

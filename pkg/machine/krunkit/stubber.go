@@ -4,7 +4,6 @@ package krunkit
 
 import (
 	"bauklotze/pkg/machine"
-	"bauklotze/pkg/machine/apple"
 	"bauklotze/pkg/machine/apple/hvhelper"
 	"bauklotze/pkg/machine/machineDefine"
 	"bauklotze/pkg/machine/shim/diskpull"
@@ -54,7 +53,7 @@ func (l LibKrunStubber) RemoveAndCleanMachines(dirs *machineDefine.MachineDirs) 
 }
 
 func (l LibKrunStubber) StartNetworking(mc *vmconfigs.MachineConfig, cmd *gvproxy.GvproxyCommand) error {
-	return apple.StartGenericNetworking(mc, cmd)
+	return StartGenericNetworking(mc, cmd)
 }
 func (l LibKrunStubber) PostStartNetworking(mc *vmconfigs.MachineConfig, noInfo bool) error {
 	return nil
@@ -75,6 +74,7 @@ func (l LibKrunStubber) RequireExclusiveActive() bool {
 func (l LibKrunStubber) UpdateSSHPort(mc *vmconfigs.MachineConfig, port int) error {
 	return nil
 }
+
 func (l LibKrunStubber) GetRosetta(mc *vmconfigs.MachineConfig) (bool, error) {
 	return false, nil
 }
@@ -101,9 +101,16 @@ func (l LibKrunStubber) CreateVM(opts machineDefine.CreateVMOpts, mc *vmconfigs.
 	if err != nil {
 		return err
 	}
-	return apple.ResizeDisk(mc, mc.Resources.DiskSize)
+	return ResizeDisk(mc, mc.Resources.DiskSize)
 }
 
 func (l LibKrunStubber) VMType() machineDefine.VMType {
 	return machineDefine.LibKrun
+}
+func (l LibKrunStubber) StartVM(mc *vmconfigs.MachineConfig) (func() error, func() error, error) {
+	bl := mc.AppleKrunkitHypervisor.Krunkit.VirtualMachine.Bootloader
+	if bl == nil {
+		return nil, nil, fmt.Errorf("unable to determine boot loader for this machine")
+	}
+	return StartGenericAppleVM(mc, krunkitBinary, bl, mc.LibKrunHypervisor.KRun.Endpoint)
 }

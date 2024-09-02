@@ -26,11 +26,6 @@ func (mc *MachineConfig) APISocket() (*machineDefine.VMFile, error) {
 	return apiSocket(mc.Name, machineRuntimeDir)
 }
 
-func apiSocket(name string, socketDir *machineDefine.VMFile) (*machineDefine.VMFile, error) {
-	socketName := name + "-api.sock"
-	return socketDir.AppendToNewVMFile(socketName)
-}
-
 func (mc *MachineConfig) Lock() {
 	mc.lock.Lock()
 }
