@@ -8,16 +8,76 @@ import (
 	"bauklotze/pkg/machine/machineDefine"
 	"bauklotze/pkg/machine/ports"
 	"bauklotze/pkg/machine/vmconfigs"
+	"errors"
 	"fmt"
 	gvproxy "github.com/containers/gvisor-tap-vsock/pkg/types"
 	"github.com/sirupsen/logrus"
+	"net"
 	"path/filepath"
 	"strings"
+	"time"
 )
 
 const (
 	defaultGuestSock = "/run/user/%d/podman/podman.sock"
 )
+
+var (
+	ErrNotRunning      = errors.New("machine not in running state")
+	ErrSSHNotListening = errors.New("machine is not listening on ssh port")
+)
+
+func isListening(port int) bool {
+	// Check if we can dial it
+	conn, err := net.DialTimeout("tcp", fmt.Sprintf("%s:%d", "127.0.0.1", port), 10*time.Millisecond)
+	if err != nil {
+		return false
+	}
+	if err := conn.Close(); err != nil {
+		logrus.Error(err)
+	}
+	return true
+}
+
+// conductVMReadinessCheck checks to make sure the machine is in the proper state
+// and that SSH is up and running
+func conductVMReadinessCheck(mc *vmconfigs.MachineConfig, maxBackoffs int, backoff time.Duration, stateF func() (machineDefine.Status, error)) (connected bool, sshError error, err error) {
+	for i := 0; i < maxBackoffs; i++ {
+		if i > 0 {
+			time.Sleep(backoff)
+			backoff *= 2
+		}
+		state, err := stateF()
+		if err != nil {
+			return false, nil, err
+		}
+		if state != machineDefine.Running {
+			sshError = ErrNotRunning
+			continue
+		}
+		if !isListening(mc.SSH.Port) {
+			sshError = ErrSSHNotListening
+			continue
+		}
+
+		// Also make sure that SSH is up and running.  The
+		// ready service's dependencies don't fully make sure
+		// that clients can SSH into the machine immediately
+		// after boot.
+		//
+		// CoreOS users have reported the same observation but
+		// the underlying source of the issue remains unknown.
+
+		if sshError = machine.CommonSSHSilent(mc.SSH.RemoteUsername, mc.SSH.IdentityPath, mc.Name, mc.SSH.Port, []string{"true"}); sshError != nil {
+			logrus.Debugf("SSH readiness check for machine failed: %v", sshError)
+			continue
+		}
+		connected = true
+		sshError = nil
+		break
+	}
+	return
+}
 
 func reassignSSHPort(mc *vmconfigs.MachineConfig, provider vmconfigs.VMProvider) error {
 	newPort, err := ports.AllocateMachinePort()

@@ -16,6 +16,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"time"
 )
 
 func VMExists(name string, vmstubbers []vmconfigs.VMProvider) (*vmconfigs.MachineConfig, bool, error) {
@@ -34,6 +35,7 @@ func VMExists(name string, vmstubbers []vmconfigs.VMProvider) (*vmconfigs.Machin
 func emptyfunc(p string) {
 
 }
+
 func Init(opts machineDefine.InitOptions, mp vmconfigs.VMProvider) error {
 	var (
 		imageExtension string
@@ -102,7 +104,7 @@ func Init(opts machineDefine.InitOptions, mp vmconfigs.VMProvider) error {
 	}
 
 	callbackFuncs.Add(mc.ImagePath.Delete)
-	
+
 	err = mp.CreateVM(createOpts, mc)
 	if err != nil {
 		return err
@@ -156,8 +158,8 @@ func checkExclusiveActiveVM(provider vmconfigs.VMProvider, mc *vmconfigs.Machine
 }
 
 func Start(mc *vmconfigs.MachineConfig, mp vmconfigs.VMProvider, dirs *machineDefine.MachineDirs, opts machine.StartOptions) error {
-	//defaultBackoff := 500 * time.Millisecond
-	//maxBackoffs := 6
+	defaultBackoff := 500 * time.Millisecond
+	maxBackoffs := 6
 	noInfo := opts.NoInfo
 	mc.Lock()
 	defer mc.Unlock()
@@ -229,6 +231,59 @@ func Start(mc *vmconfigs.MachineConfig, mp vmconfigs.VMProvider, dirs *machineDe
 	// releaseFunc is if the provider starts a vm using a go command
 	// and we still need control of it while it is booting until the ready
 	// socket is tripped
+
+	releaseCmd, WaitForReady, err := mp.StartVM(mc)
+	if err != nil {
+		return err
+	}
+
+	if WaitForReady == nil {
+		return errors.New("no valid wait function returned")
+	}
+
+	if err := WaitForReady(); err != nil {
+		return err
+	}
+
+	if releaseCmd != nil && releaseCmd() != nil { // some providers can return nil here (hyperv)
+		if err := releaseCmd(); err != nil {
+			// I think it is ok for a "light" error?
+			logrus.Error(err)
+		}
+	}
+
+	err = mp.PostStartNetworking(mc, opts.NoInfo)
+	if err != nil {
+		return err
+	}
+
+	// Update state
+	stateF := func() (machineDefine.Status, error) {
+		return mp.State(mc, true)
+	}
+
+	connected, sshError, err := conductVMReadinessCheck(mc, maxBackoffs, defaultBackoff, stateF)
+	if err != nil {
+		return err
+	}
+
+	if !connected {
+		msg := "machine did not transition into running state"
+		if sshError != nil {
+			return fmt.Errorf("%s: ssh error: %v", msg, sshError)
+		}
+		return errors.New(msg)
+	}
+
+	// mount the volumes to the VM
+	if err := mp.MountVolumesToVM(mc, opts.Quiet); err != nil {
+		return err
+	}
+
+	// Provider is responsible for waiting
+	if mp.UseProviderNetworkSetup() {
+		return nil
+	}
 
 	machine.WaitAPIAndPrintInfo(
 		forwardingState,

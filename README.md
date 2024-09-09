@@ -8,18 +8,13 @@
 
 # 子命令
 - [X] `machine init [vm_name]` 初始化虚拟机
-- [ ] `machine start [vm_name]` 启动虚拟机
+- [X] `machine start [vm_name]` 启动虚拟机
 - [ ] `machine stop  [vm_name]` 停止虚拟机
 - [ ] `machine rm    [vm_name]` 删除虚拟机
 - [ ] `machine reset`  重置所有系统
-
-# 主线任务
-- [x] 解压 image.xz 到 `/Users/danhexon/.local/share/oomol/ovm/machine/libkrun`
-- [X] 试图正确配置及运行 gvproxy，`.config/oomol/ovm/machine/libkrun/bugbox-machine-default.json`
-- [X] 写入 gvproxy fordward 配置到 `~/.config/oomol/ovm/machine/bugbox-connections.json`
-- [X] 生成 ssh keys 到 `/Users/danhexon/.local/share/oomol/ovm/machine`
 
 ## 淦 ！
 
  - ~~2024-08-25 VFKIT EFI BOOT 模式方式并不能启动常规的 Linux 发行版，并且连自家的 Fedora Core 也启动不来，原因未知~~
  - Sat Aug 31 15:39:16 HKT 2024 EFI Boot 的坑基本上踩完了，我只能说：不过如此：）
+ - Mon Sep  9 16:50:17 HKT 2024 现在 machine start 可以启动一个基于 alpine 的虚拟机，现在只剩下几个小问题了哈哈哈哈

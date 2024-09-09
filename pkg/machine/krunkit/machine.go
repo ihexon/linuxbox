@@ -17,13 +17,6 @@ import (
 	"time"
 )
 
-const applehvMACAddress = "5a:94:ef:e4:0c:ee"
-
-var (
-	gvProxyWaitBackoff        = 500 * time.Millisecond
-	gvProxyMaxBackoffAttempts = 6
-)
-
 func GetDefaultDevices(mc *vmconfigs.MachineConfig) ([]vfConfig.VirtioDevice, *machineDefine.VMFile, error) {
 	var devices []vfConfig.VirtioDevice
 
@@ -50,6 +43,7 @@ func GetDefaultDevices(mc *vmconfigs.MachineConfig) ([]vfConfig.VirtioDevice, *m
 		return nil, nil, err
 	}
 
+	// Note: the connection from guest to host
 	readyDevice, err := vfConfig.VirtioVsockNew(1025, readySocket.GetPath(), true)
 	if err != nil {
 		return nil, nil, err
@@ -76,8 +70,14 @@ func GetVfKitEndpointCMDArgs(endpoint string) ([]string, error) {
 	return restEndpoint.ToCmdLine()
 }
 
-func StartGenericAppleVM(mc *vmconfigs.MachineConfig, cmdBinary string, bootloader vfConfig.Bootloader, endpoint string) (func() error, func() error, error) {
+const applehvMACAddress = "5a:94:ef:e4:0c:ee"
 
+var (
+	gvProxyWaitBackoff        = 500 * time.Millisecond
+	gvProxyMaxBackoffAttempts = 6
+)
+
+func StartGenericAppleVM(mc *vmconfigs.MachineConfig, cmdBinary string, bootloader vfConfig.Bootloader, endpoint string) (func() error, func() error, error) {
 	// Add networking
 	netDevice, err := vfConfig.VirtioNetNew(applehvMACAddress)
 	if err != nil {
@@ -156,7 +156,6 @@ func StartGenericAppleVM(mc *vmconfigs.MachineConfig, cmdBinary string, bootload
 
 	// TODO
 	if firstBoot {
-
 	}
 
 	logrus.Debugf("listening for ready on: %s", readySocket.GetPath())

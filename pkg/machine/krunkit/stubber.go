@@ -27,11 +27,6 @@ func (l LibKrunStubber) StopVM(mc *vmconfigs.MachineConfig, hardStop bool) error
 	return mc.AppleKrunkitHypervisor.Krunkit.Stop(hardStop, true)
 }
 
-const (
-	krunkitBinary = "krunkit"
-	localhostURI  = "http://localhost"
-)
-
 func (l LibKrunStubber) GetDisk(userInputPath string, dirs *machineDefine.MachineDirs, mc *vmconfigs.MachineConfig) error {
 	return diskpull.GetDisk(userInputPath, dirs, mc.ImagePath, l.VMType(), mc.Name)
 }
@@ -41,6 +36,7 @@ func (l LibKrunStubber) Exists(name string) (bool, error) {
 	return false, nil
 }
 
+// MountVolumesToVM do nothing cause we write guest:/etc/fstab
 func (l LibKrunStubber) MountVolumesToVM(mc *vmconfigs.MachineConfig, quiet bool) error {
 	return nil
 }
@@ -48,6 +44,7 @@ func (l LibKrunStubber) MountVolumesToVM(mc *vmconfigs.MachineConfig, quiet bool
 func (l LibKrunStubber) Remove(mc *vmconfigs.MachineConfig) ([]string, func() error, error) {
 	return []string{}, func() error { return nil }, nil
 }
+
 func (l LibKrunStubber) RemoveAndCleanMachines(dirs *machineDefine.MachineDirs) error {
 	return nil
 }
@@ -55,6 +52,7 @@ func (l LibKrunStubber) RemoveAndCleanMachines(dirs *machineDefine.MachineDirs) 
 func (l LibKrunStubber) StartNetworking(mc *vmconfigs.MachineConfig, cmd *gvproxy.GvproxyCommand) error {
 	return StartGenericNetworking(mc, cmd)
 }
+
 func (l LibKrunStubber) PostStartNetworking(mc *vmconfigs.MachineConfig, noInfo bool) error {
 	return nil
 }
@@ -78,9 +76,15 @@ func (l LibKrunStubber) UpdateSSHPort(mc *vmconfigs.MachineConfig, port int) err
 func (l LibKrunStubber) GetRosetta(mc *vmconfigs.MachineConfig) (bool, error) {
 	return false, nil
 }
+
 func (l LibKrunStubber) MountType() vmconfigs.VolumeMountType {
 	return vmconfigs.VirtIOFS
 }
+
+const (
+	krunkitBinary = "krunkit"
+	localhostURI  = "http://127.0.0.1"
+)
 
 func (l LibKrunStubber) CreateVM(opts machineDefine.CreateVMOpts, mc *vmconfigs.MachineConfig) error {
 	mc.AppleKrunkitHypervisor = new(vmconfigs.AppleKrunkitConfig)
@@ -91,7 +95,7 @@ func (l LibKrunStubber) CreateVM(opts machineDefine.CreateVMOpts, mc *vmconfigs.
 	if err != nil {
 		return err
 	}
-
+	// Endpoint is a string: http://127.0.0.1/[random_port]
 	mc.AppleKrunkitHypervisor.Krunkit.Endpoint = localhostURI + ":" + strconv.Itoa(randPort)
 	virtiofsMounts := make([]machine.VirtIoFs, 0, len(mc.Mounts))
 	for _, mnt := range mc.Mounts {
@@ -107,10 +111,11 @@ func (l LibKrunStubber) CreateVM(opts machineDefine.CreateVMOpts, mc *vmconfigs.
 func (l LibKrunStubber) VMType() machineDefine.VMType {
 	return machineDefine.LibKrun
 }
+
 func (l LibKrunStubber) StartVM(mc *vmconfigs.MachineConfig) (func() error, func() error, error) {
 	bl := mc.AppleKrunkitHypervisor.Krunkit.VirtualMachine.Bootloader
 	if bl == nil {
 		return nil, nil, fmt.Errorf("unable to determine boot loader for this machine")
 	}
-	return StartGenericAppleVM(mc, krunkitBinary, bl, mc.LibKrunHypervisor.KRun.Endpoint)
+	return StartGenericAppleVM(mc, krunkitBinary, bl, mc.AppleKrunkitHypervisor.Krunkit.Endpoint)
 }

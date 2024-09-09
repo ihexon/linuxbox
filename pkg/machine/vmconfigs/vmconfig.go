@@ -38,6 +38,9 @@ type VMProvider interface { //nolint:interfacebloat
 	UpdateSSHPort(mc *MachineConfig, port int) error
 	UseProviderNetworkSetup() bool
 	StartNetworking(mc *MachineConfig, cmd *gvproxy.GvproxyCommand) error
+	PostStartNetworking(mc *MachineConfig, noInfo bool) error
+	StartVM(mc *MachineConfig) (func() error, func() error, error)
+	MountVolumesToVM(mc *MachineConfig, quiet bool) error
 }
 
 type machineImage interface { //nolint:unused
