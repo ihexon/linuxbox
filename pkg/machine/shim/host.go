@@ -327,3 +327,60 @@ func Reset(mps []vmconfigs.VMProvider) error {
 
 	return resetErrors.ErrorOrNil()
 }
+
+// Stop stops the machine as well as supporting binaries/processes
+func Stop(mc *vmconfigs.MachineConfig, mp vmconfigs.VMProvider, dirs *machineDefine.MachineDirs, hardStop bool) error {
+	// state is checked here instead of earlier because stopping a stopped vm is not considered
+	// an error.  so putting in one place instead of sprinkling all over.
+	mc.Lock()
+	defer mc.Unlock()
+	if err := mc.Refresh(); err != nil {
+		return fmt.Errorf("reload config: %w", err)
+	}
+
+	return stopLocked(mc, mp, dirs, hardStop)
+}
+
+// stopLocked stops the machine and expects the caller to hold the machine's lock.
+func stopLocked(mc *vmconfigs.MachineConfig, mp vmconfigs.VMProvider, dirs *machineDefine.MachineDirs, hardStop bool) error {
+	state, err := mp.State(mc, false)
+	if err != nil {
+		return err
+	}
+	// stopping a stopped machine is NOT an error
+	if state == machineDefine.Stopped {
+		return nil
+	}
+	if state != machineDefine.Running {
+		return machineDefine.ErrWrongState
+	}
+
+	// Provider stops the machine
+	if err := mp.StopVM(mc, hardStop); err != nil {
+		return err
+	}
+
+	// Remove Ready Socket
+	readySocket, err := mc.ReadySocket()
+	if err != nil {
+		return err
+	}
+	if err := readySocket.Delete(); err != nil {
+		return err
+	}
+
+	// Stop GvProxy and remove PID file
+	if !mp.UseProviderNetworkSetup() {
+		gvproxyPidFile, err := dirs.RuntimeDir.AppendToNewVMFile("gvproxy.pid")
+		if err != nil {
+			return err
+		}
+		if err := gvproxy.CleanupGVProxy(*gvproxyPidFile); err != nil {
+			return fmt.Errorf("unable to clean up gvproxy: %w", err)
+		}
+	}
+
+	// Update last time up
+	mc.LastUp = time.Now()
+	return mc.Write()
+}

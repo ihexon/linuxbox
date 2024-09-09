@@ -10,9 +10,11 @@ import (
 	"errors"
 	"fmt"
 	gvproxy "github.com/containers/gvisor-tap-vsock/pkg/types"
+	"github.com/sirupsen/logrus"
 	"io/fs"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 )
 
@@ -184,9 +186,6 @@ func loadMachineFromFQPath(path *machineDefine.VMFile) (*MachineConfig, error) {
 	return mc, err
 }
 
-// The LoadMachinesInDir function loads all machine configurations from a specified directory.
-// It walks through the directory, identifies JSON configuration files, and loads each machine configuration using loadMachineFromFQPath.
-// It also handles incompatible machine configurations by logging an error.
 func LoadMachineByName(name string, dirs *machineDefine.MachineDirs) (*MachineConfig, error) {
 	fullPath, err := dirs.ConfigDir.AppendToNewVMFile(name + ".json")
 	if err != nil {
@@ -212,4 +211,37 @@ func LoadMachineByName(name string, dirs *machineDefine.MachineDirs) (*MachineCo
 		}
 	}
 	return mc, nil
+}
+
+func LoadMachinesInDir(dirs *machineDefine.MachineDirs) (map[string]*MachineConfig, error) {
+	mcs := make(map[string]*MachineConfig)
+	if err := filepath.WalkDir(dirs.ConfigDir.GetPath(), func(path string, d fs.DirEntry, err error) error {
+		if strings.HasSuffix(d.Name(), ".json") {
+			fullPath, err := dirs.ConfigDir.AppendToNewVMFile(d.Name())
+			if err != nil {
+				return err
+			}
+			mc, err := loadMachineFromFQPath(fullPath)
+			if err != nil {
+				return err
+			}
+			// if we find an incompatible machine configuration file, we emit and error
+			//
+			if mc.Version == 0 {
+				tmpErr := &machineDefine.ErrIncompatibleMachineConfig{
+					Name: mc.Name,
+					Path: fullPath.GetPath(),
+				}
+				logrus.Error(tmpErr)
+				return nil
+			}
+			mc.ConfigPath = fullPath
+			mc.Dirs = dirs
+			mcs[mc.Name] = mc
+		}
+		return nil
+	}); err != nil {
+		return nil, err
+	}
+	return mcs, nil
 }
