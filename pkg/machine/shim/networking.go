@@ -59,15 +59,6 @@ func conductVMReadinessCheck(mc *vmconfigs.MachineConfig, maxBackoffs int, backo
 			sshError = ErrSSHNotListening
 			continue
 		}
-
-		// Also make sure that SSH is up and running.  The
-		// ready service's dependencies don't fully make sure
-		// that clients can SSH into the machine immediately
-		// after boot.
-		//
-		// CoreOS users have reported the same observation but
-		// the underlying source of the issue remains unknown.
-
 		if sshError = machine.CommonSSHSilent(mc.SSH.RemoteUsername, mc.SSH.IdentityPath, mc.Name, mc.SSH.Port, []string{"true"}); sshError != nil {
 			logrus.Debugf("SSH readiness check for machine failed: %v", sshError)
 			continue

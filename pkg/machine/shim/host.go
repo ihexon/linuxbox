@@ -32,8 +32,9 @@ func VMExists(name string, vmstubbers []vmconfigs.VMProvider) (*vmconfigs.Machin
 	}
 	return nil, false, nil
 }
-func emptyfunc(p string) {
 
+func emptyfunc(p string) {
+	// print ssh keys
 }
 
 func Init(opts machineDefine.InitOptions, mp vmconfigs.VMProvider) error {
@@ -59,6 +60,7 @@ func Init(opts machineDefine.InitOptions, mp vmconfigs.VMProvider) error {
 	if err != nil {
 		return err
 	}
+
 	emptyfunc(sshKey)
 
 	mc, err := vmconfigs.NewMachineConfig(opts, dirs, sshIdentityPath, mp.VMType())
@@ -238,9 +240,10 @@ func Start(mc *vmconfigs.MachineConfig, mp vmconfigs.VMProvider, dirs *machineDe
 	}
 
 	if WaitForReady == nil {
-		return errors.New("no valid wait function returned")
+		return errors.New("no valid WaitForReady function returned")
 	}
 
+	// continue check krunkit runnning
 	if err := WaitForReady(); err != nil {
 		return err
 	}
@@ -252,6 +255,7 @@ func Start(mc *vmconfigs.MachineConfig, mp vmconfigs.VMProvider, dirs *machineDe
 		}
 	}
 
+	// Actually do nothing
 	err = mp.PostStartNetworking(mc, opts.NoInfo)
 	if err != nil {
 		return err
