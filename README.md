@@ -14,6 +14,11 @@
 - [ ] `machine reset`  重置所有系统
 - [ ] `支持点火器 :)`
 
+
+
+#  oomol studio 相关的参数
+- [X] `machine start --send-event-endpoint="/tmp/ovmjs_event_receiver.sock"`
+
 ## TODO LIST
 
  - ~~2024-08-25 VFKIT EFI BOOT 模式方式并不能启动常规的 Linux 发行版，并且连自家的 Fedora Core 也启动不来，原因未知~~

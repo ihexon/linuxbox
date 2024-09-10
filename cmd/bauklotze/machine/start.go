@@ -2,10 +2,12 @@ package machine
 
 import (
 	"bauklotze/cmd/registry"
+	"bauklotze/pkg/events"
 	"bauklotze/pkg/machine"
 	"bauklotze/pkg/machine/env"
 	"bauklotze/pkg/machine/shim"
 	"bauklotze/pkg/machine/vmconfigs"
+	"bauklotze/pkg/network"
 	"fmt"
 	"github.com/spf13/cobra"
 )
@@ -29,13 +31,16 @@ func init() {
 		Command: startCmd,
 		Parent:  machineCmd,
 	})
-
 	flags := startCmd.Flags()
+
 	noInfoFlagName := "no-info"
 	flags.BoolVar(&startOpts.NoInfo, noInfoFlagName, false, "Suppress informational tips")
 
 	quietFlagName := "quiet"
 	flags.BoolVarP(&startOpts.Quiet, quietFlagName, "q", false, "Suppress machine starting status output")
+
+	sendEventToEndpoint := "send-event-endpoint"
+	flags.StringVar(&startOpts.SendEvt, sendEventToEndpoint, "", "send events to somewhere")
 }
 
 func start(_ *cobra.Command, args []string) error {
@@ -59,7 +64,11 @@ func start(_ *cobra.Command, args []string) error {
 	if !startOpts.Quiet {
 		fmt.Printf("Starting machine %q\n", vmName)
 	}
-	// TODO
+
+	if startOpts.SendEvt != "" {
+		network.SendEventToOvmJs(events.Start, "KunkitStaring...")
+	}
+
 	if err := shim.Start(mc, provider, dirs, startOpts); err != nil {
 		return err
 	}

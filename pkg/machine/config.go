@@ -6,6 +6,7 @@ type StartOptions struct {
 	NoInfo  bool
 	Quiet   bool
 	Rosetta bool
+	SendEvt string
 }
 
 var (
