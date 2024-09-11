@@ -7,6 +7,9 @@ type StartOptions struct {
 	Quiet   bool
 	Rosetta bool
 	SendEvt string
+	// TwinPid is the parent process that calls Bauklotze.
+	// Bauklotze will automatically exit when the parent process ends.
+	TwinPid int
 }
 
 var (

@@ -1,7 +1,10 @@
+//go:build darwin && arm64
+
 package krunkit
 
 import (
 	"bauklotze/pkg/config"
+	"bauklotze/pkg/machine"
 	"bauklotze/pkg/machine/machineDefine"
 	"bauklotze/pkg/machine/sockets"
 	"bauklotze/pkg/machine/vmconfigs"
@@ -84,7 +87,6 @@ func StartGenericAppleVM(mc *vmconfigs.MachineConfig, cmdBinary string, bootload
 		return nil, nil, err
 	}
 	// Set user networking with gvproxy
-
 	gvproxySocket, err := mc.GVProxySocket()
 	if err != nil {
 		return nil, nil, err
@@ -149,12 +151,11 @@ func StartGenericAppleVM(mc *vmconfigs.MachineConfig, cmdBinary string, bootload
 
 	cmd.Args = append(cmd.Args, endpointArgs...)
 
+	// TODO: firset boot things
 	firstBoot, err := mc.IsFirstBoot()
 	if err != nil {
 		return nil, nil, err
 	}
-
-	// TODO
 	if firstBoot {
 	}
 
@@ -173,6 +174,7 @@ func StartGenericAppleVM(mc *vmconfigs.MachineConfig, cmdBinary string, bootload
 
 	logrus.Debugf("helper command-line: %v", cmd.Args)
 
+	// Write krunkit commandline
 	if mc.AppleKrunkitHypervisor != nil && logrus.IsLevelEnabled(logrus.DebugLevel) {
 		rtDir, err := mc.RuntimeDir()
 		if err != nil {
@@ -214,6 +216,7 @@ func StartGenericAppleVM(mc *vmconfigs.MachineConfig, cmdBinary string, bootload
 
 	returnFunc := func() error {
 		processErrChan := make(chan error)
+		machine.GlobalPIDs.SetKrunkitPID(cmd.Process.Pid)
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
 		go func() {
@@ -224,7 +227,7 @@ func StartGenericAppleVM(mc *vmconfigs.MachineConfig, cmdBinary string, bootload
 					return
 				default:
 				}
-				if err := CheckProcessRunning(cmdBinary, cmd.Process.Pid); err != nil {
+				if err := CheckProcessRunning(cmdBinary, machine.GlobalPIDs.GetKrunkitPID()); err != nil {
 					processErrChan <- err
 					return
 				}

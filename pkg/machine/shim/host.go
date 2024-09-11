@@ -1,7 +1,6 @@
 package shim
 
 import (
-	"bauklotze/pkg/events"
 	"bauklotze/pkg/machine"
 	"bauklotze/pkg/machine/connection"
 	"bauklotze/pkg/machine/env"
@@ -9,7 +8,6 @@ import (
 	"bauklotze/pkg/machine/lock"
 	"bauklotze/pkg/machine/machineDefine"
 	"bauklotze/pkg/machine/vmconfigs"
-	"bauklotze/pkg/network"
 	"bauklotze/pkg/utils"
 	"errors"
 	"fmt"
@@ -245,21 +243,9 @@ func Start(mc *vmconfigs.MachineConfig, mp vmconfigs.VMProvider, dirs *machineDe
 		return errors.New("no valid WaitForReady function returned")
 	}
 
-	// continue check krunkit runnning
+	// continue check krunkit runnning and wait ready event comming
 	if err := WaitForReady(); err != nil {
 		return err
-	} else {
-		unixsocksfile := opts.SendEvt
-		if unixsocksfile != "" {
-			uri := fmt.Sprintf("http://ovm/notify?event=%s&message=%s", events.Start, "ready")
-			// send events to remote endpoint
-			client := network.NewUnixSocketClient(unixsocksfile, 200*time.Millisecond)
-			logrus.Debugf("notify %s event to %s", events.Start, uri)
-			resp, _ := client.Get(uri)
-			if resp != nil {
-				_ = resp.Body.Close()
-			}
-		}
 	}
 
 	if releaseCmd != nil && releaseCmd() != nil { // some providers can return nil here (hyperv)
@@ -310,6 +296,7 @@ func Start(mc *vmconfigs.MachineConfig, mp vmconfigs.VMProvider, dirs *machineDe
 		noInfo,
 		mc.HostUser.Rootful,
 	)
+
 	return nil
 }
 
@@ -397,7 +384,6 @@ func stopLocked(mc *vmconfigs.MachineConfig, mp vmconfigs.VMProvider, dirs *mach
 			return fmt.Errorf("unable to clean up gvproxy: %w", err)
 		}
 	}
-
 	// Update last time up
 	mc.LastUp = time.Now()
 	return mc.Write()

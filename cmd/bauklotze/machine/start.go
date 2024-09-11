@@ -39,8 +39,11 @@ func init() {
 	quietFlagName := "quiet"
 	flags.BoolVarP(&startOpts.Quiet, quietFlagName, "q", false, "Suppress machine starting status output")
 
-	sendEventToEndpoint := "send-event-endpoint"
+	sendEventToEndpoint := "evtsock"
 	flags.StringVar(&startOpts.SendEvt, sendEventToEndpoint, "", "send events to somewhere")
+
+	twinPid := "twinpid"
+	flags.IntVar(&startOpts.TwinPid, twinPid, -1, "self killing when [twin pid] exit")
 }
 
 func start(_ *cobra.Command, args []string) error {
@@ -73,6 +76,12 @@ func start(_ *cobra.Command, args []string) error {
 		return err
 	}
 	fmt.Printf("Machine %q started successfully\n", vmName)
-	return nil
 
+	if startOpts.TwinPid != -1 {
+		machine.TwinPidKiller(startOpts.TwinPid,
+			machine.GlobalPIDs.GetGvproxyPID(),
+			machine.GlobalPIDs.GetGvproxyPID(),
+		)
+	}
+	return nil
 }

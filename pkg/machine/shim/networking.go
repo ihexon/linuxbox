@@ -164,6 +164,7 @@ func startHostForwarder(mc *vmconfigs.MachineConfig, provider vmconfigs.VMProvid
 	if err := c.Start(); err != nil {
 		return fmt.Errorf("unable to execute: %q: %w", cmd.ToCmdline(), err)
 	}
+	machine.GlobalPIDs.SetGvproxyPID(c.Process.Pid)
 	return nil
 }
 
