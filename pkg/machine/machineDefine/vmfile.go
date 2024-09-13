@@ -6,6 +6,10 @@ import (
 	"path/filepath"
 )
 
+type VMFile struct {
+	Path string
+}
+
 func (m *VMFile) GetPath() string {
 	return m.Path
 }

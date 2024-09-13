@@ -112,6 +112,9 @@ func Init(opts machineDefine.InitOptions, mp vmconfigs.VMProvider) error {
 		return err
 	}
 
+	mc.EvtSockPath = &machineDefine.VMFile{Path: opts.SendEvt}
+	mc.TwinPid = opts.TwinPid
+
 	return mc.Write()
 }
 
@@ -159,7 +162,7 @@ func checkExclusiveActiveVM(provider vmconfigs.VMProvider, mc *vmconfigs.Machine
 	return nil
 }
 
-func Start(mc *vmconfigs.MachineConfig, mp vmconfigs.VMProvider, dirs *machineDefine.MachineDirs, opts machine.StartOptions) error {
+func Start(mc *vmconfigs.MachineConfig, mp vmconfigs.VMProvider, dirs *machineDefine.MachineDirs, opts machineDefine.StartOptions) error {
 	defaultBackoff := 500 * time.Millisecond
 	maxBackoffs := 6
 	noInfo := opts.NoInfo

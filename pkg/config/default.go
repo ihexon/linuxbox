@@ -32,7 +32,7 @@ func newLocked(options *Options) (*Config, error) {
 	if err != nil {
 		return nil, err
 	}
-
+	
 	if options.SetDefault {
 		cachedConfig = config
 		cachedConfigError = nil

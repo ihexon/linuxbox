@@ -7,6 +7,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"net"
 	"net/http"
+	"net/url"
 	"time"
 )
 
@@ -22,18 +23,9 @@ func NewUnixSocketClient(socketPath string, timeout time.Duration) *http.Client 
 	}
 }
 
-func SendEvent(event events.Status, message, socks string) {
+func SendEventToOvmJs(event events.Status, message, socks string) {
+	uri := fmt.Sprintf("http://ovm/notify?event=%s&message=%s", event, url.QueryEscape(message))
 	client := NewUnixSocketClient(socks, 200*time.Millisecond)
-	logrus.Debugf("notify %s event to %s", event, socks)
-	resp, _ := client.Get(socks)
-	if resp != nil {
-		_ = resp.Body.Close()
-	}
-}
-
-func SendEventToOvmJs(event events.Status, message string) {
-	uri := fmt.Sprintf("http://ovm/notify?event=%s&message=%s", event, message)
-	client := NewUnixSocketClient(uri, 200*time.Millisecond)
 	logrus.Debugf("notify %s event to %s", event, uri)
 	resp, _ := client.Get(uri)
 	if resp != nil {

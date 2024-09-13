@@ -101,6 +101,14 @@ func init() {
 
 	rootfulFlagName := "rootful"
 	flags.BoolVar(&initOpts.Rootful, rootfulFlagName, true, "Whether this machine should prefer rootful container execution")
+
+	twinPid := "twinpid"
+	flags.IntVar(&initOpts.TwinPid, twinPid, -1, "self killing when [twin pid] exit")
+	flags.MarkHidden(twinPid)
+
+	sendEventToEndpoint := "evtsock"
+	flags.StringVar(&initOpts.SendEvt, sendEventToEndpoint, "", "send events to somewhere")
+	flags.MarkHidden(sendEventToEndpoint)
 }
 
 // machinePreRunE: Status ok

@@ -40,19 +40,15 @@ func init() {
 	quietFlagName := "quiet"
 	flags.BoolVarP(&startOpts.Quiet, quietFlagName, "q", false, "Suppress machine starting status output")
 
-	sendEventToEndpoint := "evtsock"
-	flags.StringVar(&startOpts.SendEvt, sendEventToEndpoint, "", "send events to somewhere")
-	flags.MarkHidden(sendEventToEndpoint)
-
-	twinPid := "twinpid"
-	flags.IntVar(&startOpts.TwinPid, twinPid, -1, "self killing when [twin pid] exit")
-	flags.MarkHidden(twinPid)
+	noquitFlagName := "noquit"
+	flags.BoolVarP(&startOpts.NoQuit, noquitFlagName, "", false, "do not exit after start machine")
 }
 
 func start(_ *cobra.Command, args []string) error {
 	var (
 		err error
 	)
+
 	startOpts.NoInfo = startOpts.Quiet || startOpts.NoInfo
 	vmName := defaultMachineName
 	if len(args) > 0 && len(args[0]) > 0 {
@@ -71,20 +67,25 @@ func start(_ *cobra.Command, args []string) error {
 		fmt.Printf("Starting machine %q\n", vmName)
 	}
 
-	if startOpts.SendEvt != "" {
-		network.SendEventToOvmJs(events.Start, "KunkitStaring...")
-	}
-
 	if err := shim.Start(mc, provider, dirs, startOpts); err != nil {
 		return err
 	}
 	fmt.Printf("Machine %q started successfully\n", vmName)
 
-	if startOpts.TwinPid != -1 {
-		machine.TwinPidKiller(startOpts.TwinPid,
+	if mc.EvtSockPath.GetPath() != "" {
+		network.SendEventToOvmJs(events.Start, "KunkitStaring...", mc.EvtSockPath.GetPath())
+	}
+
+	if mc.TwinPid != -1 {
+		machine.TwinPidKiller(mc.TwinPid,
 			machine.GlobalPIDs.GetGvproxyPID(),
 			machine.GlobalPIDs.GetKrunkitPID(),
 		)
 	}
+
+	if startOpts.NoQuit {
+		// NoQuit
+	}
+
 	return nil
 }

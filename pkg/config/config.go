@@ -3,7 +3,6 @@ package config
 import (
 	"fmt"
 	"github.com/sirupsen/logrus"
-	"github.com/spf13/pflag"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -50,12 +49,6 @@ type MachineConfig struct {
 
 type Config struct {
 	Machine MachineConfig `toml:"machine"`
-}
-
-type PodmanConfig struct {
-	*pflag.FlagSet
-	ContainersConf           *Config
-	ContainersConfDefaultsRO *Config
 }
 
 const (

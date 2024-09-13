@@ -15,8 +15,18 @@
 - [ ] `支持点火器 :)`
 
 #  oomol studio 相关的参数
-- [X] `machine start --evtsock="/tmp/ovmjs_event_receiver.sock"` 将时间发送到远端 UDF
-- [X] `machine start --twinpid [PID]` 如果给定的 PID 不存在，则杀死 GVPROXY 和 KRUNKIT
+- twinpid [PID]
+监视 PID ，如果 PID 找不到，则退出 ovm
+
+- evtsock [SOCK_PATH]
+发送虚拟机事件给 SOCK_PATH，这个 SOCK_PATH 应该是一个 UDF
+
+```
+machine init --twinpid [PID] --evtsock [SOCK_PATH]
+```
+
+
+
 
 ## TODO LIST
 

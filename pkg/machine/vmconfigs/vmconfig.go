@@ -105,6 +105,8 @@ type MachineConfig struct {
 	SSH                    SSHConfig
 	Starting               bool
 	lock                   *lockfile.LockFile
+	EvtSockPath            *machineDefine.VMFile `json:",omitempty"`
+	TwinPid                int                   `json:",omitempty"`
 }
 
 // SSHConfig contains remote access information for SSH

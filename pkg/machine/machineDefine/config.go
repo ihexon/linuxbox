@@ -40,10 +40,6 @@ type MachineDirs struct {
 	RuntimeDir    *VMFile
 }
 
-type VMFile struct {
-	Path string
-}
-
 type ResetOptions struct {
 	Force bool
 }
@@ -57,13 +53,9 @@ var (
 )
 
 type StartOptions struct {
-	NoInfo  bool
-	Quiet   bool
-	Rosetta bool
-	SendEvt string
-	// TwinPid is the parent process that calls Bauklotze.
-	// Bauklotze will automatically exit when the parent process ends.
-	TwinPid int
+	NoInfo bool
+	Quiet  bool
+	NoQuit bool // NoQuit when machine start
 }
 
 type InitOptions struct {
@@ -77,4 +69,6 @@ type InitOptions struct {
 	Username  string
 	Rootful   bool
 	ReExec    bool
+	TwinPid   int
+	SendEvt   string
 }

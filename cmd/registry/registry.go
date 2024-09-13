@@ -2,7 +2,7 @@ package registry
 
 import (
 	defconfig "bauklotze/pkg/config"
-	"bauklotze/pkg/domain/entities"
+	"bauklotze/pkg/config/domain/entities"
 	"fmt"
 	"github.com/spf13/cobra"
 	"os"
@@ -22,11 +22,6 @@ var (
 	podmanOptions entities.OvmConfig
 )
 
-func OvmInitConfig() *entities.OvmConfig {
-	podmanSync.Do(newPodmanConfig)
-	return &podmanOptions
-}
-
 func newPodmanConfig() {
 	defaultConfig, err := defconfig.New(&defconfig.Options{
 		SetDefault: true, // This makes sure that following calls to config.Default() return default config
@@ -38,14 +33,17 @@ func newPodmanConfig() {
 	}
 
 	podmanOptions = entities.OvmConfig{ContainersConfRW: &defconfig.Config{}, ContainersConfDefaultsRO: defaultConfig}
-
 }
 
-var ()
+func OvmInitConfig() *entities.OvmConfig {
+	podmanSync.Do(newPodmanConfig)
+	return &podmanOptions
+}
 
 func SetExitCode(code int) {
 	exitCode = code
 }
+
 func GetExitCode() int {
 	return exitCode
 }
