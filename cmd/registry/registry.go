@@ -1,7 +1,7 @@
 package registry
 
 import (
-	"bauklotze/pkg/config"
+	defconfig "bauklotze/pkg/config"
 	"bauklotze/pkg/domain/entities"
 	"fmt"
 	"github.com/spf13/cobra"
@@ -22,22 +22,22 @@ var (
 	podmanOptions entities.OvmConfig
 )
 
-func OvmConfig() *entities.OvmConfig {
+func OvmInitConfig() *entities.OvmConfig {
 	podmanSync.Do(newPodmanConfig)
 	return &podmanOptions
 }
 
 func newPodmanConfig() {
-	defaultConfig, err := config.New(&config.Options{
-		SetDefault: true, // This makes sure that following calls to config.Default() return this config
+	defaultConfig, err := defconfig.New(&defconfig.Options{
+		SetDefault: true, // This makes sure that following calls to config.Default() return default config
 	})
 
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Failed to obtain podman configuration: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Failed to obtain ovm configuration: %v\n", err)
 		os.Exit(1)
 	}
 
-	podmanOptions = entities.OvmConfig{ContainersConfRW: &config.Config{}, ContainersConfDefaultsRO: defaultConfig}
+	podmanOptions = entities.OvmConfig{ContainersConfRW: &defconfig.Config{}, ContainersConfDefaultsRO: defaultConfig}
 
 }
 

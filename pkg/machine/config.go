@@ -2,14 +2,7 @@ package machine
 
 type APIForwardingState int
 
-type StartOptions struct {
-	NoInfo  bool
-	Quiet   bool
-	Rosetta bool
-	SendEvt string
-	// TwinPid is the parent process that calls Bauklotze.
-	// Bauklotze will automatically exit when the parent process ends.
-	TwinPid int
+type StopOptions struct {
 }
 
 var (
@@ -23,8 +16,6 @@ const (
 	MachineLocal
 	DockerGlobal
 )
-
-type StopOptions struct{}
 
 type RemoveOptions struct {
 	Force        bool

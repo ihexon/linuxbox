@@ -56,6 +56,16 @@ var (
 	DefaultFilePerm os.FileMode = 0644
 )
 
+type StartOptions struct {
+	NoInfo  bool
+	Quiet   bool
+	Rosetta bool
+	SendEvt string
+	// TwinPid is the parent process that calls Bauklotze.
+	// Bauklotze will automatically exit when the parent process ends.
+	TwinPid int
+}
+
 type InitOptions struct {
 	IsDefault bool
 	CPUS      uint64

@@ -14,17 +14,17 @@
 - [ ] `machine reset`  重置所有系统
 - [ ] `支持点火器 :)`
 
-
-
 #  oomol studio 相关的参数
-- [X] `machine start --send-event-endpoint="/tmp/ovmjs_event_receiver.sock"`
+- [X] `machine start --evtsock="/tmp/ovmjs_event_receiver.sock"` 将时间发送到远端 UDF
+- [X] `machine start --twinpid [PID]` 如果给定的 PID 不存在，则杀死 GVPROXY 和 KRUNKIT
 
 ## TODO LIST
 
  - ~~2024-08-25 VFKIT EFI BOOT 模式方式并不能启动常规的 Linux 发行版，并且连自家的 Fedora Core 也启动不来，原因未知~~
  - ~~Sat Aug 31 15:39:16 HKT 2024 EFI Boot 的坑基本上踩完了，我只能说：不过如此：）~~
  - ~~Mon Sep  9 16:50:17 HKT 2024 现在 machine start 可以启动一个基于 alpine rootfs 的虚拟机~~
- - machine start 似乎不会退出主进程，我的期望是退出主进程
+ - ~~machine start 似乎不会退出主进程，我的期望是退出主进程~~
  - machine stop 需要更多的测试
  - machine init 需要更多的测试
- - gvproxy 生成的 socks file 会与 podman 本身的 socks files 冲突。
+ - ~~gvproxy 生成的 socks file 会与 podman 本身的 socks files 冲突。~~
+ - machine stop 无法正确停止 gvproxy 和 krunkit

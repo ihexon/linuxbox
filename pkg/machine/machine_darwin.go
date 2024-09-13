@@ -9,8 +9,12 @@ import (
 	"time"
 )
 
-// Function TwinPidKiller checks if the given PID is alive and wait.
-// Kills gvproxy and krunkit if the PID is not alive
+// TwinPidKiller checks if the given PID is alive and wait.
+//
+//	Kills gvproxy and krunkit if the PID is not alive
+//
+//	pid_wait: wait for target pid
+//	pid_k1 & pid_k2: killing target pids
 func TwinPidKiller(pid_wait, pid_k1, pid_k2 int) {
 	pidExited := make(chan bool)
 	ctx, cancel := context.WithCancel(context.Background())

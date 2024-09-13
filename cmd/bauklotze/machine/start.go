@@ -5,6 +5,7 @@ import (
 	"bauklotze/pkg/events"
 	"bauklotze/pkg/machine"
 	"bauklotze/pkg/machine/env"
+	"bauklotze/pkg/machine/machineDefine"
 	"bauklotze/pkg/machine/shim"
 	"bauklotze/pkg/machine/vmconfigs"
 	"bauklotze/pkg/network"
@@ -23,7 +24,7 @@ var (
 		Example:           `podman machine start podman-machine-default`,
 		ValidArgsFunction: autocompleteMachine,
 	}
-	startOpts = machine.StartOptions{}
+	startOpts = machineDefine.StartOptions{}
 )
 
 func init() {
@@ -41,9 +42,11 @@ func init() {
 
 	sendEventToEndpoint := "evtsock"
 	flags.StringVar(&startOpts.SendEvt, sendEventToEndpoint, "", "send events to somewhere")
+	flags.MarkHidden(sendEventToEndpoint)
 
 	twinPid := "twinpid"
 	flags.IntVar(&startOpts.TwinPid, twinPid, -1, "self killing when [twin pid] exit")
+	flags.MarkHidden(twinPid)
 }
 
 func start(_ *cobra.Command, args []string) error {
@@ -80,7 +83,7 @@ func start(_ *cobra.Command, args []string) error {
 	if startOpts.TwinPid != -1 {
 		machine.TwinPidKiller(startOpts.TwinPid,
 			machine.GlobalPIDs.GetGvproxyPID(),
-			machine.GlobalPIDs.GetGvproxyPID(),
+			machine.GlobalPIDs.GetKrunkitPID(),
 		)
 	}
 	return nil

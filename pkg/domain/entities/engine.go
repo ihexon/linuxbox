@@ -8,5 +8,5 @@ import (
 type OvmConfig struct {
 	*pflag.FlagSet
 	ContainersConfRW         *config.Config
-	ContainersConfDefaultsRO *config.Config // The read-only! defaults from containers.conf.
+	ContainersConfDefaultsRO *config.Config // The read-only! defaults configure
 }

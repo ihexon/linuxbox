@@ -52,7 +52,10 @@ func init() {
 	})
 
 	flags := initCmd.Flags()
-	cfg := registry.OvmConfig()
+	// Calculate the default configuration
+	// CPU,MEMORY,VOLUME,etc..
+	// OvmInitConfig() 配置虚拟机的内存/CPU/磁盘大小，这些配置将被写入 machine 的 json 文件做到持久化
+	cfg := registry.OvmInitConfig()
 
 	flags.BoolVar(
 		&initOpts.ReExec,

@@ -5,6 +5,7 @@ package machine
 import (
 	"bauklotze/cmd/registry"
 	"bauklotze/pkg/events"
+	"bauklotze/pkg/machine"
 	"bauklotze/pkg/machine/env"
 	"bauklotze/pkg/machine/shim"
 	"bauklotze/pkg/machine/vmconfigs"
@@ -23,6 +24,7 @@ var (
 		Example:           `podman machine stop podman-machine-default`,
 		ValidArgsFunction: autocompleteMachine,
 	}
+	stopOpts = machine.StopOptions{}
 )
 
 func init() {
@@ -30,6 +32,7 @@ func init() {
 		Command: stopCmd,
 		Parent:  machineCmd,
 	})
+
 }
 
 // TODO  Name shouldn't be required, need to create a default vm
@@ -57,6 +60,8 @@ func stop(cmd *cobra.Command, args []string) error {
 	}
 
 	fmt.Printf("Machine %q stopped successfully\n", vmName)
+
+	// TODO: Scan Event Socks dir and send event to all socks file
 	newMachineEvent(events.Stop, events.Event{Name: vmName})
 	return nil
 }
