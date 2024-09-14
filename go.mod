@@ -6,6 +6,7 @@ require (
 	github.com/Microsoft/go-winio v0.6.2
 	github.com/containers/gvisor-tap-vsock v0.7.5
 	github.com/containers/storage v1.55.0
+	github.com/containers/winquit v1.1.0
 	github.com/crc-org/vfkit v0.5.1
 	github.com/docker/go-units v0.5.0
 	github.com/hashicorp/go-multierror v1.1.1

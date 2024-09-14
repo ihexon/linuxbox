@@ -15,3 +15,7 @@ func getDefaultMachineVolumes() []string {
 	hostMnt := filepath.ToSlash(strings.TrimPrefix(hd, vol))
 	return []string{fmt.Sprintf("%s:%s", hd, hostMnt)}
 }
+
+var defaultHelperBinariesDir = []string{
+	"C:\\Program Files\\RedHat\\Podman",
+}

@@ -1,3 +1,5 @@
+//go:build darwin && linux && (amd64 || arm64)
+
 package gvproxy
 
 import (

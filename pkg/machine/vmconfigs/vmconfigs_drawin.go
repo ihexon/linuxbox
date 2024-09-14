@@ -1,3 +1,5 @@
+//go:build darwin && linux && (amd64 || arm64)
+
 package vmconfigs
 
 import "bauklotze/pkg/machine/apple/hvhelper"

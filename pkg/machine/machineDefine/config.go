@@ -20,7 +20,7 @@ type MiB uint64
 type cores uint64
 
 type WSLConfig struct {
-	// Uses usermode networking
+	// Uses usermode networking, not support now
 	UserModeNetworking bool
 }
 

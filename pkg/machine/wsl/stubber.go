@@ -5,12 +5,72 @@ package wsl
 import (
 	"bauklotze/pkg/machine/env"
 	"bauklotze/pkg/machine/machineDefine"
-	"bauklotze/pkg/machine/shim/diskpull"
-	"bauklotze/pkg/ovmdisk"
+	"bauklotze/pkg/machine/vmconfigs"
+	gvproxy "github.com/containers/gvisor-tap-vsock/pkg/types"
 )
 
 type WSLStubber struct {
 	machineDefine.WSLConfig
+}
+
+func (w WSLStubber) GetDisk(userInputPath string, dirs *machineDefine.MachineDirs, mc *vmconfigs.MachineConfig) error {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (w WSLStubber) CreateVM(opts machineDefine.CreateVMOpts, mc *vmconfigs.MachineConfig) error {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (w WSLStubber) StopVM(mc *vmconfigs.MachineConfig, hardStop bool) error {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (w WSLStubber) MountType() vmconfigs.VolumeMountType {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (w WSLStubber) RequireExclusiveActive() bool {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (w WSLStubber) State(mc *vmconfigs.MachineConfig, bypass bool) (machineDefine.Status, error) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (w WSLStubber) UpdateSSHPort(mc *vmconfigs.MachineConfig, port int) error {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (w WSLStubber) UseProviderNetworkSetup() bool {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (w WSLStubber) StartNetworking(mc *vmconfigs.MachineConfig, cmd *gvproxy.GvproxyCommand) error {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (w WSLStubber) PostStartNetworking(mc *vmconfigs.MachineConfig, noInfo bool) error {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (w WSLStubber) StartVM(mc *vmconfigs.MachineConfig) (func() error, func() error, error) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (w WSLStubber) MountVolumesToVM(mc *vmconfigs.MachineConfig, quiet bool) error {
+	//TODO implement me
+	panic("implement me")
 }
 
 func (w WSLStubber) Exists(name string) (bool, error) {
@@ -21,28 +81,16 @@ func (w WSLStubber) VMType() machineDefine.VMType {
 	return machineDefine.WSLVirt
 }
 
-func (w WSLStubber) GetDisk(userInputPath string, mc *machineDefine.MachineConfig) error {
-	var (
-		myDisk ovmdisk.Disker
-	)
-	// 现阶段，userInputPath 一定不为空
-	if userInputPath != "" {
-		// userInputPath 是用户指定的 rootfs 路径
-		// mc.ImagePath 实际上是用户指定的 rootfs 路径解压后的 rootfs 的路径
-		return diskpull.GetDisk(userInputPath, mc.Dirs, mc.ImagePath, w.VMType(), mc.Name)
+func (w WSLStubber) Remove(mc *vmconfigs.MachineConfig) ([]string, func() error, error) {
+
+	wslRemoveFunc := func() error {
+		if err := runCmdPassThrough(FindWSL(), "--unregister", env.WithBugBoxPrefix(mc.Name)); err != nil {
+			return err
+		}
+		return nil
 	}
-	return myDisk.Get()
-}
 
-// TODO: checkAndInstallWSL
-func (w WSLStubber) CreateVM(opts machineDefine.CreateVMOpts, mc *machineDefine.MachineConfig) error {
-	checkAndInstallWSL(opts.ReExec)
-	return nil
-}
-
-func (w WSLStubber) StopVM(mc *machineDefine.MachineConfig, hardStop bool) error {
-	dist := env.WithBugBoxPrefix(mc.Name)
-	return terminateDist(dist)
+	return []string{}, wslRemoveFunc, nil
 }
 
 func isRunning(name string) (bool, error) {
@@ -62,16 +110,4 @@ func isRunning(name string) (bool, error) {
 	//	}
 	// }
 	return running, err
-}
-
-func (w WSLStubber) Remove(mc *machineDefine.MachineConfig) ([]string, func() error, error) {
-
-	wslRemoveFunc := func() error {
-		if err := runCmdPassThrough(FindWSL(), "--unregister", env.WithBugBoxPrefix(mc.Name)); err != nil {
-			return err
-		}
-		return nil
-	}
-
-	return []string{}, wslRemoveFunc, nil
 }

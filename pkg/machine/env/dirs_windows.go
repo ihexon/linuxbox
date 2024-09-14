@@ -1,6 +1,8 @@
-//go:build !darwin && windows && !linux
+//go:build windows && (arm64 || amd64)
 
 package env
+
+import "os"
 
 func getRuntimeDir() (string, error) {
 	tmpDir, ok := os.LookupEnv("TEMP")

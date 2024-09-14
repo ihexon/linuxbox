@@ -34,7 +34,7 @@ var (
 		PersistentPreRunE: machinePreRunE,
 		RunE:              initMachine,
 		Args:              cobra.MaximumNArgs(1), // max positional arguments
-		Example:           `podman machine init podman-machine-default`,
+		Example:           `machine init`,
 		ValidArgsFunction: completion.AutocompleteNone,
 	}
 	initOpts           = machineDefine.InitOptions{}
