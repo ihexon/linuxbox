@@ -1,3 +1,5 @@
+//go:build !drawin && !linux && windows
+
 // Package flags contains the enum used by WSL to display
 // some configuration of a WSL distro.
 package flags

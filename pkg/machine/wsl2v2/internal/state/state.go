@@ -1,3 +1,5 @@
+//go:build !drawin && !linux && windows
+
 // Package state defines the state enum so that both backends can use it
 package state
 

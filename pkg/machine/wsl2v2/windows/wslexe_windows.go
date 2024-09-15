@@ -1,3 +1,5 @@
+//go:build !drawin && !linux && windows
+
 package windows
 
 // This file contains utilities to access functionality accessed via wsl.exe
