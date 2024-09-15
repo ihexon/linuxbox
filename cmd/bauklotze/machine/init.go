@@ -111,7 +111,6 @@ func init() {
 	flags.MarkHidden(sendEventToEndpoint)
 }
 
-// machinePreRunE: Status ok
 func machinePreRunE(c *cobra.Command, args []string) error {
 	var err error = nil
 	provider, err = provider2.Get()

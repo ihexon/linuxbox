@@ -20,6 +20,10 @@ import (
 )
 
 func VMExists(name string, vmstubbers []vmconfigs.VMProvider) (*vmconfigs.MachineConfig, bool, error) {
+	// We can load the machine in dir by env.GetMachineDirs(stubber.VMType())
+	// and check if the vm exist and return *vmconfigs.MachineConfig
+	// but for now we simply check vm exist by call vmstubber.Exists(name)
+
 	// Check with the provider hypervisor
 	for _, vmstubber := range vmstubbers {
 		exists, err := vmstubber.Exists(name)
