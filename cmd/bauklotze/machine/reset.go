@@ -22,6 +22,7 @@ var (
 		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 			return nil, cobra.ShellCompDirectiveNoFileComp
 		},
+		Hidden: true,
 	}
 )
 
@@ -33,10 +34,10 @@ func init() {
 }
 
 func reset(_ *cobra.Command, _ []string) error {
-	providers := provider2.GetAll()
-	//if err != nil {
-	//	return err
-	//}
+	providers, err := provider2.GetAll()
+	if err != nil {
+		return err
+	}
 	return shim.Reset(providers)
 }
 

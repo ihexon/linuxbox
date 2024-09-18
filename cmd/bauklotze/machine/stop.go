@@ -10,6 +10,7 @@ import (
 	"bauklotze/pkg/machine/shim"
 	"bauklotze/pkg/machine/vmconfigs"
 	"fmt"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
@@ -37,10 +38,7 @@ func init() {
 
 // TODO  Name shouldn't be required, need to create a default vm
 func stop(cmd *cobra.Command, args []string) error {
-	var (
-		err error
-	)
-
+	var err error
 	vmName := defaultMachineName
 	if len(args) > 0 && len(args[0]) > 0 {
 		vmName = args[0]
@@ -62,6 +60,9 @@ func stop(cmd *cobra.Command, args []string) error {
 	fmt.Printf("Machine %q stopped successfully\n", vmName)
 
 	// TODO: Scan Event Socks dir and send event to all socks file
-	newMachineEvent(events.Stop, events.Event{Name: vmName})
-	return nil
+	err = NewMachineEvent(events.Stop, "stopped", mc)
+	if err != nil {
+		logrus.Warnf("Send event failed: %s", err.Error())
+	}
+	return err
 }

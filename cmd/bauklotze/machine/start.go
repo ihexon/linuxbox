@@ -8,8 +8,8 @@ import (
 	"bauklotze/pkg/machine/machineDefine"
 	"bauklotze/pkg/machine/shim"
 	"bauklotze/pkg/machine/vmconfigs"
-	"bauklotze/pkg/network"
 	"fmt"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
@@ -72,8 +72,9 @@ func start(_ *cobra.Command, args []string) error {
 	}
 	fmt.Printf("Machine %q started successfully\n", vmName)
 
-	if mc.EvtSockPath.GetPath() != "" {
-		network.SendEventToOvmJs(events.Start, "KunkitStaring...", mc.EvtSockPath.GetPath())
+	err = NewMachineEvent(events.Start, "started", mc)
+	if err != nil {
+		logrus.Warnf("Send event failed: %s", err.Error())
 	}
 
 	if mc.TwinPid != -1 {

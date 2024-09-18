@@ -31,7 +31,7 @@ func Get() (vmconfigs.VMProvider, error) {
 	}
 }
 
-func GetAll(_ bool) ([]vmconfigs.VMProvider, error) {
+func GetAll() ([]vmconfigs.VMProvider, error) {
 	return []vmconfigs.VMProvider{
 		new(krunkit.LibKrunStubber),
 	}, nil

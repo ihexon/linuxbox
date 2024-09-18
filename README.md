@@ -12,6 +12,7 @@
 - [X] `machine stop  [vm_name]` 停止虚拟机
 - [ ] `machine rm    [vm_name]` 删除虚拟机
 - [ ] `machine reset`  重置所有系统
+- [ ] `machine set`    修改虚拟机配置文件
 - [ ] `支持点火器 :)`
 
 #  oomol studio 相关的参数
@@ -21,12 +22,9 @@
 - evtsock [SOCK_PATH]
 发送虚拟机事件给 SOCK_PATH，这个 SOCK_PATH 应该是一个 UDF
 
-```
+```bash
 machine init --twinpid [PID] --evtsock [SOCK_PATH]
 ```
-
-
-
 
 ## TODO LIST
 
@@ -38,3 +36,5 @@ machine init --twinpid [PID] --evtsock [SOCK_PATH]
  - machine init 需要更多的测试
  - ~~gvproxy 生成的 socks file 会与 podman 本身的 socks files 冲突。~~
  - machine stop 无法正确停止 gvproxy 和 krunkit
+ - wsl2v1 完整抄袭 podman，先跑起来再说...
+ - wsl2v2 重新实现
