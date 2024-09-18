@@ -3,10 +3,12 @@ package windows
 import (
 	"bauklotze/pkg/machine/wsl2v2/internal/backend"
 	decorate "bauklotze/pkg/machine/wsl2v2/internal/utils"
+	"context"
 	"errors"
 	"fmt"
 	"golang.org/x/sys/windows/registry"
 	"io/fs"
+	"os/exec"
 	"path/filepath"
 	"syscall"
 )
@@ -65,4 +67,23 @@ func (r *RegistryKey) SubkeyNames() (subkeys []string, err error) {
 		return nil, fmt.Errorf("could not stat parent registry key: %v", err)
 	}
 	return r.key.ReadSubKeyNames(int(keyInfo.SubKeyCount))
+}
+
+// RemoveAppxFamily uninstalls the Appx under the provided family name.
+func (Backend) RemoveAppxFamily(ctx context.Context, packageFamilyName string) error {
+	cmd := exec.CommandContext(ctx,
+		"powershell.exe",
+		"-NonInteractive",
+		"-NoProfile",
+		"-NoLogo",
+		"-Command",
+		`Get-AppxPackage | Where-Object -Property PackageFamilyName -eq "${env:PackageFamilyName}" | Remove-AppPackage`,
+	)
+	cmd.Env = append(cmd.Env, fmt.Sprintf("PackageFamilyName=%q", packageFamilyName))
+
+	if out, err := cmd.Output(); err != nil {
+		return fmt.Errorf("could not uninstall %q: %v. %s", packageFamilyName, err, out)
+	}
+
+	return nil
 }

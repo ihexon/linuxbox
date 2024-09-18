@@ -38,7 +38,8 @@ func unregisterDist(dist string) error {
 	return err
 }
 
-func isRunning(dist string) (bool, error) {
+// Deprecated, Using isRunningV2
+func isRunningv1(dist string) (bool, error) {
 	distro := NewDistro(context.Background(), dist)
 	s, err := distro.backend.State(distro.name)
 	if err != nil {
@@ -48,6 +49,22 @@ func isRunning(dist string) (bool, error) {
 	case state.Running:
 		return true, nil
 	default:
+	}
+	return false, err
+}
+
+func isRunningV2(distroName string) (bool, error) {
+	distro := Distro{
+		backend: selectBackend(context.Background()),
+		name:    distroName,
+	}
+	s, err := distro.State()
+	if err != nil {
+		return false, err
+	}
+	if s == state.Running {
+		return true, nil
+
 	}
 	return false, err
 }

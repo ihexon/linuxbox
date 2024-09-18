@@ -33,4 +33,7 @@ type Backend interface {
 	WslLaunchInteractive(distributionName string, command string, useCurrentWorkingDirectory bool) (uint32, error)
 	WslRegisterDistribution(distributionName string, tarGzFilename string) error
 	WslUnregisterDistribution(distributionName string) error
+
+	// AppxFamily
+	RemoveAppxFamily(ctx context.Context, packageFamilyName string) error
 }
