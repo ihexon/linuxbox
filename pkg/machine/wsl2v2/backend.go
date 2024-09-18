@@ -3,8 +3,8 @@
 package wsl2v2
 
 import (
-	"bauklotze/pkg/machine/wsl2v2/backend"
-	"bauklotze/pkg/machine/wsl2v2/windows"
+	"bauklotze/pkg/machine/wsl2v2/internal/backend"
+	"bauklotze/pkg/machine/wsl2v2/internal/backend/windows"
 	"context"
 )
 

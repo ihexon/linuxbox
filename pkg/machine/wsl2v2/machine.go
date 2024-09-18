@@ -1,22 +1,9 @@
 package wsl2v2
 
 import (
-	"bauklotze/pkg/machine/wsl2v2/backend"
 	"bauklotze/pkg/machine/wsl2v2/internal/state"
 	"context"
 )
-
-type Distro struct {
-	backend backend.Backend
-	name    string
-}
-
-func NewDistro(ctx context.Context, name string) Distro {
-	return Distro{
-		backend: selectBackend(ctx),
-		name:    name,
-	}
-}
 
 func wslCheckExists(dist string, running bool) (bool, error) {
 	distro := NewDistro(context.Background(), dist)

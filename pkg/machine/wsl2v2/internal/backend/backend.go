@@ -9,7 +9,14 @@ import (
 	"os"
 )
 
+type RegistryKey interface {
+	Close() error
+	Field(name string) (string, error)
+	SubkeyNames() ([]string, error)
+}
+
 type Backend interface {
+	OpenLxssRegistry(path string) (RegistryKey, error)
 
 	// wsl.exe
 	State(distributionName string) (state.State, error)
