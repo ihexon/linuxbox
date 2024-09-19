@@ -3,6 +3,7 @@
 package system
 
 import (
+	"fmt"
 	"syscall"
 
 	"golang.org/x/sys/unix"
@@ -21,4 +22,17 @@ func IsProcessAlive(pid int) bool {
 // KillProcess force-stops a process.
 func KillProcess(pid int) {
 	_ = unix.Kill(pid, unix.SIGKILL)
+}
+
+func CheckProcessRunning(processName string, pid int) error {
+	var status syscall.WaitStatus
+	pid, err := syscall.Wait4(pid, &status, syscall.WNOHANG, nil)
+	if err != nil {
+		return fmt.Errorf("failed to read %s process status: %w", processName, err)
+	}
+	if pid > 0 {
+		// child exited
+		return fmt.Errorf("%s exited unexpectedly with exit code %d", processName, status.ExitStatus())
+	}
+	return nil
 }

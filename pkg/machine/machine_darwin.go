@@ -4,32 +4,23 @@ package machine
 
 import (
 	"bauklotze/pkg/system"
-	"context"
-	"fmt"
 	"time"
 )
 
-// TwinPidKiller checks if the given PID is alive and wait.
-//
-//	Kills gvproxy and krunkit if the PID is not alive
-//
-//	pid_wait: wait for target pid
-//	pid_k1 & pid_k2: killing target pids
-func TwinPidKiller(pid_wait, pid_k1, pid_k2 int) {
-	pidExited := make(chan bool)
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+func OvmProcessKiller(ovmppid, krunkit, gvproxy int) {
+	somethingWrong := make(chan bool)
 	go func() {
-		defer close(pidExited)
 		for {
-			select {
-			case <-ctx.Done():
+			if ok := system.IsProcessAlive(ovmppid); !ok {
+				somethingWrong <- true
 				return
-			default:
-				fmt.Println("Continue checking...")
 			}
-			if ok := system.IsProcessAlive(pid_wait); !ok {
-				pidExited <- true
+			if err := system.CheckProcessRunning("Krunkit", krunkit); err != nil {
+				somethingWrong <- true
+				return
+			}
+			if err := system.CheckProcessRunning("GVproxy", gvproxy); err != nil {
+				somethingWrong <- true
 				return
 			}
 			// lets poll status every half second
@@ -39,10 +30,10 @@ func TwinPidKiller(pid_wait, pid_k1, pid_k2 int) {
 
 	// wait for either socket or to be ready or process to have exited
 	select {
-	case exited := <-pidExited:
+	case exited := <-somethingWrong:
 		if exited == true {
-			system.KillProcess(pid_k1)
-			system.KillProcess(pid_k2)
+			system.KillProcess(GlobalPIDs.GetGvproxyPID())
+			system.KillProcess(GlobalPIDs.GetKrunkitPID())
 		}
 	}
 }

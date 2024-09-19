@@ -3,7 +3,6 @@ package machine
 import (
 	"bauklotze/cmd/registry"
 	"bauklotze/pkg/completion"
-	"bauklotze/pkg/events"
 	"bauklotze/pkg/machine/machineDefine"
 	provider2 "bauklotze/pkg/machine/provider"
 	"bauklotze/pkg/machine/shim"
@@ -158,7 +157,7 @@ func initMachine(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	newMachineEvent(events.Init, events.Event{Name: initOpts.Name})
+	//NewMachineEvent(events.Init, events.Event{Name: initOpts.Name})
 	return nil
 }
 

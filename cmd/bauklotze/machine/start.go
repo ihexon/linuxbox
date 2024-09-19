@@ -2,14 +2,12 @@ package machine
 
 import (
 	"bauklotze/cmd/registry"
-	"bauklotze/pkg/events"
 	"bauklotze/pkg/machine"
 	"bauklotze/pkg/machine/env"
 	"bauklotze/pkg/machine/machineDefine"
 	"bauklotze/pkg/machine/shim"
 	"bauklotze/pkg/machine/vmconfigs"
 	"fmt"
-	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
@@ -70,23 +68,20 @@ func start(_ *cobra.Command, args []string) error {
 	if err := shim.Start(mc, provider, dirs, startOpts); err != nil {
 		return err
 	}
+
 	fmt.Printf("Machine %q started successfully\n", vmName)
 
-	err = NewMachineEvent(events.Start, "started", mc)
-	if err != nil {
-		logrus.Warnf("Send event failed: %s", err.Error())
-	}
+	//
+	//err = NewMachineEvent(events.Start, "started", mc)
+	//if err != nil {
+	//	logrus.Warnf("Send event failed: %s", err.Error())
+	//}
 
 	if mc.TwinPid != -1 {
-		machine.TwinPidKiller(mc.TwinPid,
-			machine.GlobalPIDs.GetGvproxyPID(),
+		machine.OvmProcessKiller(mc.TwinPid,
 			machine.GlobalPIDs.GetKrunkitPID(),
+			machine.GlobalPIDs.GetGvproxyPID(),
 		)
 	}
-
-	if startOpts.NoQuit {
-		// NoQuit
-	}
-
 	return nil
 }
