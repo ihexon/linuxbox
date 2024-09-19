@@ -24,6 +24,7 @@
 
 ```bash
 machine init --twinpid [PID] --evtsock [SOCK_PATH]
+machine start --twinpid [PID] --evtsock [SOCK_PATH]
 ```
 
 ## TODO LIST

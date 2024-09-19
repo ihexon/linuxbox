@@ -28,6 +28,7 @@ func (l LibKrunStubber) StopVM(mc *vmconfigs.MachineConfig, hardStop bool) error
 }
 
 func (l LibKrunStubber) GetDisk(userInputPath string, dirs *machineDefine.MachineDirs, mc *vmconfigs.MachineConfig) error {
+
 	return diskpull.GetDisk(userInputPath, dirs, mc.ImagePath, l.VMType(), mc.Name)
 }
 

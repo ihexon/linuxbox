@@ -105,6 +105,10 @@ func init() {
 	flags.IntVar(&initOpts.TwinPid, twinPid, -1, "self killing when [twin pid] exit")
 	flags.MarkHidden(twinPid)
 
+	imageVersion := "image-version"
+	flags.StringVar(&initOpts.ImageVersion, imageVersion, "always-update", "Special bootable image version")
+	flags.MarkHidden(twinPid)
+
 	sendEventToEndpoint := "evtsock"
 	flags.StringVar(&initOpts.SendEvt, sendEventToEndpoint, "", "send events to somewhere")
 	flags.MarkHidden(sendEventToEndpoint)
@@ -132,9 +136,7 @@ func initMachine(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	// Check if machine already exists
-	// In macos_arm64 shim.VMExist always false
-	_, exists, err := shim.VMExists(initOpts.Name, []vmconfigs.VMProvider{provider})
+	exists, err := shim.VMExists(initOpts.Name, []vmconfigs.VMProvider{provider})
 	if err != nil {
 		return err
 	}

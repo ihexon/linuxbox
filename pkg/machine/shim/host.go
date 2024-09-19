@@ -19,22 +19,17 @@ import (
 	"time"
 )
 
-func VMExists(name string, vmstubbers []vmconfigs.VMProvider) (*vmconfigs.MachineConfig, bool, error) {
-	// We can load the machine in dir by env.GetMachineDirs(stubber.VMType())
-	// and check if the vm exist and return *vmconfigs.MachineConfig
-	// but for now we simply check vm exist by call vmstubber.Exists(name)
-
-	// Check with the provider hypervisor
+func VMExists(name string, vmstubbers []vmconfigs.VMProvider) (bool, error) {
 	for _, vmstubber := range vmstubbers {
 		exists, err := vmstubber.Exists(name)
 		if err != nil {
-			return nil, false, err
+			return false, err
 		}
 		if exists {
-			return nil, true, fmt.Errorf("vm %q already exists on hypervisor", name)
+			return true, fmt.Errorf("vm %q already exists on hypervisor", name)
 		}
 	}
-	return nil, false, nil
+	return false, nil
 }
 
 func emptyfunc(p string) {
@@ -43,10 +38,18 @@ func emptyfunc(p string) {
 
 func Init(opts machineDefine.InitOptions, mp vmconfigs.VMProvider) error {
 	var (
-		imageExtension string
-		err            error
-		imagePath      *machineDefine.VMFile
+		imageExtension   string
+		err              error
+		imagePath        *machineDefine.VMFile
+		oldMachineConfig *vmconfigs.MachineConfig
 	)
+
+	// Get Old machine configure as mcs
+	mcs, _ := GetMCsOverProviders([]vmconfigs.VMProvider{mp})
+	if mcs != nil {
+		oldMachineConfig = mcs[opts.Name]
+	}
+
 	// Empty callbackFuncs arraylist
 	callbackFuncs := machine.CleanupFuncs()
 	defer callbackFuncs.CleanIfErr(&err)
@@ -65,13 +68,16 @@ func Init(opts machineDefine.InitOptions, mp vmconfigs.VMProvider) error {
 		return err
 	}
 
+	// TODO: write sshkey to rootfs
 	emptyfunc(sshKey)
 
+	// construct a machine configure but not write into disk
 	mc, err := vmconfigs.NewMachineConfig(opts, dirs, sshIdentityPath, mp.VMType())
 	if err != nil {
 		return err
 	}
 
+	// machine configure json,version always be as 1
 	mc.Version = machineDefine.MachineConfigVersion
 
 	createOpts := machineDefine.CreateVMOpts{
@@ -92,8 +98,17 @@ func Init(opts machineDefine.InitOptions, mp vmconfigs.VMProvider) error {
 	imagePath, err = dirs.DataDir.AppendToNewVMFile(fmt.Sprintf("%s-%s%s", opts.Name, runtime.GOARCH, imageExtension))
 	mc.ImagePath = imagePath
 
-	if err := mp.GetDisk(opts.Image, dirs, mc); err != nil {
-		return err
+	mc.ImageVersion = opts.ImageVersion
+
+	switch {
+	case oldMachineConfig == nil, opts.ImageVersion == "always-update":
+		if err := mp.GetDisk(opts.Image, dirs, mc); err != nil {
+			return err
+		}
+	case oldMachineConfig.ImageVersion != opts.ImageVersion:
+		if err := mp.GetDisk(opts.Image, dirs, mc); err != nil {
+			return err
+		}
 	}
 
 	// Mounts
@@ -132,9 +147,6 @@ func getMCsOverProviders(vmstubbers []vmconfigs.VMProvider) (map[string]*vmconfi
 		if err != nil {
 			return nil, err
 		}
-		// TODO When we get to golang-1.20+ we can replace the following with maps.Copy
-		// maps.Copy(mcs, stubberMCs)
-		// iterate known mcs and add the stubbers
 		for mcName, mc := range stubberMCs {
 			if _, ok := mcs[mcName]; !ok {
 				mcs[mcName] = mc
@@ -142,6 +154,10 @@ func getMCsOverProviders(vmstubbers []vmconfigs.VMProvider) (map[string]*vmconfi
 		}
 	}
 	return mcs, nil
+}
+
+func GetMCsOverProviders(vmstubbers []vmconfigs.VMProvider) (map[string]*vmconfigs.MachineConfig, error) {
+	return getMCsOverProviders(vmstubbers)
 }
 
 // checkExclusiveActiveVM checks if any of the machines are already running

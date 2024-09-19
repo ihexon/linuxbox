@@ -40,6 +40,10 @@ func init() {
 
 	noquitFlagName := "noquit"
 	flags.BoolVarP(&startOpts.NoQuit, noquitFlagName, "", false, "do not exit after start machine")
+
+	twinPid := "twinpid"
+	flags.IntVar(&startOpts.TwinPid, twinPid, -1, "self killing when [twin pid] exit")
+	flags.MarkHidden(twinPid)
 }
 
 func start(_ *cobra.Command, args []string) error {
@@ -77,11 +81,12 @@ func start(_ *cobra.Command, args []string) error {
 	//	logrus.Warnf("Send event failed: %s", err.Error())
 	//}
 
-	if mc.TwinPid != -1 {
+	if startOpts.TwinPid != -1 {
 		machine.OvmProcessKiller(mc.TwinPid,
 			machine.GlobalPIDs.GetKrunkitPID(),
 			machine.GlobalPIDs.GetGvproxyPID(),
 		)
 	}
+
 	return nil
 }

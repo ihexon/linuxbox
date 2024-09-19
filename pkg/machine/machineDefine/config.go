@@ -53,22 +53,24 @@ var (
 )
 
 type StartOptions struct {
-	NoInfo bool
-	Quiet  bool
-	NoQuit bool // NoQuit when machine start
+	NoInfo  bool
+	Quiet   bool
+	NoQuit  bool // NoQuit when machine start
+	TwinPid int
 }
 
 type InitOptions struct {
-	IsDefault bool
-	CPUS      uint64
-	DiskSize  uint64
-	Image     string
-	Volumes   []string
-	Memory    uint64
-	Name      string
-	Username  string
-	Rootful   bool
-	ReExec    bool
-	TwinPid   int
-	SendEvt   string
+	IsDefault    bool
+	CPUS         uint64
+	DiskSize     uint64
+	Image        string
+	Volumes      []string
+	Memory       uint64
+	Name         string
+	Username     string
+	Rootful      bool
+	ReExec       bool
+	TwinPid      int
+	SendEvt      string
+	ImageVersion string
 }
