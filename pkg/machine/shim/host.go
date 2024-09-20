@@ -19,17 +19,32 @@ import (
 	"time"
 )
 
-func VMExists(name string, vmstubbers []vmconfigs.VMProvider) (bool, error) {
+// VMExists looks old machine for a machine's existence.  returns the actual config and found bool
+func VMExists(name string, vmstubbers []vmconfigs.VMProvider) (*vmconfigs.MachineConfig, bool, error) {
+	// Look on disk first
+	mcs, err := getMCsOverProviders(vmstubbers)
+	if err != nil {
+		return nil, false, err
+	}
+	if mc, found := mcs[name]; found {
+		return mc, true, nil
+	}
+	return nil, false, err
+}
+
+// VMExistsUsingProvider looks across given providers for a machine's existence. returns the actual config and found bool
+func VMExistsUsingProvider(name string, vmstubbers []vmconfigs.VMProvider) (*vmconfigs.MachineConfig, bool, error) {
+	// Check with the provider hypervisor
 	for _, vmstubber := range vmstubbers {
 		exists, err := vmstubber.Exists(name)
 		if err != nil {
-			return false, err
+			return nil, false, err
 		}
 		if exists {
-			return true, fmt.Errorf("vm %q already exists on hypervisor", name)
+			return nil, true, fmt.Errorf("vm %q already exists on hypervisor", name)
 		}
 	}
-	return false, nil
+	return nil, false, nil
 }
 
 func emptyfunc(p string) {
@@ -38,17 +53,10 @@ func emptyfunc(p string) {
 
 func Init(opts machineDefine.InitOptions, mp vmconfigs.VMProvider) error {
 	var (
-		imageExtension   string
-		err              error
-		imagePath        *machineDefine.VMFile
-		oldMachineConfig *vmconfigs.MachineConfig
+		imageExtension string
+		err            error
+		imagePath      *machineDefine.VMFile
 	)
-
-	// Get Old machine configure as mcs
-	mcs, _ := GetMCsOverProviders([]vmconfigs.VMProvider{mp})
-	if mcs != nil {
-		oldMachineConfig = mcs[opts.Name]
-	}
 
 	// Empty callbackFuncs arraylist
 	callbackFuncs := machine.CleanupFuncs()
@@ -76,7 +84,6 @@ func Init(opts machineDefine.InitOptions, mp vmconfigs.VMProvider) error {
 	if err != nil {
 		return err
 	}
-
 	// machine configure json,version always be as 1
 	mc.Version = machineDefine.MachineConfigVersion
 
@@ -97,19 +104,6 @@ func Init(opts machineDefine.InitOptions, mp vmconfigs.VMProvider) error {
 
 	imagePath, err = dirs.DataDir.AppendToNewVMFile(fmt.Sprintf("%s-%s%s", opts.Name, runtime.GOARCH, imageExtension))
 	mc.ImagePath = imagePath
-
-	mc.ImageVersion = opts.ImageVersion
-
-	switch {
-	case oldMachineConfig == nil, opts.ImageVersion == "always-update":
-		if err := mp.GetDisk(opts.Image, dirs, mc); err != nil {
-			return err
-		}
-	case oldMachineConfig.ImageVersion != opts.ImageVersion:
-		if err := mp.GetDisk(opts.Image, dirs, mc); err != nil {
-			return err
-		}
-	}
 
 	// Mounts
 	if mp.VMType() != machineDefine.WSLVirt {

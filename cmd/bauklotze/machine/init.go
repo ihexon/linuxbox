@@ -12,6 +12,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/shirou/gopsutil/v3/mem"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"os"
 )
@@ -38,6 +39,7 @@ var (
 	}
 	initOpts           = machineDefine.InitOptions{}
 	defaultMachineName = machineDefine.DefaultMachineName
+	now                bool
 )
 
 type InitOptionalFlags struct {
@@ -112,6 +114,8 @@ func init() {
 	sendEventToEndpoint := "evtsock"
 	flags.StringVar(&initOpts.SendEvt, sendEventToEndpoint, "", "send events to somewhere")
 	flags.MarkHidden(sendEventToEndpoint)
+
+	flags.BoolVar(&now, "now", false, "Start machine now")
 }
 
 func machinePreRunE(c *cobra.Command, args []string) error {
@@ -136,13 +140,26 @@ func initMachine(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	exists, err := shim.VMExists(initOpts.Name, []vmconfigs.VMProvider{provider})
+	oldmc, exists, err := shim.VMExists(initOpts.Name, []vmconfigs.VMProvider{provider})
 	if err != nil {
 		return err
 	}
 
-	if exists {
+	switch {
+	case exists == true && oldmc != nil && oldmc.ImageVersion != initOpts.ImageVersion:
+		logrus.Infof("%s: %s", initOpts.Name, machineDefine.ErrVMAlreadyExists)
+		logrus.Infof("New image-version:%s, old image-version: %s, Force Initialize....", initOpts.ImageVersion, oldmc.ImageVersion)
+		break
+	case exists == true && oldmc != nil:
+		logrus.Infof("%s: %s, skip initialize !", initOpts.Name, machineDefine.ErrVMAlreadyExists)
+		if now {
+			return start(cmd, args)
+		}
 		return fmt.Errorf("%s: %w", initOpts.Name, machineDefine.ErrVMAlreadyExists)
+	case oldmc == nil:
+	case initOpts.ImageVersion == "always-update":
+	case oldmc.ImageVersion != initOpts.ImageVersion:
+	default:
 	}
 
 	for idx, vol := range initOpts.Volumes {
