@@ -66,10 +66,22 @@ func GetImageCacheDir(vmType machineDefine.VMType) (string, error) {
 	return filepath.Join(p, "cache"), nil
 }
 
-// GetConfigHome return $HOME/.config
+// GetConfigHome return $HOME/.config,
 func GetConfigHome() (string, error) {
 	homeDir, _ := GetHomePath()
 	return filepath.Join(homeDir, ".config"), nil
+}
+
+// GetHomePath return $HOME, If the CustomHomeDir is set, then using CustomHomeDir
+func GetHomePath() (string, error) {
+	if CustomHomeEnv != "" {
+		return CustomHomeEnv, nil
+	}
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return "", err
+	}
+	return home, nil
 }
 
 // GetVMConfDir return $HOME/.config/oomol/ovm/machine/{wsl,qemu,libkrun,applehv}
@@ -93,15 +105,6 @@ func GetMachineConfDir() (string, error) {
 	// ~/.config/oomol/ovm/machine/
 	configDirOfMachine = filepath.Join(configDirOfMachine, "oomol", "ovm", "machine")
 	return configDirOfMachine, nil
-}
-
-// GetHomePath return $HOME
-func GetHomePath() (string, error) {
-	home, err := os.UserHomeDir()
-	if err != nil {
-		return "", err
-	}
-	return home, nil
 }
 
 func WithBugBoxPrefix(name string) string {

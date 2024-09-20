@@ -3,6 +3,8 @@ package main
 import (
 	"bauklotze/cmd/bauklotze/validata"
 	"bauklotze/cmd/registry"
+	"bauklotze/pkg/completion"
+	"bauklotze/pkg/config"
 	"fmt"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -50,10 +52,52 @@ var (
 	}
 
 	requireCleanup = true
+	logLevel       = "warn"
 )
 
 func init() {
 	rootCmd.SetUsageTemplate(usageTemplate)
+	cobra.OnInitialize(
+		loggingHook,
+	)
+	rootFlags(rootCmd, registry.OvmInitConfig())
+
+}
+
+func loggingHook() {
+	var found bool
+	for _, l := range completion.LogLevels {
+		if l == strings.ToLower(logLevel) {
+			found = true
+			break
+		}
+	}
+	if !found {
+		fmt.Fprintf(os.Stderr, "Log Level %q is not supported, choose from: %s\n", logLevel, strings.Join(completion.LogLevels, ", "))
+		os.Exit(1)
+	}
+
+	level, err := logrus.ParseLevel(logLevel)
+	if err != nil {
+		fmt.Fprint(os.Stderr, err.Error())
+		os.Exit(1)
+	}
+	logrus.SetLevel(level)
+
+	if logrus.IsLevelEnabled(logrus.InfoLevel) {
+		logrus.Infof("%s filtering at log level %s", os.Args[0], logrus.GetLevel())
+	}
+}
+
+func rootFlags(cmd *cobra.Command, podmanConfig *config.OvmConfig) {
+	pFlags := cmd.PersistentFlags()
+
+	logLevelFlagName := "log-level"
+	pFlags.StringVar(&logLevel, logLevelFlagName, logLevel, fmt.Sprintf("Log messages above specified level (%s)", strings.Join(completion.LogLevels, ", ")))
+	_ = rootCmd.RegisterFlagCompletionFunc(logLevelFlagName, completion.AutocompleteLogLevel)
+
+	ovmHomedir := "workdir"
+	pFlags.StringVar(&ovmHomedir, ovmHomedir, "", "Bauklotze's HOME dif, default get by $HOME")
 }
 
 func RootCmdExecute() {

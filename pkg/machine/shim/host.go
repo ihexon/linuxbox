@@ -93,7 +93,6 @@ func Init(opts machineDefine.InitOptions, mp vmconfigs.VMProvider) error {
 	}
 
 	switch mp.VMType() {
-
 	case machineDefine.LibKrun:
 		imageExtension = ".raw"
 	case machineDefine.WSLVirt:
@@ -124,6 +123,7 @@ func Init(opts machineDefine.InitOptions, mp vmconfigs.VMProvider) error {
 
 	mc.EvtSockPath = &machineDefine.VMFile{Path: opts.SendEvt}
 	mc.TwinPid = opts.TwinPid
+	mc.ImageVersion = opts.ImageVersion
 
 	return mc.Write()
 }

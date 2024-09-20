@@ -3,6 +3,7 @@ package machine
 import (
 	"bauklotze/cmd/registry"
 	"bauklotze/pkg/completion"
+	"bauklotze/pkg/machine/env"
 	"bauklotze/pkg/machine/machineDefine"
 	provider2 "bauklotze/pkg/machine/provider"
 	"bauklotze/pkg/machine/shim"
@@ -108,7 +109,7 @@ func init() {
 	flags.MarkHidden(twinPid)
 
 	imageVersion := "image-version"
-	flags.StringVar(&initOpts.ImageVersion, imageVersion, "always-update", "Special bootable image version")
+	flags.StringVar(&initOpts.ImageVersion, imageVersion, "", "Special bootable image version")
 	flags.MarkHidden(twinPid)
 
 	sendEventToEndpoint := "evtsock"
@@ -128,6 +129,9 @@ func machinePreRunE(c *cobra.Command, args []string) error {
 }
 
 func initMachine(cmd *cobra.Command, args []string) error {
+	d, _ := cmd.Flags().GetString("workdir")
+	env.InitCustomHomeEnv(d)
+
 	initOpts.Name = defaultMachineName
 	if len(args) > 0 {
 		if len(args[0]) > maxMachineNameSize {

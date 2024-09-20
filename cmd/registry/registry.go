@@ -2,7 +2,6 @@ package registry
 
 import (
 	defconfig "bauklotze/pkg/config"
-	"bauklotze/pkg/config/domain/entities"
 	"fmt"
 	"github.com/spf13/cobra"
 	"os"
@@ -19,7 +18,7 @@ var (
 	exitCode   = 0
 	// Commands All commands will be registin here
 	Commands      []CliCommand
-	podmanOptions entities.OvmConfig
+	podmanOptions defconfig.OvmConfig
 )
 
 func newPodmanConfig() {
@@ -32,10 +31,10 @@ func newPodmanConfig() {
 		os.Exit(1)
 	}
 
-	podmanOptions = entities.OvmConfig{ContainersConfRW: &defconfig.Config{}, ContainersConfDefaultsRO: defaultConfig}
+	podmanOptions = defconfig.OvmConfig{ContainersConfRW: &defconfig.Config{}, ContainersConfDefaultsRO: defaultConfig}
 }
 
-func OvmInitConfig() *entities.OvmConfig {
+func OvmInitConfig() *defconfig.OvmConfig {
 	podmanSync.Do(newPodmanConfig)
 	return &podmanOptions
 }
