@@ -109,12 +109,25 @@ func Init(opts machineDefine.InitOptions, mp vmconfigs.VMProvider) error {
 		mc.Mounts = CmdLineVolumesToMounts(opts.Volumes, mp.MountType())
 	}
 
-	// TODO AddSSHConnectionToPodmanSocket could take an machineconfig instead
-	if err := connection.AddSSHConnectionsToPodmanSocket(mc.HostUser.UID, mc.SSH.Port, mc.SSH.IdentityPath, mc.Name, mc.SSH.RemoteUsername, opts); err != nil {
-		return err
+	{
+		if err := mp.GetDisk(opts.Image, dirs, mc); err != nil {
+			return err
+		}
+		logrus.Infof("--> imagePath is %q", imagePath.GetPath())
+		callbackFuncs.Add(mc.ImagePath.Delete)
+
 	}
 
-	callbackFuncs.Add(mc.ImagePath.Delete)
+	{
+		// TODO AddSSHConnectionToPodmanSocket could take an machineconfig instead
+		if err := connection.AddSSHConnectionsToPodmanSocket(mc.HostUser.UID, mc.SSH.Port, mc.SSH.IdentityPath, mc.Name, mc.SSH.RemoteUsername, opts); err != nil {
+			return err
+		}
+		cleanup := func() error {
+			return connection.RemoveConnections(mc.Name, mc.Name+"-root")
+		}
+		callbackFuncs.Add(cleanup)
+	}
 
 	err = mp.CreateVM(createOpts, mc)
 	if err != nil {
