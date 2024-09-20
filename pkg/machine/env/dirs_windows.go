@@ -2,12 +2,19 @@
 
 package env
 
-import "os"
+import (
+	"os"
+	"path/filepath"
+)
 
 func getTMPDir() (string, error) {
+	if CustomHomeEnv != "" {
+		return filepath.Join(CustomHomeEnv, ".tmp"), nil
+	}
+
 	tmpDir, ok := os.LookupEnv("TEMP")
 	if !ok {
-		tmpDir = os.Getenv("LOCALAPPDATA") + "\\Temp"
+		tmpDir = filepath.Join(os.Getenv("LOCALAPPDATA"), "Temp")
 	}
 	return tmpDir, nil
 }

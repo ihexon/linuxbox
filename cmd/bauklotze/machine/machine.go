@@ -5,42 +5,38 @@ package machine
 import (
 	"bauklotze/cmd/bauklotze/validata"
 	"bauklotze/cmd/registry"
-	"bauklotze/pkg/events"
 	"bauklotze/pkg/machine/env"
 	provider2 "bauklotze/pkg/machine/provider"
 	"bauklotze/pkg/machine/vmconfigs"
-	"bauklotze/pkg/network"
 	"github.com/spf13/cobra"
-	"os"
 	"strings"
-	"syscall"
 )
 
-func NewMachineEvent(event events.Status, msg string, mc *vmconfigs.MachineConfig) error {
-	sockPath := mc.EvtSockPath.GetPath()
-	if sockPath == "" {
-		// Do Nothing
-		return nil
-	}
-
-	fileInfo, err := os.Stat(mc.EvtSockPath.GetPath())
-	if err != nil {
-		return err
-	}
-
-	if fileInfo.IsDir() {
-		// Do scan dir....
-		return nil
-	}
-
-	if stat, ok := fileInfo.Sys().(*syscall.Stat_t); ok {
-		if stat.Mode&syscall.S_IFMT == syscall.S_IFSOCK {
-			network.SendEventToOvmJs(event, msg, mc.EvtSockPath.GetPath())
-		}
-	}
-
-	return nil
-}
+//func NewMachineEvent(event events.Status, msg string, mc *vmconfigs.MachineConfig) error {
+//	sockPath := mc.EvtSockPath.GetPath()
+//	if sockPath == "" {
+//		// Do Nothing
+//		return nil
+//	}
+//
+//	fileInfo, err := os.Stat(mc.EvtSockPath.GetPath())
+//	if err != nil {
+//		return err
+//	}
+//
+//	if fileInfo.IsDir() {
+//		// Do scan dir....
+//		return nil
+//	}
+//
+//	if stat, ok := fileInfo.Sys().(*syscall.Stat_t); ok {
+//		if stat.Mode&syscall.S_IFMT == syscall.S_IFSOCK {
+//			network.SendEventToOvmJs(event, msg, mc.EvtSockPath.GetPath())
+//		}
+//	}
+//
+//	return nil
+//}
 
 func getMachines(toComplete string) ([]string, cobra.ShellCompDirective) {
 	suggestions := []string{}

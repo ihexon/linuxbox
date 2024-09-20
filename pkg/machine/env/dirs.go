@@ -10,52 +10,56 @@ import (
 const prefix_str = "donaldtrump"
 
 func GetMachineDirs(vmType machineDefine.VMType) (*machineDefine.MachineDirs, error) {
-	rtDir, err := getRuntimeDir()
+	vmFiles := []*machineDefine.VMFile{}
+
+	d, err := getRuntimeDir()
 	if err != nil {
 		return nil, err
 	}
-	rtDir = filepath.Join(rtDir, "ovm")
-
-	rtDirFile := machineDefine.VMFile{rtDir}
+	d = filepath.Join(d, machineDefine.MyName)
+	rtVMDir := &machineDefine.VMFile{Path: d}
+	vmFiles = append(vmFiles, rtVMDir)
 
 	vmconfDir, err := GetVMConfDir(vmType)
 	if err != nil {
 		return nil, err
 	}
-	configDir := machineDefine.VMFile{Path: vmconfDir}
+	configDir := &machineDefine.VMFile{Path: vmconfDir}
+	vmFiles = append(vmFiles, configDir)
 
 	vmdataDir, err := GetVMDataDir(vmType)
 	if err != nil {
 		return nil, err
 	}
-	dataDir := machineDefine.VMFile{Path: vmdataDir}
+	dataDir := &machineDefine.VMFile{Path: vmdataDir}
+	vmFiles = append(vmFiles, dataDir)
 
 	imageCacheDir, err := GetImageCacheDir(vmType)
 	if err != nil {
 		return nil, err
 	}
-	cacheDir := machineDefine.VMFile{Path: imageCacheDir}
+	cacheDir := &machineDefine.VMFile{Path: imageCacheDir}
+	vmFiles = append(vmFiles, cacheDir)
 
-	dirs := machineDefine.MachineDirs{
-		ConfigDir:     &configDir,
-		DataDir:       &dataDir,
-		RuntimeDir:    &rtDirFile,
-		ImageCacheDir: &cacheDir,
+	// Resolve VMFile
+	for _, vmf := range vmFiles {
+		if err = vmf.Abs(); err != nil {
+			return nil, err
+		}
+		err = vmf.CreatePath()
+		if err != nil {
+			return nil, err
+		}
 	}
 
-	// make sure all machine dirs are present
-	if err := os.MkdirAll(rtDirFile.Path, 0755); err != nil {
-		return nil, err
-	}
-	if err := os.MkdirAll(configDir.Path, 0755); err != nil {
-		return nil, err
+	dirs := &machineDefine.MachineDirs{
+		ConfigDir:     configDir,
+		DataDir:       dataDir,
+		RuntimeDir:    rtVMDir,
+		ImageCacheDir: cacheDir,
 	}
 
-	// Because this is a mkdirall, we make the image cache dir
-	// which is a subdir of datadir (so the datadir is made anyway)
-	err = os.MkdirAll(cacheDir.GetPath(), 0755)
-
-	return &dirs, err
+	return dirs, err
 }
 
 func GetImageCacheDir(vmType machineDefine.VMType) (string, error) {
@@ -159,5 +163,6 @@ func GetSSHIdentityPath(name string) (string, error) {
 	if err != nil {
 		return "", err
 	}
+	datadir, err = filepath.Abs(datadir)
 	return filepath.Join(datadir, name), nil
 }

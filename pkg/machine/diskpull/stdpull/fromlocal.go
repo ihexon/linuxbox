@@ -4,6 +4,7 @@ import (
 	"bauklotze/pkg/archiver/decompress"
 	"bauklotze/pkg/fileutils"
 	"bauklotze/pkg/machine/machineDefine"
+	"fmt"
 	"github.com/sirupsen/logrus"
 )
 
@@ -25,10 +26,9 @@ func NewStdDiskPull(inputPath string, finalpath *machineDefine.VMFile) (*StdDisk
 // Nothing interesting at all
 func (s *StdDiskPull) Get() error {
 	if err := fileutils.Exists(s.inputPath.GetPath()); err != nil {
-		// could not find user input disk
-		return err
+		return fmt.Errorf("could not find user input disk: %w", err)
 	}
 	// 解压 rootfs 或者镜像解压成文件名为 .local/share/containers/podman/machine/[vmType]/podman-machine-default-amd64
-	logrus.Debugf("decompressing (if needed) %s to %s", s.inputPath.GetPath(), s.finalPath.GetPath())
+	logrus.Infof("decompressing (if needed) %s to %s", s.inputPath.GetPath(), s.finalPath.GetPath())
 	return decompress.Decompress(s.inputPath, s.finalPath.GetPath())
 }

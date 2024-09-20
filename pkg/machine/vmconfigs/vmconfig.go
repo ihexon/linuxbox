@@ -31,7 +31,7 @@ func NormalizeMachineArch(arch string) (string, error) {
 type VMProvider interface { //nolint:interfacebloat
 	VMType() machineDefine.VMType
 	Exists(name string) (bool, error)
-	GetDisk(userInputPath string, dirs *machineDefine.MachineDirs, mc *MachineConfig) error
+	GetDisk(userInputPath string, dirs *machineDefine.MachineDirs, vmType machineDefine.VMType, mc *MachineConfig) error
 	CreateVM(opts machineDefine.CreateVMOpts, mc *MachineConfig) error
 	StopVM(mc *MachineConfig, hardStop bool) error
 	MountType() VolumeMountType

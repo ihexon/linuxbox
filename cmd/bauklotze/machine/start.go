@@ -46,7 +46,7 @@ func init() {
 	flags.MarkHidden(twinPid)
 }
 
-func start(_ *cobra.Command, args []string) error {
+func start(cmd *cobra.Command, args []string) error {
 	var (
 		err error
 	)
@@ -87,6 +87,13 @@ func start(_ *cobra.Command, args []string) error {
 			machine.GlobalPIDs.GetGvproxyPID(),
 		)
 	}
+
+	//api()
+
+	//err = stop(cmd, args)
+	//if err != nil {
+	//	return err
+	//}
 
 	return nil
 }

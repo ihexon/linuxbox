@@ -13,21 +13,21 @@ import (
 // GetAll get all VMProvider of current platform, windows using wsl.WSLStubber
 func GetAll() []vmconfigs.VMProvider {
 	providers := []vmconfigs.VMProvider{
-		// Windows only support wsl
+		// Windows only support wsl for now
 		new(wsl.WSLStubber),
 	}
 	return providers
 }
 
-// Get get a provider via configure file
 func Get() (vmconfigs.VMProvider, error) {
+	// HyperVisor with High priority
 	provider := ""
 	resolvedVMType, err := machineDefine.ParseVMType(provider, machineDefine.WSLVirt)
 	if err != nil {
 		return nil, err
 	}
 
-	logrus.Debugf("Init machine with `%s` virtualization provider", resolvedVMType.String())
+	logrus.Infof("Init machine with `%s` virtualization provider", resolvedVMType.String())
 	switch resolvedVMType {
 	case machineDefine.WSLVirt:
 		return new(wsl.WSLStubber), nil

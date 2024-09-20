@@ -52,7 +52,7 @@ var (
 	}
 
 	requireCleanup = true
-	logLevel       = "warn"
+	logLevel       = "info"
 )
 
 func init() {

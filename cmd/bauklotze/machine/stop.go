@@ -4,13 +4,11 @@ package machine
 
 import (
 	"bauklotze/cmd/registry"
-	"bauklotze/pkg/events"
 	"bauklotze/pkg/machine"
 	"bauklotze/pkg/machine/env"
 	"bauklotze/pkg/machine/shim"
 	"bauklotze/pkg/machine/vmconfigs"
 	"fmt"
-	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
@@ -60,9 +58,9 @@ func stop(cmd *cobra.Command, args []string) error {
 	fmt.Printf("Machine %q stopped successfully\n", vmName)
 
 	// TODO: Scan Event Socks dir and send event to all socks file
-	err = NewMachineEvent(events.Stop, "stopped", mc)
-	if err != nil {
-		logrus.Warnf("Send event failed: %s", err.Error())
-	}
+	//err = NewMachineEvent(events.Stop, "stopped", mc)
+	//if err != nil {
+	//	logrus.Warnf("Send event failed: %s", err.Error())
+	//}
 	return err
 }

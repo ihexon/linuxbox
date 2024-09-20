@@ -47,7 +47,7 @@ func VMExistsUsingProvider(name string, vmstubbers []vmconfigs.VMProvider) (*vmc
 	return nil, false, nil
 }
 
-func emptyfunc(p string) {
+func writeSSHPublicKeyToRootfs(p string) {
 	// print ssh keys
 }
 
@@ -67,6 +67,7 @@ func Init(opts machineDefine.InitOptions, mp vmconfigs.VMProvider) error {
 	if err != nil {
 		return err
 	}
+
 	sshIdentityPath, err := env.GetSSHIdentityPath(machineDefine.DefaultIdentityName)
 	if err != nil {
 		return err
@@ -77,7 +78,7 @@ func Init(opts machineDefine.InitOptions, mp vmconfigs.VMProvider) error {
 	}
 
 	// TODO: write sshkey to rootfs
-	emptyfunc(sshKey)
+	writeSSHPublicKeyToRootfs(sshKey)
 
 	// construct a machine configure but not write into disk
 	mc, err := vmconfigs.NewMachineConfig(opts, dirs, sshIdentityPath, mp.VMType())
@@ -109,25 +110,28 @@ func Init(opts machineDefine.InitOptions, mp vmconfigs.VMProvider) error {
 		mc.Mounts = CmdLineVolumesToMounts(opts.Volumes, mp.MountType())
 	}
 
-	{
-		if err := mp.GetDisk(opts.Image, dirs, mc); err != nil {
-			return err
-		}
-		logrus.Infof("--> imagePath is %q", imagePath.GetPath())
+	// Jump into Provider's GetDisk implementation, but we can using
+	// if err := diskpull.GetDisk(opts.Image, dirs, mc.ImagePath, mp.VMType(), mc.Name); err != nil {
+	//		return err
+	//	}
+	// for simplify code, but for now keep using Provider's GetDisk implementation
+	if err = mp.GetDisk(opts.Image, dirs, mp.VMType(), mc); err != nil {
+		return err
+	}
+	logrus.Infof("--> imagePath is %q", imagePath.GetPath())
+
+	if mp.VMType() != machineDefine.WSLVirt {
 		callbackFuncs.Add(mc.ImagePath.Delete)
-
 	}
 
-	{
-		// TODO AddSSHConnectionToPodmanSocket could take an machineconfig instead
-		if err := connection.AddSSHConnectionsToPodmanSocket(mc.HostUser.UID, mc.SSH.Port, mc.SSH.IdentityPath, mc.Name, mc.SSH.RemoteUsername, opts); err != nil {
-			return err
-		}
-		cleanup := func() error {
-			return connection.RemoveConnections(mc.Name, mc.Name+"-root")
-		}
-		callbackFuncs.Add(cleanup)
+	// TODO AddSSHConnectionToPodmanSocket could take an machineconfig instead
+	if err = connection.AddSSHConnectionsToPodmanSocket(mc.HostUser.UID, mc.SSH.Port, mc.SSH.IdentityPath, mc.Name, mc.SSH.RemoteUsername, opts); err != nil {
+		return err
 	}
+	cleanup := func() error {
+		return connection.RemoveConnections(mc.Name, mc.Name+"-root")
+	}
+	callbackFuncs.Add(cleanup)
 
 	err = mp.CreateVM(createOpts, mc)
 	if err != nil {
@@ -316,6 +320,7 @@ func Start(mc *vmconfigs.MachineConfig, mp vmconfigs.VMProvider, dirs *machineDe
 		return nil
 	}
 
+	// TODO
 	machine.WaitAPIAndPrintInfo(
 		forwardingState,
 		mc.Name,

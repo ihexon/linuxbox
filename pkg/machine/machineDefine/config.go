@@ -5,8 +5,11 @@ import (
 	"os"
 )
 
-const DefaultIdentityName = "machine"
-const MachineConfigVersion = 1
+const (
+	DefaultIdentityName  = "sshkey"
+	MachineConfigVersion = 1
+	MyName               = "Bauklotze"
+)
 
 type CreateVMOpts struct {
 	Name               string

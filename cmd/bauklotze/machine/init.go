@@ -119,19 +119,20 @@ func init() {
 	flags.BoolVar(&now, "now", false, "Start machine now")
 }
 
-func machinePreRunE(c *cobra.Command, args []string) error {
+func machinePreRunE(cmd *cobra.Command, args []string) error {
 	var err error = nil
+	d, _ := cmd.Flags().GetString("workdir")
+	env.InitCustomHomeEnv(d)
+
 	provider, err = provider2.Get()
 	if err != nil {
 		return err
 	}
+
 	return nil
 }
 
 func initMachine(cmd *cobra.Command, args []string) error {
-	d, _ := cmd.Flags().GetString("workdir")
-	env.InitCustomHomeEnv(d)
-
 	initOpts.Name = defaultMachineName
 	if len(args) > 0 {
 		if len(args[0]) > maxMachineNameSize {

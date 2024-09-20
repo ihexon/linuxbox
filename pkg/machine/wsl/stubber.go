@@ -13,9 +13,12 @@ type WSLStubber struct {
 	machineDefine.WSLConfig
 }
 
-func (w WSLStubber) GetDisk(userInputPath string, dirs *machineDefine.MachineDirs, mc *vmconfigs.MachineConfig) error {
-	//TODO implement me
-	panic("implement me")
+func (w WSLStubber) GetDisk(userInputPath string,
+	dirs *machineDefine.MachineDirs,
+	vmType machineDefine.VMType,
+	mc *vmconfigs.MachineConfig) error {
+	// Do not do anything because we using wsl --import [rootfs.tar]
+	return nil
 }
 
 func (w WSLStubber) CreateVM(opts machineDefine.CreateVMOpts, mc *vmconfigs.MachineConfig) error {

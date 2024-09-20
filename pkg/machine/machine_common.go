@@ -34,10 +34,6 @@ func (p *AllPIDs) GetGvproxyPID() int {
 	return *p.GvproxyPID
 }
 
+// TODO
 func WaitAPIAndPrintInfo(forwardState APIForwardingState, name, forwardSock string, noInfo, rootful bool) {
-}
-
-func WaitAndExit() error {
-
-	return nil
 }

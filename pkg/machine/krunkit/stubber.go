@@ -5,8 +5,8 @@ package krunkit
 import (
 	"bauklotze/pkg/machine"
 	"bauklotze/pkg/machine/apple/hvhelper"
+	"bauklotze/pkg/machine/diskpull"
 	"bauklotze/pkg/machine/machineDefine"
-	"bauklotze/pkg/machine/shim/diskpull"
 	"bauklotze/pkg/machine/vmconfigs"
 	"bauklotze/pkg/utils"
 	"fmt"
