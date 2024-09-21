@@ -136,7 +136,8 @@ func Init(opts machineDefine.InitOptions, mp vmconfigs.VMProvider) error {
 		return err
 	}
 	cleanup := func() error {
-		return connection.RemoveConnections(mc.Name, mc.Name+"-root")
+		// TODO, remove -root endstr
+		return connection.RemoveConnections(mc.Name + "-root")
 	}
 	callbackFuncs.Add(cleanup)
 

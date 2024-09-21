@@ -47,6 +47,9 @@ func (w WSLStubber) CreateVM(opts machineDefine.CreateVMOpts, mc *vmconfigs.Mach
 
 	_ = setupWslProxyEnv()
 	dist, err := provisionWSLDist(opts, mc.ImagePath.GetPath(), prompt)
+	if err != nil {
+		return err
+	}
 
 	unprovisionCallbackFunc := func() error {
 		return unprovisionWSL(mc)
