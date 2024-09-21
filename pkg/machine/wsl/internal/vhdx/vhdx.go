@@ -19,8 +19,8 @@ const (
 	blockSizeInMb                               uint32 = 1
 )
 
-// Create vhdx
-func Create(path machineDefine.VMFile, maxSizeInBytes uint64) error {
+// VhdxCreate vhdx
+func VhdxCreate(path machineDefine.VMFile, maxSizeInBytes uint64) error {
 	params := vhd.CreateVirtualDiskParameters{
 		Version: 2,
 		Version2: vhd.CreateVersion2{
