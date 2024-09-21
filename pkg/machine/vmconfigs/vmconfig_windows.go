@@ -7,8 +7,8 @@ type HyperVConfig struct {
 
 type WSLConfig struct {
 	// Uses usermode networking
-	UserModeNetworking bool
 }
 
 // Stubs
-type AppleKrunkitConfig struct{}
+type AppleKrunkitConfig struct {
+}

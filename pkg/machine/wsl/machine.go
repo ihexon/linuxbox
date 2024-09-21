@@ -3,6 +3,7 @@
 package wsl
 
 import (
+	"bauklotze/pkg/config"
 	"bauklotze/pkg/machine/env"
 	"bufio"
 	"bytes"
@@ -166,6 +167,31 @@ func wslCheckExists(dist string, running bool) (bool, error) {
 	return exists, nil
 }
 
+// setupWslProxyEnv: add environments into WSLENV list
+// For example: WSLENV=HOME/w:GOPATH/l:TMPDIR/p …
+//
+// Ref:
+// https://devblogs.microsoft.com/commandline/share-environment-vars-between-wsl-and-windows/
+func setupWslProxyEnv() (hasProxy bool) {
+	current, _ := os.LookupEnv("WSLENV")
+	for _, key := range config.ProxyEnv {
+		if value, _ := os.LookupEnv(key); len(value) < 1 {
+			continue
+		}
+
+		hasProxy = true
+		delim := ""
+		if len(current) > 0 {
+			delim = ":"
+		}
+		current = fmt.Sprintf("%s%s%s/u", current, delim, key)
+	}
+	if hasProxy {
+		os.Setenv("WSLENV", current)
+	}
+	return
+}
+
 func getAllWSLDistros(running bool) (map[string]struct{}, error) {
 	args := []string{"-l", "--quiet"}
 	if running {
@@ -212,6 +238,15 @@ func runCmdPassThrough(name string, arg ...string) error {
 
 func terminateDist(dist string) error {
 	cmd := exec.Command(FindWSL(), "--terminate", dist)
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("command %s %v failed: %w (%s)", cmd.Path, cmd.Args, err, strings.TrimSpace(string(out)))
+	}
+	return nil
+}
+
+func unregisterDist(dist string) error {
+	cmd := exec.Command(FindWSL(), "--unregister", dist)
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("command %s %v failed: %w (%s)", cmd.Path, cmd.Args, err, strings.TrimSpace(string(out)))

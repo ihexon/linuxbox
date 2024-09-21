@@ -15,6 +15,7 @@ type CreateVMOpts struct {
 	Name               string
 	Dirs               *MachineDirs
 	ReExec             bool // re-exec as administrator
+	UserImageFile      string
 	UserModeNetworking bool
 }
 

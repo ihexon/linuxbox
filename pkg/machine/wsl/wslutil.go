@@ -24,9 +24,14 @@ var (
 )
 
 func FindWSL() string {
-	// 让环境变量决定 WSL.exe 的位置
+	// Let the environment variable determine the location of WSL.exe
 	once.Do(func() {
-		wslPath = "wsl.exe"
+		path, err := exec.LookPath("wsl.exe")
+		if err != nil {
+			wslPath = "wsl.exe" // fallback to default
+		} else {
+			wslPath = path
+		}
 	})
 	return wslPath
 }

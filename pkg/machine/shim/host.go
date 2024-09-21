@@ -89,8 +89,11 @@ func Init(opts machineDefine.InitOptions, mp vmconfigs.VMProvider) error {
 	mc.Version = machineDefine.MachineConfigVersion
 
 	createOpts := machineDefine.CreateVMOpts{
+		// Distro Name : machine init [distro_name]
 		Name: opts.Name,
 		Dirs: dirs,
+		// UserImageFile: Image Path form machine init --image [rootfs.tar]
+		UserImageFile: opts.Image,
 	}
 
 	switch mp.VMType() {
@@ -118,13 +121,17 @@ func Init(opts machineDefine.InitOptions, mp vmconfigs.VMProvider) error {
 	if err = mp.GetDisk(opts.Image, dirs, mp.VMType(), mc); err != nil {
 		return err
 	}
-	logrus.Infof("--> imagePath is %q", imagePath.GetPath())
 
 	if mp.VMType() != machineDefine.WSLVirt {
 		callbackFuncs.Add(mc.ImagePath.Delete)
+		logrus.Infof("--> imagePath is %q", createOpts.UserImageFile)
+
+	} else {
+		logrus.Infof("--> imagePath is %q", imagePath.GetPath())
 	}
 
 	// TODO AddSSHConnectionToPodmanSocket could take an machineconfig instead
+	//
 	if err = connection.AddSSHConnectionsToPodmanSocket(mc.HostUser.UID, mc.SSH.Port, mc.SSH.IdentityPath, mc.Name, mc.SSH.RemoteUsername, opts); err != nil {
 		return err
 	}

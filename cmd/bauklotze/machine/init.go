@@ -155,6 +155,8 @@ func initMachine(cmd *cobra.Command, args []string) error {
 		logrus.Infof("%s: %s", initOpts.Name, machineDefine.ErrVMAlreadyExists)
 		logrus.Infof("New image-version:%s, old image-version: %s, Force Initialize....", initOpts.ImageVersion, oldmc.ImageVersion)
 		break
+	case initOpts.ImageVersion == "always-update":
+		break
 	case exists == true && oldmc != nil:
 		logrus.Infof("%s: %s, skip initialize !", initOpts.Name, machineDefine.ErrVMAlreadyExists)
 		if now {
@@ -162,7 +164,7 @@ func initMachine(cmd *cobra.Command, args []string) error {
 		}
 		return fmt.Errorf("%s: %w", initOpts.Name, machineDefine.ErrVMAlreadyExists)
 	case oldmc == nil:
-	case initOpts.ImageVersion == "always-update":
+
 	case oldmc.ImageVersion != initOpts.ImageVersion:
 	default:
 	}

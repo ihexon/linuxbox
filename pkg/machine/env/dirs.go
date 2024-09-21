@@ -4,10 +4,7 @@ import (
 	"bauklotze/pkg/machine/machineDefine"
 	"os"
 	"path/filepath"
-	"strings"
 )
-
-const prefix_str = "donaldtrump"
 
 func GetMachineDirs(vmType machineDefine.VMType) (*machineDefine.MachineDirs, error) {
 	vmFiles := []*machineDefine.VMFile{}
@@ -109,13 +106,6 @@ func GetMachineConfDir() (string, error) {
 	// ~/.config/oomol/ovm/machine/
 	configDirOfMachine = filepath.Join(configDirOfMachine, "oomol", "ovm", "machine")
 	return configDirOfMachine, nil
-}
-
-func WithBugBoxPrefix(name string) string {
-	if !strings.HasPrefix(name, prefix_str) {
-		name = prefix_str + name
-	}
-	return name
 }
 
 // GetVMDataDir return $HOME/.local/share/oomol/ovm/machine/{wsl,libkrun}
