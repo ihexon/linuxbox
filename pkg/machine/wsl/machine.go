@@ -236,6 +236,7 @@ func runCmdPassThrough(name string, arg ...string) error {
 	return nil
 }
 
+// wslPipe : echo "input" | wsl -u root -d "$dist"
 func wslPipe(input string, dist string, arg ...string) error {
 	newArgs := []string{"-u", "root", "-d", dist}
 	newArgs = append(newArgs, arg...)
@@ -267,6 +268,16 @@ func terminateDist(dist string) error {
 		return fmt.Errorf("command %s %v failed: %w (%s)", cmd.Path, cmd.Args, err, strings.TrimSpace(string(out)))
 	}
 	return nil
+}
+
+func mountBareVHDX(vhdxDisk string) error {
+	logrus.Infof("map %s to all wsl2 distro", vhdxDisk)
+	return pipeCmdPassThrough(FindWSL(), "--mount", "--bare", "--vhd", vhdxDisk)
+}
+
+func unmountBareVHDX(vhdxDisk string) error {
+	logrus.Infof("unmap %s to all wsl2 distro", vhdxDisk)
+	return pipeCmdPassThrough(FindWSL(), "--unmount", vhdxDisk)
 }
 
 func unregisterDist(dist string) error {

@@ -174,21 +174,6 @@ func getHostUID() int {
 	return os.Getuid()
 }
 
-func loadMachineFromFQPath(path *machineDefine.VMFile) (*MachineConfig, error) {
-	mc := new(MachineConfig)
-	b, err := path.Read()
-	if err != nil {
-		return nil, err
-	}
-
-	if err = json.Unmarshal(b, mc); err != nil {
-		return nil, fmt.Errorf("unable to load machine config file: %q", err)
-	}
-	lock, err := lock.GetMachineLock(mc.Name, filepath.Dir(path.GetPath()))
-	mc.lock = lock
-	return mc, err
-}
-
 func LoadMachineByName(name string, dirs *machineDefine.MachineDirs) (*MachineConfig, error) {
 	fullPath, err := dirs.ConfigDir.AppendToNewVMFile(name + ".json")
 	if err != nil {
@@ -247,4 +232,19 @@ func LoadMachinesInDir(dirs *machineDefine.MachineDirs) (map[string]*MachineConf
 		return nil, err
 	}
 	return mcs, nil
+}
+
+func loadMachineFromFQPath(path *machineDefine.VMFile) (*MachineConfig, error) {
+	mc := new(MachineConfig)
+	b, err := path.Read()
+	if err != nil {
+		return nil, err
+	}
+
+	if err = json.Unmarshal(b, mc); err != nil {
+		return nil, fmt.Errorf("unable to load machine config file: %q", err)
+	}
+	lock, err := lock.GetMachineLock(mc.Name, filepath.Dir(path.GetPath()))
+	mc.lock = lock
+	return mc, err
 }

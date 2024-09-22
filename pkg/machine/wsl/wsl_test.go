@@ -17,9 +17,14 @@ func TestWSLFuncs(t *testing.T) {
 }
 
 func TestWSLStubber_Exists(t *testing.T) {
-	exist, err := isWSLExist("ovm")
+	exist, err := isWSLExist("Ubuntu")
 	if err != nil {
 		t.Fatalf(err.Error())
 	}
 	t.Log(exist)
+}
+
+func TestWslPipe(t *testing.T) {
+	wslPipe("ls /", "Ubuntu", "--help")
+
 }

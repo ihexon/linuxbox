@@ -82,8 +82,25 @@ func provisionWSLDist(opts machineDefine.CreateVMOpts, distroInstallDir string, 
 }
 
 func (w WSLStubber) StopVM(mc *vmconfigs.MachineConfig, hardStop bool) error {
-	//TODO implement me
-	panic("implement me")
+	if running, err := isRunning(mc.Name); !running {
+		return err
+	}
+	dist := (mc.Name)
+
+	// Stop user-mode networking if enabled
+	//if err := stopUserModeNetworking(mc); err != nil {
+	//	fmt.Fprintf(os.Stderr, "Could not cleanly stop user-mode networking: %s\n", err.Error())
+	//}
+
+	//if err := machine.StopWinProxy(mc.Name, vmtype); err != nil {
+	//	fmt.Fprintf(os.Stderr, "Could not stop API forwarding service (win-sshproxy.exe): %s\n", err.Error())
+	//}
+
+	err := wslPipe("sync", dist)
+	if err != nil {
+		return err
+	}
+	return terminateDist(dist)
 }
 
 func (w WSLStubber) MountType() vmconfigs.VolumeMountType {
@@ -141,6 +158,7 @@ func (w WSLStubber) StartVM(mc *vmconfigs.MachineConfig) (func() error, func() e
 
 // TODO mount bare image into wsl
 func (w WSLStubber) MountVolumesToVM(mc *vmconfigs.MachineConfig, quiet bool) error {
+
 	return nil
 }
 
