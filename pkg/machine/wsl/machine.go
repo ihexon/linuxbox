@@ -225,7 +225,7 @@ func getAllWSLDistros(running bool) (map[string]struct{}, error) {
 }
 
 func runCmdPassThrough(name string, arg ...string) error {
-	logrus.Debugf("Running command: %s %v", name, arg)
+	logrus.Infof("Running command: %s %v", name, arg)
 	cmd := exec.Command(name, arg...)
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
@@ -234,6 +234,30 @@ func runCmdPassThrough(name string, arg ...string) error {
 		return fmt.Errorf("command %s %v failed: %w", name, arg, err)
 	}
 	return nil
+}
+
+func wslPipe(input string, dist string, arg ...string) error {
+	newArgs := []string{"-u", "root", "-d", dist}
+	newArgs = append(newArgs, arg...)
+	return pipeCmdPassThrough(FindWSL(), input, newArgs...)
+}
+
+func pipeCmdPassThrough(name string, input string, arg ...string) error {
+	logrus.Debugf("Running command: %s %v", name, arg)
+	cmd := exec.Command(name, arg...)
+	cmd.Stdin = strings.NewReader(input)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("command %s %v failed: %w", name, arg, err)
+	}
+	return nil
+}
+
+func wslInvoke(dist string, arg ...string) error {
+	newArgs := []string{"-u", "root", "-d", dist}
+	newArgs = append(newArgs, arg...)
+	return runCmdPassThrough(FindWSL(), newArgs...)
 }
 
 func terminateDist(dist string) error {

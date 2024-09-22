@@ -294,7 +294,6 @@ func Start(mc *vmconfigs.MachineConfig, mp vmconfigs.VMProvider, dirs *machineDe
 		}
 	}
 
-	// Actually do nothing
 	err = mp.PostStartNetworking(mc, opts.NoInfo)
 	if err != nil {
 		return err

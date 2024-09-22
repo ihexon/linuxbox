@@ -2,6 +2,7 @@ package main
 
 import (
 	_ "bauklotze/cmd/bauklotze/machine"
+	_ "bauklotze/cmd/bauklotze/studiomod"
 	"bauklotze/cmd/registry"
 	"bauklotze/pkg/terminal"
 	"fmt"

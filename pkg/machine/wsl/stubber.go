@@ -73,8 +73,8 @@ func unprovisionWSL(mc *vmconfigs.MachineConfig) error {
 	return utils.GuardedRemoveAll(vmDataDir)
 }
 
-func provisionWSLDist(opts machineDefine.CreateVMOpts, imagePathFromCommandLine string, prompt string) (string, error) {
-	if err := runCmdPassThrough(FindWSL(), "--import", opts.Name, opts.Dirs.DataDir.GetPath(), opts.UserImageFile, "--version", "2"); err != nil {
+func provisionWSLDist(opts machineDefine.CreateVMOpts, distroInstallDir string, prompt string) (string, error) {
+	if err := runCmdPassThrough(FindWSL(), "--import", opts.Name, distroInstallDir, opts.UserImageFile, "--version", "2"); err != nil {
 		return "", fmt.Errorf("the WSL import of guest OS failed: %w", err)
 	}
 	return opts.Name, nil
@@ -93,12 +93,18 @@ func (w WSLStubber) MountType() vmconfigs.VolumeMountType {
 
 func (w WSLStubber) RequireExclusiveActive() bool {
 	//TODO implement me
-	panic("implement me")
+	return false
 }
 
 func (w WSLStubber) State(mc *vmconfigs.MachineConfig, bypass bool) (machineDefine.Status, error) {
-	//TODO implement me
-	panic("implement me")
+	running, err := isRunning(mc.Name)
+	if err != nil {
+		return "", err
+	}
+	if running {
+		return machineDefine.Running, nil
+	}
+	return machineDefine.Stopped, nil
 }
 
 func (w WSLStubber) UpdateSSHPort(mc *vmconfigs.MachineConfig, port int) error {
@@ -116,18 +122,26 @@ func (w WSLStubber) StartNetworking(mc *vmconfigs.MachineConfig, cmd *gvproxy.Gv
 }
 
 func (w WSLStubber) PostStartNetworking(mc *vmconfigs.MachineConfig, noInfo bool) error {
-	//TODO implement me
-	panic("implement me")
+	return nil
 }
 
 func (w WSLStubber) StartVM(mc *vmconfigs.MachineConfig) (func() error, func() error, error) {
-	//TODO implement me
-	panic("implement me")
+	dist := (mc.Name)
+
+	err := wslInvoke(dist, "echo", "OkImFine")
+	if err != nil {
+		err = fmt.Errorf("the WSL bootstrap script failed: %w", err)
+	}
+
+	readyFunc := func() error {
+		return nil
+	}
+	return nil, readyFunc, err
 }
 
+// TODO mount bare image into wsl
 func (w WSLStubber) MountVolumesToVM(mc *vmconfigs.MachineConfig, quiet bool) error {
-	//TODO implement me
-	panic("implement me")
+	return nil
 }
 
 func (w WSLStubber) Exists(distroName string) (bool, error) {

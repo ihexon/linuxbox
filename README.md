@@ -33,9 +33,12 @@ machine start --twinpid [PID] --evtsock [SOCK_PATH]
  - ~~Sat Aug 31 15:39:16 HKT 2024 EFI Boot 的坑基本上踩完了，我只能说：不过如此：）~~
  - ~~Mon Sep  9 16:50:17 HKT 2024 现在 machine start 可以启动一个基于 alpine rootfs 的虚拟机~~
  - ~~machine start 似乎不会退出主进程，我的期望是退出主进程~~
- - machine stop 需要更多的测试
- - machine init 需要更多的测试
  - ~~gvproxy 生成的 socks file 会与 podman 本身的 socks files 冲突。~~
- - machine stop 无法正确停止 gvproxy 和 krunkit
+ - ~~machine stop 无法正确停止 gvproxy 和 krunkit~~
  - wsl2v1 完整抄袭 podman，先跑起来再说...
  - wsl2v2 重新实现
+ - machine stop 需要更多的测试
+ - machine init 需要更多的测试
+
+### WSL2 实现部分
+ = [X] machine init 基本实现
