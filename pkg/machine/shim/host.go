@@ -412,6 +412,14 @@ func stopLocked(mc *vmconfigs.MachineConfig, mp vmconfigs.VMProvider, dirs *mach
 	if err := readySocket.Delete(); err != nil {
 		return err
 	}
+	// Remove ignitionSocket Socket
+	ignitionSocket, err := mc.IgnitionSocket()
+	if err != nil {
+		return err
+	}
+	if err := ignitionSocket.Delete(); err != nil {
+		return err
+	}
 
 	// Stop GvProxy and remove PID file
 	if !mp.UseProviderNetworkSetup() {

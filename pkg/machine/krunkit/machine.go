@@ -51,7 +51,15 @@ func GetDefaultDevices(mc *vmconfigs.MachineConfig) ([]vfConfig.VirtioDevice, *m
 	if err != nil {
 		return nil, nil, err
 	}
-	devices = append(devices, disk, rng, readyDevice)
+
+	ignitionSocket, err := mc.IgnitionSocket()
+	if err != nil {
+		return nil, nil, err
+	}
+
+	ignitionDevice, err := vfConfig.VirtioVsockNew(1026, ignitionSocket.GetPath(), true)
+	devices = append(devices, disk, rng, readyDevice, ignitionDevice)
+
 	if mc.AppleKrunkitHypervisor == nil || !logrus.IsLevelEnabled(logrus.DebugLevel) {
 		// If libkrun is the provider and we want to show the debug console,
 		// don't add a virtio serial device to avoid redirecting the output.
@@ -134,17 +142,13 @@ func StartGenericAppleVM(mc *vmconfigs.MachineConfig, cmdBinary string, bootload
 	if err != nil {
 		return nil, nil, err
 	}
+
 	if logrus.IsLevelEnabled(logrus.DebugLevel) {
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
 	}
 
 	endpointArgs, err := GetVfKitEndpointCMDArgs(endpoint)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	//machineDataDir, err := mc.DataDir()
 	if err != nil {
 		return nil, nil, err
 	}
@@ -159,10 +163,11 @@ func StartGenericAppleVM(mc *vmconfigs.MachineConfig, cmdBinary string, bootload
 	if firstBoot {
 	}
 
-	logrus.Debugf("listening for ready on: %s", readySocket.GetPath())
+	logrus.Infof("listening for ready on: %s", readySocket.GetPath())
 	if err := readySocket.Delete(); err != nil {
 		logrus.Warnf("unable to delete previous ready socket: %q", err)
 	}
+
 	readyListen, err := net.Listen("unix", readySocket.GetPath())
 	if err != nil {
 		return nil, nil, err
@@ -171,6 +176,19 @@ func StartGenericAppleVM(mc *vmconfigs.MachineConfig, cmdBinary string, bootload
 	logrus.Debug("waiting for ready notification")
 	readyChan := make(chan error)
 	go sockets.ListenAndWaitOnSocket(readyChan, readyListen)
+
+	ignitionSocket, err := mc.IgnitionSocket()
+	if err != nil {
+		return nil, nil, err
+	}
+	logrus.Infof("IgnitionSocket for ready on: %s", ignitionSocket.GetPath())
+	if err = ignitionSocket.Delete(); err != nil {
+		logrus.Warnf("unable to delete previous ready socket: %q", err)
+	}
+	_, err = net.Listen("unix", ignitionSocket.GetPath())
+	if err != nil {
+		return nil, nil, err
+	}
 
 	logrus.Debugf("helper command-line: %v", cmd.Args)
 

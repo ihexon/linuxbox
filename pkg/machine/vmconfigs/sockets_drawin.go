@@ -19,3 +19,8 @@ func apiSocket(name string, socketDir *machineDefine.VMFile) (*machineDefine.VMF
 	socketName := name + "-api.sock"
 	return socketDir.AppendToNewVMFile(socketName)
 }
+
+func ignitionSocket(name string, socketDir *machineDefine.VMFile) (*machineDefine.VMFile, error) {
+	socketName := name + "-ignition.sock"
+	return socketDir.AppendToNewVMFile(socketName)
+}
