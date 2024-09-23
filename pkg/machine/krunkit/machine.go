@@ -147,7 +147,7 @@ func StartGenericAppleVM(mc *vmconfigs.MachineConfig, cmdBinary string, bootload
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
 	}
-
+	// endpoint is krunkit rest api endpoint
 	endpointArgs, err := GetVfKitEndpointCMDArgs(endpoint)
 	if err != nil {
 		return nil, nil, err
@@ -177,60 +177,29 @@ func StartGenericAppleVM(mc *vmconfigs.MachineConfig, cmdBinary string, bootload
 	readyChan := make(chan error)
 	go sockets.ListenAndWaitOnSocket(readyChan, readyListen)
 
-	ignitionSocket, err := mc.IgnitionSocket()
-	if err != nil {
-		return nil, nil, err
-	}
-	logrus.Infof("IgnitionSocket for ready on: %s", ignitionSocket.GetPath())
-	if err = ignitionSocket.Delete(); err != nil {
-		logrus.Warnf("unable to delete previous ready socket: %q", err)
-	}
-	_, err = net.Listen("unix", ignitionSocket.GetPath())
-	if err != nil {
-		return nil, nil, err
-	}
-
 	logrus.Debugf("helper command-line: %v", cmd.Args)
-
-	// Write krunkit commandline
-	if mc.AppleKrunkitHypervisor != nil && logrus.IsLevelEnabled(logrus.DebugLevel) {
-		rtDir, err := mc.RuntimeDir()
-		if err != nil {
-			return nil, nil, err
-		}
-		kdFile, err := rtDir.AppendToNewVMFile("krunkit-debug.sh")
-		if err != nil {
-			return nil, nil, err
-		}
-		f, err := os.Create(kdFile.Path)
-		if err != nil {
-			return nil, nil, err
-		}
-		err = os.Chmod(kdFile.Path, 0744)
-		if err != nil {
-			return nil, nil, err
-		}
-
-		_, err = f.WriteString("#!/bin/sh\nexec ")
-		if err != nil {
-			return nil, nil, err
-		}
-		for _, arg := range cmd.Args {
-			_, err = f.WriteString(fmt.Sprintf("%q ", arg))
-			if err != nil {
-				return nil, nil, err
-			}
-		}
-		err = f.Close()
-		if err != nil {
-			return nil, nil, err
-		}
-		//cmd = exec.Command("/usr/bin/open", "-Wa", "Terminal", kdFile.Path)
-	}
 
 	if err := cmd.Start(); err != nil {
 		return nil, nil, err
 	}
+
+	ignitionSocket, err := mc.IgnitionSocket()
+	if err != nil {
+		return nil, nil, err
+	}
+	logrus.Infof("IgnitionSocket on: %s", ignitionSocket.GetPath())
+	if err = ignitionSocket.Delete(); err != nil {
+		logrus.Warnf("unable to delete previous ready socket: %q", err)
+	}
+	ignListen, err := net.Listen("unix", ignitionSocket.GetPath())
+	if err != nil {
+		return nil, nil, err
+	}
+
+	ignitionChan := make(chan error)
+	go sockets.ListenAndExecCommandOnUnixSocketFile(ignitionChan, ignListen, mc)
+	<-ignitionChan
+	logrus.Infof("Ignition finished")
 
 	returnFunc := func() error {
 		processErrChan := make(chan error)
@@ -264,7 +233,7 @@ func StartGenericAppleVM(mc *vmconfigs.MachineConfig, cmdBinary string, bootload
 			if err != nil {
 				return err
 			}
-			logrus.Debug("ready notification received")
+			logrus.Infof("podman ready notification received")
 		}
 		return nil
 	}

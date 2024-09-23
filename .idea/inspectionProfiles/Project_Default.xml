@@ -1,0 +1,10 @@
+<component name="InspectionProjectProfileManager">
+  <profile version="1.0">
+    <option name="myName" value="Project Default" />
+    <inspection_tool class="GoDfaErrorMayBeNotNil" enabled="true" level="WARNING" enabled_by_default="true">
+      <methods>
+        <method importPath="bauklotze/pkg/machine/ignition" receiver="DynamicIgnition" name="generateSetTimeZoneIgnitionCfg" />
+      </methods>
+    </inspection_tool>
+  </profile>
+</component>

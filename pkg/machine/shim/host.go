@@ -72,13 +72,10 @@ func Init(opts machineDefine.InitOptions, mp vmconfigs.VMProvider) error {
 	if err != nil {
 		return err
 	}
-	sshKey, err := machine.GetSSHKeys(sshIdentityPath)
+	_, err = machine.GetSSHKeys(sshIdentityPath)
 	if err != nil {
 		return err
 	}
-
-	// TODO: write sshkey to rootfs
-	writeSSHPublicKeyToRootfs(sshKey)
 
 	// construct a machine configure but not write into disk
 	mc, err := vmconfigs.NewMachineConfig(opts, dirs, sshIdentityPath, mp.VMType())
@@ -118,17 +115,13 @@ func Init(opts machineDefine.InitOptions, mp vmconfigs.VMProvider) error {
 	//		return err
 	//	}
 	// for simplify code, but for now keep using Provider's GetDisk implementation
-	if err = mp.GetDisk(opts.Image, dirs, mp.VMType(), mc); err != nil {
+	initCmdOpts := opts
+	if err = mp.GetDisk(initCmdOpts.Image, dirs, mc.ImagePath, mp.VMType(), mc.Name); err != nil {
 		return err
 	}
 
-	if mp.VMType() != machineDefine.WSLVirt {
-		callbackFuncs.Add(mc.ImagePath.Delete)
-		logrus.Infof("--> imagePath is %q", createOpts.UserImageFile)
-
-	} else {
-		logrus.Infof("--> imagePath is %q", imagePath.GetPath())
-	}
+	callbackFuncs.Add(mc.ImagePath.Delete)
+	logrus.Infof("--> imagePath is %q", createOpts.UserImageFile)
 
 	// TODO AddSSHConnectionToPodmanSocket could take an machineconfig instead
 	//
@@ -299,7 +292,7 @@ func Start(mc *vmconfigs.MachineConfig, mp vmconfigs.VMProvider, dirs *machineDe
 		return err
 	}
 
-	// Update state
+	//Update state
 	stateF := func() (machineDefine.Status, error) {
 		return mp.State(mc, true)
 	}

@@ -2,6 +2,8 @@ package sockets
 
 import (
 	"bauklotze/pkg/fileutils"
+	"bauklotze/pkg/machine/ignition"
+	"bauklotze/pkg/machine/vmconfigs"
 	"bufio"
 	"fmt"
 	"github.com/sirupsen/logrus"
@@ -30,12 +32,12 @@ func WaitForSocketWithBackoffs(maxBackoffs int, backoff time.Duration, socketPat
 func ListenAndWaitOnSocket(errChan chan<- error, listener net.Listener) {
 	conn, err := listener.Accept()
 	if err != nil {
-		logrus.Debug("failed to connect to ready socket")
+		logrus.Errorf("failed to connect to ready socket")
 		errChan <- err
 		return
 	}
 	_, err = bufio.NewReader(conn).ReadString('\n')
-	logrus.Debug("ready ack received")
+	logrus.Infof("ready ack received")
 
 	if closeErr := conn.Close(); closeErr != nil {
 		errChan <- closeErr
@@ -43,4 +45,36 @@ func ListenAndWaitOnSocket(errChan chan<- error, listener net.Listener) {
 	}
 
 	errChan <- err
+}
+
+func ListenAndExecCommandOnUnixSocketFile(errChan chan<- error, listener net.Listener, mc *vmconfigs.MachineConfig) error {
+	err := listener.(*net.UnixListener).SetDeadline(time.Now().Add(10 * time.Second))
+	if err != nil {
+		return err
+	}
+	conn, err := listener.Accept()
+	if err != nil {
+		logrus.Errorf("failed to connect to c2 socket")
+		errChan <- err
+		return err
+	}
+
+	ignCfgs, err := ignition.ServeIgnitionOverSock(mc)
+	if err != nil {
+		return err
+	}
+
+	for _, c := range ignCfgs.Commands {
+		logrus.Infof("Exec: %s", c)
+		_, err := conn.Write([]byte(c + "\n"))
+		if err != nil {
+			return err
+		}
+	}
+	if closeErr := conn.Close(); closeErr != nil {
+		errChan <- closeErr
+		return nil
+	}
+	errChan <- err
+	return nil
 }

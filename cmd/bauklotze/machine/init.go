@@ -109,7 +109,7 @@ func init() {
 	flags.MarkHidden(twinPid)
 
 	imageVersion := "image-version"
-	flags.StringVar(&initOpts.ImageVersion, imageVersion, "", "Special bootable image version")
+	flags.StringVar(&initOpts.ImageVersion, imageVersion, "always-update", "Special bootable image version")
 	flags.MarkHidden(twinPid)
 
 	sendEventToEndpoint := "evtsock"

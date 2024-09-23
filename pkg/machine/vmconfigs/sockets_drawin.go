@@ -6,7 +6,7 @@ import (
 )
 
 func readySocket(name string, machineRuntimeDir *machineDefine.VMFile) (*machineDefine.VMFile, error) {
-	socketName := name + ".sock"
+	socketName := name + "-ready.sock"
 	return machineRuntimeDir.AppendToNewVMFile(socketName)
 }
 
