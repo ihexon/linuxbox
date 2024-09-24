@@ -4,7 +4,7 @@
 package vhdx
 
 import (
-	"bauklotze/pkg/machine/machineDefine"
+	"bauklotze/pkg/machine/define"
 	"fmt"
 	"syscall"
 )
@@ -20,7 +20,7 @@ const (
 )
 
 // VhdxCreate vhdx
-func VhdxCreate(path machineDefine.VMFile, maxSizeInBytes uint64) error {
+func VhdxCreate(path define.VMFile, maxSizeInBytes uint64) error {
 	params := vhd.CreateVirtualDiskParameters{
 		Version: 2,
 		Version2: vhd.CreateVersion2{

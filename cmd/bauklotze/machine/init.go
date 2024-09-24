@@ -3,9 +3,7 @@ package machine
 import (
 	"bauklotze/cmd/registry"
 	"bauklotze/pkg/completion"
-	"bauklotze/pkg/machine/env"
-	"bauklotze/pkg/machine/machineDefine"
-	provider2 "bauklotze/pkg/machine/provider"
+	"bauklotze/pkg/machine/define"
 	"bauklotze/pkg/machine/shim"
 	"bauklotze/pkg/machine/vmconfigs"
 	"bauklotze/pkg/regexp"
@@ -38,8 +36,8 @@ var (
 		Example:           `machine init`,
 		ValidArgsFunction: completion.AutocompleteNone,
 	}
-	initOpts           = machineDefine.InitOptions{}
-	defaultMachineName = machineDefine.DefaultMachineName
+	initOpts           = define.InitOptions{}
+	defaultMachineName = define.DefaultMachineName
 	now                bool
 )
 
@@ -119,19 +117,6 @@ func init() {
 	flags.BoolVar(&now, "now", false, "Start machine now")
 }
 
-func machinePreRunE(cmd *cobra.Command, args []string) error {
-	var err error = nil
-	d, _ := cmd.Flags().GetString("workdir")
-	env.InitCustomHomeEnv(d)
-
-	provider, err = provider2.Get()
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
 func initMachine(cmd *cobra.Command, args []string) error {
 	initOpts.Name = defaultMachineName
 	if len(args) > 0 {
@@ -152,17 +137,17 @@ func initMachine(cmd *cobra.Command, args []string) error {
 
 	switch {
 	case exists == true && oldmc != nil && oldmc.ImageVersion != initOpts.ImageVersion:
-		logrus.Infof("%s: %s", initOpts.Name, machineDefine.ErrVMAlreadyExists)
+		logrus.Infof("%s: %s", initOpts.Name, define.ErrVMAlreadyExists)
 		logrus.Infof("New image-version:%s, old image-version: %s, Force Initialize....", initOpts.ImageVersion, oldmc.ImageVersion)
 		break
 	case initOpts.ImageVersion == "always-update":
 		break
 	case exists == true && oldmc != nil:
-		logrus.Infof("%s: %s, skip initialize !", initOpts.Name, machineDefine.ErrVMAlreadyExists)
+		logrus.Infof("%s: %s, skip initialize !", initOpts.Name, define.ErrVMAlreadyExists)
 		if now {
 			return start(cmd, args)
 		}
-		return fmt.Errorf("%s: %w", initOpts.Name, machineDefine.ErrVMAlreadyExists)
+		return fmt.Errorf("%s: %w", initOpts.Name, define.ErrVMAlreadyExists)
 	case oldmc == nil:
 
 	case oldmc.ImageVersion != initOpts.ImageVersion:

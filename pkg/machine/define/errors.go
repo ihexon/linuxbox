@@ -1,4 +1,4 @@
-package machineDefine
+package define
 
 import (
 	strongunits "bauklotze/pkg/storage"

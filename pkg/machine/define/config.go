@@ -1,4 +1,4 @@
-package machineDefine
+package define
 
 import (
 	strongunits "bauklotze/pkg/storage"
@@ -57,8 +57,6 @@ var (
 )
 
 type StartOptions struct {
-	NoInfo  bool
-	Quiet   bool
 	NoQuit  bool // NoQuit when machine start
 	TwinPid int
 }

@@ -2,7 +2,7 @@ package vmconfigs
 
 import (
 	"bauklotze/pkg/ioutils"
-	"bauklotze/pkg/machine/machineDefine"
+	"bauklotze/pkg/machine/define"
 	"encoding/json"
 	"fmt"
 	"github.com/sirupsen/logrus"
@@ -18,5 +18,5 @@ func (mc *MachineConfig) Write() error {
 		return err
 	}
 	logrus.Debugf("writing configuration file %q", mc.ConfigPath.Path)
-	return ioutils.AtomicWriteFile(mc.ConfigPath.GetPath(), b, machineDefine.DefaultFilePerm)
+	return ioutils.AtomicWriteFile(mc.ConfigPath.GetPath(), b, define.DefaultFilePerm)
 }

@@ -3,7 +3,7 @@
 package hvhelper
 
 import (
-	"bauklotze/pkg/machine/machineDefine"
+	"bauklotze/pkg/machine/define"
 	"bytes"
 	"encoding/json"
 	"errors"
@@ -43,7 +43,7 @@ type Endpoint string
 type Helper struct {
 	LogLevel       logrus.Level
 	Endpoint       string
-	BinaryPath     *machineDefine.VMFile
+	BinaryPath     *define.VMFile
 	VirtualMachine *vfkit_config.VirtualMachine
 	Rosetta        bool
 }
@@ -51,13 +51,13 @@ type Helper struct {
 // state asks vfkit for the virtual machine state. in case the vfkit
 // service is not responding, we assume the service is not running
 // and return a stopped status
-func (vf *Helper) State() (machineDefine.Status, error) {
+func (vf *Helper) State() (define.Status, error) {
 	vmState, err := vf.getRawState()
 	if err == nil {
 		return vmState, nil
 	}
 	if errors.Is(err, unix.ECONNREFUSED) {
-		return machineDefine.Stopped, nil
+		return define.Stopped, nil
 	}
 	return "", err
 }
@@ -91,14 +91,14 @@ func (vf *Helper) stateChange(newState rest.StateChange) error {
 	return err
 }
 
-func ToMachineStatus(val string) (machineDefine.Status, error) {
+func ToMachineStatus(val string) (define.Status, error) {
 	switch val {
 	case string(VZMachineStateRunning), string(VZMachineStatePausing), string(VZMachineStateResuming), string(VZMachineStateStopping), string(VZMachineStatePaused):
-		return machineDefine.Running, nil
+		return define.Running, nil
 	case string(VZMachineStateStopped):
-		return machineDefine.Stopped, nil
+		return define.Stopped, nil
 	case string(VZMachineStateStarting):
-		return machineDefine.Starting, nil
+		return define.Starting, nil
 	case string(VZMachineStateError):
 		return "", errors.New("machine is in error state")
 	}
@@ -106,7 +106,7 @@ func ToMachineStatus(val string) (machineDefine.Status, error) {
 }
 
 // getRawState asks hvhelper for virtual machine state unmodified (see state())
-func (vf *Helper) getRawState() (machineDefine.Status, error) {
+func (vf *Helper) getRawState() (define.Status, error) {
 	var response rest.VMState
 	endPoint := vf.Endpoint + state
 	serverResponse, err := vf.get(endPoint, nil)

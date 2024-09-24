@@ -1,8 +1,8 @@
 package vmconfigs
 
-import "bauklotze/pkg/machine/machineDefine"
+import "bauklotze/pkg/machine/define"
 
-func (mc *MachineConfig) LogFile() (*machineDefine.VMFile, error) {
+func (mc *MachineConfig) LogFile() (*define.VMFile, error) {
 	rtDir, err := mc.RuntimeDir()
 	if err != nil {
 		return nil, err

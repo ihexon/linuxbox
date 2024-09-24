@@ -3,11 +3,12 @@ package machine
 import (
 	"bauklotze/cmd/registry"
 	"bauklotze/pkg/machine"
+	"bauklotze/pkg/machine/define"
 	"bauklotze/pkg/machine/env"
-	"bauklotze/pkg/machine/machineDefine"
 	"bauklotze/pkg/machine/shim"
 	"bauklotze/pkg/machine/vmconfigs"
 	"fmt"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
@@ -16,13 +17,13 @@ var (
 		Use:               "start [options] [MACHINE]",
 		Short:             "Start an existing machine",
 		Long:              "Start a managed virtual machine ",
-		PersistentPreRunE: machinePreRunE,
+		PersistentPreRunE: machinePreRunE, // Get Provider and set workdir if needed
 		RunE:              start,
 		Args:              cobra.MaximumNArgs(1),
-		Example:           `podman machine start podman-machine-default`,
+		Example:           `bauklotze machine start`,
 		ValidArgsFunction: autocompleteMachine,
 	}
-	startOpts = machineDefine.StartOptions{}
+	startOpts = define.StartOptions{}
 )
 
 func init() {
@@ -31,12 +32,6 @@ func init() {
 		Parent:  machineCmd,
 	})
 	flags := startCmd.Flags()
-
-	noInfoFlagName := "no-info"
-	flags.BoolVar(&startOpts.NoInfo, noInfoFlagName, false, "Suppress informational tips")
-
-	quietFlagName := "quiet"
-	flags.BoolVarP(&startOpts.Quiet, quietFlagName, "q", false, "Suppress machine starting status output")
 
 	noquitFlagName := "noquit"
 	flags.BoolVarP(&startOpts.NoQuit, noquitFlagName, "", false, "do not exit after start machine")
@@ -47,11 +42,7 @@ func init() {
 }
 
 func start(cmd *cobra.Command, args []string) error {
-	var (
-		err error
-	)
-
-	startOpts.NoInfo = startOpts.Quiet || startOpts.NoInfo
+	var err error
 	vmName := defaultMachineName
 	if len(args) > 0 && len(args[0]) > 0 {
 		vmName = args[0]
@@ -65,11 +56,9 @@ func start(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	if !startOpts.Quiet {
-		fmt.Printf("Starting machine %q\n", vmName)
-	}
+	logrus.Infof("starting machine %q\n", vmName)
 
-	if err := shim.Start(mc, provider, dirs, startOpts); err != nil {
+	if err = shim.Start(mc, provider, dirs, startOpts); err != nil {
 		return err
 	}
 

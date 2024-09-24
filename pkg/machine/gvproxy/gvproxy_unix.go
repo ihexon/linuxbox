@@ -3,7 +3,7 @@
 package gvproxy
 
 import (
-	"bauklotze/pkg/machine/machineDefine"
+	"bauklotze/pkg/machine/define"
 	"errors"
 	"fmt"
 	psutil "github.com/shirou/gopsutil/v3/process"
@@ -67,6 +67,6 @@ func backoffForProcess(p *psutil.Process) error {
 	return fmt.Errorf("process %d has not ended", p.Pid)
 }
 
-func removeGVProxyPIDFile(f machineDefine.VMFile) error {
+func removeGVProxyPIDFile(f define.VMFile) error {
 	return f.Delete()
 }

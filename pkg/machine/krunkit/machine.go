@@ -5,7 +5,7 @@ package krunkit
 import (
 	"bauklotze/pkg/config"
 	"bauklotze/pkg/machine"
-	"bauklotze/pkg/machine/machineDefine"
+	"bauklotze/pkg/machine/define"
 	"bauklotze/pkg/machine/sockets"
 	"bauklotze/pkg/machine/vmconfigs"
 	"context"
@@ -20,7 +20,7 @@ import (
 	"time"
 )
 
-func GetDefaultDevices(mc *vmconfigs.MachineConfig) ([]vfConfig.VirtioDevice, *machineDefine.VMFile, error) {
+func GetDefaultDevices(mc *vmconfigs.MachineConfig) ([]vfConfig.VirtioDevice, *define.VMFile, error) {
 	var devices []vfConfig.VirtioDevice
 
 	disk, err := vfConfig.VirtioBlkNew(mc.ImagePath.GetPath())
@@ -196,9 +196,11 @@ func StartGenericAppleVM(mc *vmconfigs.MachineConfig, cmdBinary string, bootload
 		return nil, nil, err
 	}
 
-	ignitionChan := make(chan error)
-	go sockets.ListenAndExecCommandOnUnixSocketFile(ignitionChan, ignListen, mc)
-	<-ignitionChan
+	err = sockets.ListenAndExecCommandOnUnixSocketFile(ignListen, mc)
+	if err != nil {
+		return nil, nil, err
+	}
+
 	logrus.Infof("Ignition finished")
 
 	returnFunc := func() error {

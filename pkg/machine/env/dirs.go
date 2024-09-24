@@ -1,41 +1,41 @@
 package env
 
 import (
-	"bauklotze/pkg/machine/machineDefine"
+	"bauklotze/pkg/machine/define"
 	"os"
 	"path/filepath"
 )
 
-func GetMachineDirs(vmType machineDefine.VMType) (*machineDefine.MachineDirs, error) {
-	vmFiles := []*machineDefine.VMFile{}
+func GetMachineDirs(vmType define.VMType) (*define.MachineDirs, error) {
+	vmFiles := []*define.VMFile{}
 
 	d, err := getRuntimeDir()
 	if err != nil {
 		return nil, err
 	}
-	d = filepath.Join(d, machineDefine.MyName)
-	rtVMDir := &machineDefine.VMFile{Path: d}
+	d = filepath.Join(d, define.MyName)
+	rtVMDir := &define.VMFile{Path: d}
 	vmFiles = append(vmFiles, rtVMDir)
 
 	vmconfDir, err := GetVMConfDir(vmType)
 	if err != nil {
 		return nil, err
 	}
-	configDir := &machineDefine.VMFile{Path: vmconfDir}
+	configDir := &define.VMFile{Path: vmconfDir}
 	vmFiles = append(vmFiles, configDir)
 
 	vmdataDir, err := GetVMDataDir(vmType)
 	if err != nil {
 		return nil, err
 	}
-	dataDir := &machineDefine.VMFile{Path: vmdataDir}
+	dataDir := &define.VMFile{Path: vmdataDir}
 	vmFiles = append(vmFiles, dataDir)
 
 	imageCacheDir, err := GetImageCacheDir(vmType)
 	if err != nil {
 		return nil, err
 	}
-	cacheDir := &machineDefine.VMFile{Path: imageCacheDir}
+	cacheDir := &define.VMFile{Path: imageCacheDir}
 	vmFiles = append(vmFiles, cacheDir)
 
 	// Resolve VMFile
@@ -49,7 +49,7 @@ func GetMachineDirs(vmType machineDefine.VMType) (*machineDefine.MachineDirs, er
 		}
 	}
 
-	dirs := &machineDefine.MachineDirs{
+	dirs := &define.MachineDirs{
 		ConfigDir:     configDir,
 		DataDir:       dataDir,
 		RuntimeDir:    rtVMDir,
@@ -59,7 +59,7 @@ func GetMachineDirs(vmType machineDefine.VMType) (*machineDefine.MachineDirs, er
 	return dirs, err
 }
 
-func GetImageCacheDir(vmType machineDefine.VMType) (string, error) {
+func GetImageCacheDir(vmType define.VMType) (string, error) {
 	p, err := GetVMDataDir(vmType)
 	if err != nil {
 		return "", err
@@ -86,7 +86,7 @@ func GetHomePath() (string, error) {
 }
 
 // GetVMConfDir return $HOME/.config/oomol/ovm/machine/{wsl,qemu,libkrun,applehv}
-func GetVMConfDir(vmType machineDefine.VMType) (string, error) {
+func GetVMConfDir(vmType define.VMType) (string, error) {
 	confDirPrefix, err := GetMachineConfDir()
 	if err != nil {
 		return "", err
@@ -109,7 +109,7 @@ func GetMachineConfDir() (string, error) {
 }
 
 // GetVMDataDir return $HOME/.local/share/oomol/ovm/machine/{wsl,libkrun}
-func GetVMDataDir(vmType machineDefine.VMType) (string, error) {
+func GetVMDataDir(vmType define.VMType) (string, error) {
 	dataHomePrefix, err := DataDirMachine()
 	if err != nil {
 		return "", err

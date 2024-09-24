@@ -1,10 +1,10 @@
 package vmconfigs
 
 import (
-	"bauklotze/pkg/machine/machineDefine"
+	"bauklotze/pkg/machine/define"
 )
 
-func (mc *MachineConfig) ReadySocket() (*machineDefine.VMFile, error) {
+func (mc *MachineConfig) ReadySocket() (*define.VMFile, error) {
 	rtDir, err := mc.RuntimeDir()
 	if err != nil {
 		return nil, err
@@ -12,7 +12,7 @@ func (mc *MachineConfig) ReadySocket() (*machineDefine.VMFile, error) {
 	return readySocket(mc.Name, rtDir)
 }
 
-func (mc *MachineConfig) IgnitionSocket() (*machineDefine.VMFile, error) {
+func (mc *MachineConfig) IgnitionSocket() (*define.VMFile, error) {
 	rtDir, err := mc.RuntimeDir()
 	if err != nil {
 		return nil, err

@@ -3,7 +3,7 @@
 package gvproxy
 
 import (
-	"bauklotze/pkg/machine/machineDefine"
+	"bauklotze/pkg/machine/define"
 	"errors"
 	"github.com/containers/winquit/pkg/winquit"
 	"github.com/sirupsen/logrus"
@@ -51,7 +51,7 @@ func waitOnProcess(processID int) error {
 
 // removeGVProxyPIDFile special wrapper for deleting the GVProxyPIDFile on windows in case
 // the file has an open handle which we will ignore.  unix does not have this problem
-func removeGVProxyPIDFile(f machineDefine.VMFile) error {
+func removeGVProxyPIDFile(f define.VMFile) error {
 	err := f.Delete()
 	if err != nil && !errors.Is(err, windows.ERROR_SHARING_VIOLATION) {
 		return err

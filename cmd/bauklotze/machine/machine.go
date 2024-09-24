@@ -38,6 +38,20 @@ import (
 //	return nil
 //}
 
+var provider vmconfigs.VMProvider
+
+func machinePreRunE(cmd *cobra.Command, args []string) error {
+	var err error = nil
+	d, _ := cmd.Flags().GetString("workdir")
+	env.InitCustomHomeEnv(d)
+
+	provider, err = provider2.Get()
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func getMachines(toComplete string) ([]string, cobra.ShellCompDirective) {
 	suggestions := []string{}
 	provider, err := provider2.Get()
@@ -68,10 +82,6 @@ func autocompleteMachine(cmd *cobra.Command, args []string, toComplete string) (
 	}
 	return nil, cobra.ShellCompDirectiveNoFileComp
 }
-
-var (
-	provider vmconfigs.VMProvider
-)
 
 var machineCmd = &cobra.Command{
 	Use:   "machine",

@@ -1,7 +1,7 @@
 package gvproxy
 
 import (
-	"bauklotze/pkg/machine/machineDefine"
+	"bauklotze/pkg/machine/define"
 	"errors"
 	"fmt"
 	"io/fs"
@@ -9,7 +9,7 @@ import (
 )
 
 // CleanupGVProxy reads the --pid-file for gvproxy attempts to stop it
-func CleanupGVProxy(f machineDefine.VMFile) error {
+func CleanupGVProxy(f define.VMFile) error {
 	gvPid, err := f.Read()
 	if err != nil {
 		// The file will also be removed by gvproxy when it exits so

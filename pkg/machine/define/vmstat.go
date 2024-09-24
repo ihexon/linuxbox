@@ -1,4 +1,4 @@
-package machineDefine
+package define
 
 type Status = string
 

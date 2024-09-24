@@ -1,12 +1,12 @@
 package vmconfigs
 
 import (
-	"bauklotze/pkg/machine/machineDefine"
+	"bauklotze/pkg/machine/define"
 	"encoding/json"
 	"os"
 )
 
-func (mc *MachineConfig) GVProxySocket() (*machineDefine.VMFile, error) {
+func (mc *MachineConfig) GVProxySocket() (*define.VMFile, error) {
 	machineRuntimeDir, err := mc.RuntimeDir()
 	if err != nil {
 		return nil, err
@@ -14,7 +14,7 @@ func (mc *MachineConfig) GVProxySocket() (*machineDefine.VMFile, error) {
 	return gvProxySocket(mc.Name, machineRuntimeDir)
 }
 
-func (mc *MachineConfig) APISocket() (*machineDefine.VMFile, error) {
+func (mc *MachineConfig) APISocket() (*define.VMFile, error) {
 	machineRuntimeDir, err := mc.RuntimeDir()
 	if err != nil {
 		return nil, err

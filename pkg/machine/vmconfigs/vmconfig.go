@@ -2,8 +2,8 @@ package vmconfigs
 
 import (
 	"bauklotze/pkg/lockfile"
+	"bauklotze/pkg/machine/define"
 	"bauklotze/pkg/machine/lock"
-	"bauklotze/pkg/machine/machineDefine"
 	"bauklotze/pkg/machine/ports"
 	strongunits "bauklotze/pkg/storage"
 	"encoding/json"
@@ -29,14 +29,14 @@ func NormalizeMachineArch(arch string) (string, error) {
 }
 
 type VMProvider interface { //nolint:interfacebloat
-	VMType() machineDefine.VMType
+	VMType() define.VMType
 	Exists(name string) (bool, error)
-	GetDisk(userInputPath string, dirs *machineDefine.MachineDirs, imagePath *machineDefine.VMFile, vmType machineDefine.VMType, name string) error
-	CreateVM(opts machineDefine.CreateVMOpts, mc *MachineConfig) error
+	GetDisk(userInputPath string, dirs *define.MachineDirs, imagePath *define.VMFile, vmType define.VMType, name string) error
+	CreateVM(opts define.CreateVMOpts, mc *MachineConfig) error
 	StopVM(mc *MachineConfig, hardStop bool) error
 	MountType() VolumeMountType
 	RequireExclusiveActive() bool
-	State(mc *MachineConfig, bypass bool) (machineDefine.Status, error)
+	State(mc *MachineConfig) (define.Status, error)
 	UpdateSSHPort(mc *MachineConfig, port int) error
 	UseProviderNetworkSetup() bool
 	StartNetworking(mc *MachineConfig, cmd *gvproxy.GvproxyCommand) error
@@ -71,7 +71,7 @@ type HostUser struct {
 }
 
 // DataDir is a simple helper function to obtain the machine data dir
-func (mc *MachineConfig) DataDir() (*machineDefine.VMFile, error) {
+func (mc *MachineConfig) DataDir() (*define.VMFile, error) {
 	if mc.Dirs == nil || mc.Dirs.DataDir == nil {
 		return nil, errors.New("no data directory set")
 	}
@@ -90,24 +90,26 @@ type MachineConfig struct {
 	Created time.Time
 	LastUp  time.Time
 
-	Dirs                   *machineDefine.MachineDirs
-	HostUser               HostUser
-	Name                   string
-	ImagePath              *machineDefine.VMFile
-	WSLHypervisor          *WSLConfig `json:",omitempty"`
-	ConfigPath             *machineDefine.VMFile
-	Resources              machineDefine.ResourceConfig
-	imageDescription       machineImage
-	Version                uint
-	Mounts                 []*Mount
+	Dirs      *define.MachineDirs
+	HostUser  HostUser
+	Name      string
+	ImagePath *define.VMFile
+
 	AppleKrunkitHypervisor *AppleKrunkitConfig `json:",omitempty"`
-	GvProxy                gvproxy.GvproxyCommand
-	SSH                    SSHConfig
-	Starting               bool
-	lock                   *lockfile.LockFile
-	EvtSockPath            *machineDefine.VMFile `json:",omitempty"`
-	TwinPid                int                   `json:",omitempty"`
-	ImageVersion           string                `json:",omitempty"`
+	WSLHypervisor          *WSLConfig          `json:",omitempty"`
+
+	ConfigPath *define.VMFile
+	Resources  define.ResourceConfig
+	Version    uint
+	Mounts     []*Mount
+	GvProxy    gvproxy.GvproxyCommand
+	SSH        SSHConfig
+	Starting   bool
+	lock       *lockfile.LockFile
+	// Oomol Studio
+	EvtSockPath  *define.VMFile `json:",omitempty"`
+	TwinPid      int            `json:",omitempty"`
+	ImageVersion string         `json:",omitempty"`
 }
 
 // SSHConfig contains remote access information for SSH
@@ -121,7 +123,7 @@ type SSHConfig struct {
 }
 
 // RuntimeDir is simple helper function to obtain the runtime dir
-func (mc *MachineConfig) RuntimeDir() (*machineDefine.VMFile, error) {
+func (mc *MachineConfig) RuntimeDir() (*define.VMFile, error) {
 	if mc.Dirs == nil || mc.Dirs.RuntimeDir == nil {
 		return nil, errors.New("no runtime directory set")
 	}
@@ -132,20 +134,20 @@ func (mc *MachineConfig) RemoveRuntimeFiles() ([]string, func() error, error) {
 	return nil, nil, nil
 }
 
-func NewMachineConfig(opts machineDefine.InitOptions, dirs *machineDefine.MachineDirs, sshIdentityPath string, mtype machineDefine.VMType) (*MachineConfig, error) {
+func NewMachineConfig(opts define.InitOptions, dirs *define.MachineDirs, sshIdentityPath string, mtype define.VMType) (*MachineConfig, error) {
 	mc := new(MachineConfig)
 	mc.Name = opts.Name
 	mc.Dirs = dirs
 
 	// Assign Dirs
-	cf, err := machineDefine.NewMachineFile(filepath.Join(dirs.ConfigDir.GetPath(), fmt.Sprintf("%s.json", opts.Name)))
+	cf, err := define.NewMachineFile(filepath.Join(dirs.ConfigDir.GetPath(), fmt.Sprintf("%s.json", opts.Name)))
 	if err != nil {
 		return nil, err
 	}
 	mc.ConfigPath = cf
 
 	// System Resources
-	mrc := machineDefine.ResourceConfig{
+	mrc := define.ResourceConfig{
 		CPUs:     opts.CPUS,
 		DiskSize: strongunits.GiB(opts.DiskSize),
 		Memory:   strongunits.MiB(opts.Memory),
@@ -174,7 +176,7 @@ func getHostUID() int {
 	return os.Getuid()
 }
 
-func LoadMachineByName(name string, dirs *machineDefine.MachineDirs) (*MachineConfig, error) {
+func LoadMachineByName(name string, dirs *define.MachineDirs) (*MachineConfig, error) {
 	fullPath, err := dirs.ConfigDir.AppendToNewVMFile(name + ".json")
 	if err != nil {
 		return nil, err
@@ -182,7 +184,7 @@ func LoadMachineByName(name string, dirs *machineDefine.MachineDirs) (*MachineCo
 	mc, err := loadMachineFromFQPath(fullPath)
 	if err != nil {
 		if errors.Is(err, fs.ErrNotExist) {
-			return nil, &machineDefine.ErrVMDoesNotExist{Name: name}
+			return nil, &define.ErrVMDoesNotExist{Name: name}
 		}
 		return nil, err
 	}
@@ -193,7 +195,7 @@ func LoadMachineByName(name string, dirs *machineDefine.MachineDirs) (*MachineCo
 	// error because the user wants to deal directly with this
 	// machine
 	if mc.Version == 0 {
-		return mc, &machineDefine.ErrIncompatibleMachineConfig{
+		return mc, &define.ErrIncompatibleMachineConfig{
 			Name: name,
 			Path: fullPath.GetPath(),
 		}
@@ -201,7 +203,7 @@ func LoadMachineByName(name string, dirs *machineDefine.MachineDirs) (*MachineCo
 	return mc, nil
 }
 
-func LoadMachinesInDir(dirs *machineDefine.MachineDirs) (map[string]*MachineConfig, error) {
+func LoadMachinesInDir(dirs *define.MachineDirs) (map[string]*MachineConfig, error) {
 	mcs := make(map[string]*MachineConfig)
 	if err := filepath.WalkDir(dirs.ConfigDir.GetPath(), func(path string, d fs.DirEntry, err error) error {
 		if strings.HasSuffix(d.Name(), ".json") {
@@ -216,7 +218,7 @@ func LoadMachinesInDir(dirs *machineDefine.MachineDirs) (map[string]*MachineConf
 			// if we find an incompatible machine configuration file, we emit and error
 			//
 			if mc.Version == 0 {
-				tmpErr := &machineDefine.ErrIncompatibleMachineConfig{
+				tmpErr := &define.ErrIncompatibleMachineConfig{
 					Name: mc.Name,
 					Path: fullPath.GetPath(),
 				}
@@ -234,7 +236,7 @@ func LoadMachinesInDir(dirs *machineDefine.MachineDirs) (map[string]*MachineConf
 	return mcs, nil
 }
 
-func loadMachineFromFQPath(path *machineDefine.VMFile) (*MachineConfig, error) {
+func loadMachineFromFQPath(path *define.VMFile) (*MachineConfig, error) {
 	mc := new(MachineConfig)
 	b, err := path.Read()
 	if err != nil {

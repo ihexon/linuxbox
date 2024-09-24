@@ -15,6 +15,7 @@ const (
 	NotInstalled
 	MachineLocal
 	DockerGlobal
+	InForwarding
 )
 
 type RemoveOptions struct {

@@ -4,8 +4,8 @@ import (
 	"bauklotze/pkg/config"
 	"bauklotze/pkg/machine"
 	"bauklotze/pkg/machine/connection"
+	"bauklotze/pkg/machine/define"
 	"bauklotze/pkg/machine/env"
-	"bauklotze/pkg/machine/machineDefine"
 	"bauklotze/pkg/machine/ports"
 	"bauklotze/pkg/machine/vmconfigs"
 	"errors"
@@ -41,7 +41,7 @@ func isListening(port int) bool {
 
 // conductVMReadinessCheck checks to make sure the machine is in the proper state
 // and that SSH is up and running
-func conductVMReadinessCheck(mc *vmconfigs.MachineConfig, maxBackoffs int, backoff time.Duration, stateF func() (machineDefine.Status, error)) (connected bool, sshError error, err error) {
+func conductVMReadinessCheck(mc *vmconfigs.MachineConfig, maxBackoffs int, backoff time.Duration, stateF func() (define.Status, error)) (connected bool, sshError error, err error) {
 	for i := 0; i < maxBackoffs; i++ {
 		if i > 0 {
 			time.Sleep(backoff)
@@ -51,7 +51,7 @@ func conductVMReadinessCheck(mc *vmconfigs.MachineConfig, maxBackoffs int, backo
 		if err != nil {
 			return false, nil, err
 		}
-		if state != machineDefine.Running {
+		if state != define.Running {
 			sshError = ErrNotRunning
 			continue
 		}
@@ -117,7 +117,7 @@ func reassignSSHPort(mc *vmconfigs.MachineConfig, provider vmconfigs.VMProvider)
 	return nil
 }
 
-func startHostForwarder(mc *vmconfigs.MachineConfig, provider vmconfigs.VMProvider, dirs *machineDefine.MachineDirs, hostSocks []string) error {
+func startHostForwarder(mc *vmconfigs.MachineConfig, provider vmconfigs.VMProvider, dirs *define.MachineDirs, hostSocks []string) error {
 	forwardUser := mc.SSH.RemoteUsername
 
 	// TODO should this go up the stack higher or
@@ -160,7 +160,7 @@ func startHostForwarder(mc *vmconfigs.MachineConfig, provider vmconfigs.VMProvid
 	}
 	c := cmd.Cmd(binary)
 
-	logrus.Debugf("gvproxy command-line: %s %s", binary, strings.Join(cmd.ToCmdline(), " "))
+	logrus.Infof("gvproxy command-line: %s %s", binary, strings.Join(cmd.ToCmdline(), " "))
 	if err := c.Start(); err != nil {
 		return fmt.Errorf("unable to execute: %q: %w", cmd.ToCmdline(), err)
 	}
@@ -173,11 +173,12 @@ func startNetworking(mc *vmconfigs.MachineConfig, provider vmconfigs.VMProvider)
 	if !ports.IsLocalPortAvailable(mc.SSH.Port) {
 		logrus.Warnf("detected port conflict on machine ssh port [%d], reassigning", mc.SSH.Port)
 		if err := reassignSSHPort(mc, provider); err != nil {
-			return "", 0, err
+			return "", machine.NoForwarding, err
 		}
 	}
 
 	// Provider has its own networking code path (e.g. WSL)
+	// In krunkit UseProviderNetworkSetup() always false
 	if provider.UseProviderNetworkSetup() {
 		return "", machine.NoForwarding, provider.StartNetworking(mc, nil)
 	}
@@ -187,7 +188,7 @@ func startNetworking(mc *vmconfigs.MachineConfig, provider vmconfigs.VMProvider)
 		return "", machine.NoForwarding, err
 	}
 
-	hostSocks, forwardSock, forwardingState, err := setupMachineSockets(mc, dirs)
+	hostSocks, forwardSock, _, err := setupMachineSockets(mc, dirs)
 	if err != nil {
 		return "", machine.NoForwarding, err
 	}
@@ -196,5 +197,5 @@ func startNetworking(mc *vmconfigs.MachineConfig, provider vmconfigs.VMProvider)
 		return "", machine.NoForwarding, err
 	}
 
-	return forwardSock, forwardingState, nil
+	return forwardSock, machine.InForwarding, nil
 }

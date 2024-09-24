@@ -3,7 +3,7 @@
 package provider
 
 import (
-	"bauklotze/pkg/machine/machineDefine"
+	"bauklotze/pkg/machine/define"
 	"bauklotze/pkg/machine/vmconfigs"
 	"bauklotze/pkg/machine/wsl"
 	"fmt"
@@ -22,14 +22,14 @@ func GetAll() []vmconfigs.VMProvider {
 func Get() (vmconfigs.VMProvider, error) {
 	// HyperVisor with High priority
 	provider := ""
-	resolvedVMType, err := machineDefine.ParseVMType(provider, machineDefine.WSLVirt)
+	resolvedVMType, err := define.ParseVMType(provider, define.WSLVirt)
 	if err != nil {
 		return nil, err
 	}
 
 	logrus.Infof("Init machine with `%s` virtualization provider", resolvedVMType.String())
 	switch resolvedVMType {
-	case machineDefine.WSLVirt:
+	case define.WSLVirt:
 		return new(wsl.WSLStubber), nil
 	default:
 		return nil, fmt.Errorf("unsupported virtualization provider: `%s`", resolvedVMType.String())

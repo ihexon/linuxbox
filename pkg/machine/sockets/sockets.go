@@ -47,7 +47,7 @@ func ListenAndWaitOnSocket(errChan chan<- error, listener net.Listener) {
 	errChan <- err
 }
 
-func ListenAndExecCommandOnUnixSocketFile(errChan chan<- error, listener net.Listener, mc *vmconfigs.MachineConfig) error {
+func ListenAndExecCommandOnUnixSocketFile(listener net.Listener, mc *vmconfigs.MachineConfig) error {
 	err := listener.(*net.UnixListener).SetDeadline(time.Now().Add(10 * time.Second))
 	if err != nil {
 		return err
@@ -55,7 +55,6 @@ func ListenAndExecCommandOnUnixSocketFile(errChan chan<- error, listener net.Lis
 	conn, err := listener.Accept()
 	if err != nil {
 		logrus.Errorf("failed to connect to c2 socket")
-		errChan <- err
 		return err
 	}
 
@@ -71,10 +70,14 @@ func ListenAndExecCommandOnUnixSocketFile(errChan chan<- error, listener net.Lis
 			return err
 		}
 	}
+
+	if err := conn.(*net.UnixConn).CloseWrite(); err != nil {
+		return err
+	}
+
 	if closeErr := conn.Close(); closeErr != nil {
-		errChan <- closeErr
 		return nil
 	}
-	errChan <- err
+
 	return nil
 }

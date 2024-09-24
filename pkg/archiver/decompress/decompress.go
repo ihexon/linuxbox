@@ -1,7 +1,7 @@
 package decompress
 
 import (
-	"bauklotze/pkg/machine/machineDefine"
+	"bauklotze/pkg/machine/define"
 	"github.com/sirupsen/logrus"
 	"os"
 )
@@ -11,7 +11,7 @@ const (
 )
 
 // decompressedFilePath is a full path with contain file name !!
-func Decompress(compressedVMFile *machineDefine.VMFile, decompressedFilePath string) error {
+func Decompress(compressedVMFile *define.VMFile, decompressedFilePath string) error {
 	compressedFilePath := compressedVMFile.GetPath()
 	var (
 		d   decompressor

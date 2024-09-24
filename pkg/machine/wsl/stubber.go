@@ -4,7 +4,8 @@ package wsl
 
 import (
 	"bauklotze/pkg/machine"
-	"bauklotze/pkg/machine/machineDefine"
+	"bauklotze/pkg/machine/define"
+	"bauklotze/pkg/machine/ports"
 	"bauklotze/pkg/machine/vmconfigs"
 	"bauklotze/pkg/utils"
 	"fmt"
@@ -14,13 +15,10 @@ import (
 )
 
 type WSLStubber struct {
-	machineDefine.WSLConfig
+	define.WSLConfig
 }
 
-func (w WSLStubber) GetDisk(userInputPath string,
-	dirs *machineDefine.MachineDirs,
-	vmType machineDefine.VMType,
-	mc *vmconfigs.MachineConfig) error {
+func (w WSLStubber) GetDisk(userInputPath string, dirs *define.MachineDirs, imagePath *define.VMFile, vmType define.VMType, name string) error {
 	// Do not do anything because we using wsl --import [rootfs.tar]
 	switch {
 	case userInputPath == "":
@@ -34,7 +32,7 @@ func (w WSLStubber) GetDisk(userInputPath string,
 	return nil
 }
 
-func (w WSLStubber) CreateVM(opts machineDefine.CreateVMOpts, mc *vmconfigs.MachineConfig) error {
+func (w WSLStubber) CreateVM(opts define.CreateVMOpts, mc *vmconfigs.MachineConfig) error {
 	var (
 		err error
 	)
@@ -73,7 +71,7 @@ func unprovisionWSL(mc *vmconfigs.MachineConfig) error {
 	return utils.GuardedRemoveAll(vmDataDir)
 }
 
-func provisionWSLDist(opts machineDefine.CreateVMOpts, distroInstallDir string, prompt string) (string, error) {
+func provisionWSLDist(opts define.CreateVMOpts, distroInstallDir string, prompt string) (string, error) {
 	if err := runCmdPassThrough(FindWSL(), "--import", opts.Name, distroInstallDir, opts.UserImageFile, "--version", "2"); err != nil {
 		return "", fmt.Errorf("the WSL import of guest OS failed: %w", err)
 	}
@@ -109,19 +107,19 @@ func (w WSLStubber) MountType() vmconfigs.VolumeMountType {
 }
 
 func (w WSLStubber) RequireExclusiveActive() bool {
-	//TODO implement me
+	// WSL2 support multiple instance startup, no need exclusive active
 	return false
 }
 
-func (w WSLStubber) State(mc *vmconfigs.MachineConfig, bypass bool) (machineDefine.Status, error) {
+func (w WSLStubber) State(mc *vmconfigs.MachineConfig) (define.Status, error) {
 	running, err := isRunning(mc.Name)
 	if err != nil {
 		return "", err
 	}
 	if running {
-		return machineDefine.Running, nil
+		return define.Running, nil
 	}
-	return machineDefine.Stopped, nil
+	return define.Stopped, nil
 }
 
 func (w WSLStubber) UpdateSSHPort(mc *vmconfigs.MachineConfig, port int) error {
@@ -130,11 +128,12 @@ func (w WSLStubber) UpdateSSHPort(mc *vmconfigs.MachineConfig, port int) error {
 }
 
 func (w WSLStubber) UseProviderNetworkSetup() bool {
+	// WSL2 do not have Use Provider NetworkSetup
 	return false
 }
 
 func (w WSLStubber) StartNetworking(mc *vmconfigs.MachineConfig, cmd *gvproxy.GvproxyCommand) error {
-	//TODO implement me
+	// WSL2 do not have StartNetworking logic
 	return nil
 }
 
@@ -143,17 +142,41 @@ func (w WSLStubber) PostStartNetworking(mc *vmconfigs.MachineConfig, noInfo bool
 }
 
 func (w WSLStubber) StartVM(mc *vmconfigs.MachineConfig) (func() error, func() error, error) {
-	dist := (mc.Name)
+	distName := mc.Name
 
-	err := wslInvoke(dist, "echo", "OkImFine")
+	// TODO: This should be in /opt/ovmd, but for now just `echo OkImFine`
+	newPort, err := ports.AllocateMachinePort()
+	if err != nil {
+		return nil, nil, err
+	}
+	success := false
+	defer func() {
+		if !success {
+			if err := ports.ReleaseMachinePort(newPort); err != nil {
+				logrus.Warnf("could not release port allocation as part of failure rollback (%d): %s", newPort, err.Error())
+			}
+		}
+	}()
+
+	// TODO 计算 VHDX 的大小
+
+	str := fmt.Sprintf("/opt/ovmd", "-s", "10240", "-p", newPort)
+	logrus.Infof("str %s", str)
+
+	err = wslInvoke(distName, "echo", "OkImFine")
 	if err != nil {
 		err = fmt.Errorf("the WSL bootstrap script failed: %w", err)
 	}
 
+	// TODO: implement wsl2 ready Func
 	readyFunc := func() error {
 		return nil
 	}
-	return nil, readyFunc, err
+
+	releaseCmd := func() error {
+		return nil
+	}
+	return releaseCmd, readyFunc, err
 }
 
 // TODO mount bare image into wsl
@@ -166,8 +189,8 @@ func (w WSLStubber) Exists(distroName string) (bool, error) {
 	return isWSLExist(distroName)
 }
 
-func (w WSLStubber) VMType() machineDefine.VMType {
-	return machineDefine.WSLVirt
+func (w WSLStubber) VMType() define.VMType {
+	return define.WSLVirt
 }
 
 func (w WSLStubber) Remove(mc *vmconfigs.MachineConfig) ([]string, func() error, error) {

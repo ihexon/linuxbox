@@ -3,10 +3,10 @@ package shim
 import (
 	"bauklotze/pkg/machine"
 	"bauklotze/pkg/machine/connection"
+	"bauklotze/pkg/machine/define"
 	"bauklotze/pkg/machine/env"
 	"bauklotze/pkg/machine/gvproxy"
 	"bauklotze/pkg/machine/lock"
-	"bauklotze/pkg/machine/machineDefine"
 	"bauklotze/pkg/machine/vmconfigs"
 	"bauklotze/pkg/utils"
 	"errors"
@@ -51,11 +51,11 @@ func writeSSHPublicKeyToRootfs(p string) {
 	// print ssh keys
 }
 
-func Init(opts machineDefine.InitOptions, mp vmconfigs.VMProvider) error {
+func Init(opts define.InitOptions, mp vmconfigs.VMProvider) error {
 	var (
 		imageExtension string
 		err            error
-		imagePath      *machineDefine.VMFile
+		imagePath      *define.VMFile
 	)
 
 	// Empty callbackFuncs arraylist
@@ -68,7 +68,7 @@ func Init(opts machineDefine.InitOptions, mp vmconfigs.VMProvider) error {
 		return err
 	}
 
-	sshIdentityPath, err := env.GetSSHIdentityPath(machineDefine.DefaultIdentityName)
+	sshIdentityPath, err := env.GetSSHIdentityPath(define.DefaultIdentityName)
 	if err != nil {
 		return err
 	}
@@ -83,9 +83,9 @@ func Init(opts machineDefine.InitOptions, mp vmconfigs.VMProvider) error {
 		return err
 	}
 	// machine configure json,version always be as 1
-	mc.Version = machineDefine.MachineConfigVersion
+	mc.Version = define.MachineConfigVersion
 
-	createOpts := machineDefine.CreateVMOpts{
+	createOpts := define.CreateVMOpts{
 		// Distro Name : machine init [distro_name]
 		Name: opts.Name,
 		Dirs: dirs,
@@ -94,9 +94,9 @@ func Init(opts machineDefine.InitOptions, mp vmconfigs.VMProvider) error {
 	}
 
 	switch mp.VMType() {
-	case machineDefine.LibKrun:
+	case define.LibKrun:
 		imageExtension = ".raw"
-	case machineDefine.WSLVirt:
+	case define.WSLVirt:
 		imageExtension = ""
 	default:
 		return fmt.Errorf("unknown VM type: %s", mp.VMType())
@@ -106,7 +106,7 @@ func Init(opts machineDefine.InitOptions, mp vmconfigs.VMProvider) error {
 	mc.ImagePath = imagePath
 
 	// Mounts
-	if mp.VMType() != machineDefine.WSLVirt {
+	if mp.VMType() != define.WSLVirt {
 		mc.Mounts = CmdLineVolumesToMounts(opts.Volumes, mp.MountType())
 	}
 
@@ -139,7 +139,7 @@ func Init(opts machineDefine.InitOptions, mp vmconfigs.VMProvider) error {
 		return err
 	}
 
-	mc.EvtSockPath = &machineDefine.VMFile{Path: opts.SendEvt}
+	mc.EvtSockPath = &define.VMFile{Path: opts.SendEvt}
 	mc.TwinPid = opts.TwinPid
 	mc.ImageVersion = opts.ImageVersion
 
@@ -168,10 +168,6 @@ func getMCsOverProviders(vmstubbers []vmconfigs.VMProvider) (map[string]*vmconfi
 	return mcs, nil
 }
 
-func GetMCsOverProviders(vmstubbers []vmconfigs.VMProvider) (map[string]*vmconfigs.MachineConfig, error) {
-	return getMCsOverProviders(vmstubbers)
-}
-
 // checkExclusiveActiveVM checks if any of the machines are already running
 func checkExclusiveActiveVM(provider vmconfigs.VMProvider, mc *vmconfigs.MachineConfig) error {
 	// Check if any other machines are running; if so, we error
@@ -180,28 +176,54 @@ func checkExclusiveActiveVM(provider vmconfigs.VMProvider, mc *vmconfigs.Machine
 		return err
 	}
 	for name, localMachine := range localMachines {
-		state, err := provider.State(localMachine, false)
+		state, err := provider.State(localMachine)
 		if err != nil {
 			return err
 		}
-		if state == machineDefine.Running || state == machineDefine.Starting {
-			return fmt.Errorf("unable to start %q: machine %s: %w", mc.Name, name, machineDefine.ErrVMAlreadyRunning)
+		if state == define.Running || state == define.Starting {
+			return fmt.Errorf("unable to start %q: machine %s: %w", mc.Name, name, define.ErrVMAlreadyRunning)
 		}
 	}
 	return nil
 }
 
-func Start(mc *vmconfigs.MachineConfig, mp vmconfigs.VMProvider, dirs *machineDefine.MachineDirs, opts machineDefine.StartOptions) error {
-	defaultBackoff := 500 * time.Millisecond
-	maxBackoffs := 6
-	noInfo := opts.NoInfo
+func startNetAndForwardNow(
+	callBackFuncs *machine.CleanupCallback,
+	mc *vmconfigs.MachineConfig,
+	mp vmconfigs.VMProvider,
+	dirs *define.MachineDirs,
+) (
+	string,
+	machine.APIForwardingState,
+	error,
+) {
+	gvproxyPidFile, err := dirs.RuntimeDir.AppendToNewVMFile("gvproxy.pid")
+	if err != nil {
+		return "", machine.NoForwarding, err
+	}
+	cleanGV := func() error {
+		return gvproxy.CleanupGVProxy(*gvproxyPidFile)
+	}
+	callBackFuncs.Add(cleanGV)
+
+	forwardSocketPath, forwardSocketState, err := startNetworking(mc, mp)
+	if err != nil {
+		return "", machine.NoForwarding, err
+	}
+	return forwardSocketPath, forwardSocketState, nil
+}
+
+func Start(mc *vmconfigs.MachineConfig, mp vmconfigs.VMProvider, dirs *define.MachineDirs, opts define.StartOptions) error {
+	var err error
 	mc.Lock()
 	defer mc.Unlock()
+
 	if err := mc.Refresh(); err != nil {
 		return fmt.Errorf("reload config: %w", err)
 	}
 
 	// Don't check if provider supports parallel running machines
+	// RequireExclusiveActive return false means the provider supports parallel running
 	if mp.RequireExclusiveActive() {
 		startLock, err := lock.GetMachineStartLock()
 		if err != nil {
@@ -215,13 +237,15 @@ func Start(mc *vmconfigs.MachineConfig, mp vmconfigs.VMProvider, dirs *machineDe
 		}
 	} else {
 		// still should make sure we do not start the same machine twice
-		state, err := mp.State(mc, false)
+		state, err := mp.State(mc)
 		if err != nil {
 			return err
 		}
 
-		if state == machineDefine.Running || state == machineDefine.Starting {
-			return fmt.Errorf("machine %s: %w", mc.Name, machineDefine.ErrVMAlreadyRunning)
+		if state == define.Running || state == define.Starting {
+			emsg := fmt.Errorf("machine %s: %w", mc.Name, define.ErrVMAlreadyRunning)
+			logrus.Error(emsg)
+			return emsg
 		}
 	}
 
@@ -238,80 +262,79 @@ func Start(mc *vmconfigs.MachineConfig, mp vmconfigs.VMProvider, dirs *machineDe
 		}
 	}()
 
-	gvproxyPidFile, err := dirs.RuntimeDir.AppendToNewVMFile("gvproxy.pid")
-	if err != nil {
-		return err
-	}
-
-	// start gvproxy and set up the API socket forwarding
-	forwardSocketPath, forwardingState, err := startNetworking(mc, mp)
-	if err != nil {
-		return err
-	}
-
 	callBackFuncs := machine.CleanupFuncs()
-	defer callBackFuncs.CleanIfErr(&err)
 	go callBackFuncs.CleanOnSignal()
 
-	// Clean up gvproxy if start fails
-	cleanGV := func() error {
-		return gvproxy.CleanupGVProxy(*gvproxyPidFile)
+	var (
+		forwardSocketPath = ""
+		forwardingState   = machine.NoForwarding
+	)
+
+	if mp.VMType() != define.WSLVirt {
+		forwardSocketPath, forwardingState, err = startNetAndForwardNow(&callBackFuncs, mc, mp, dirs)
 	}
-	callBackFuncs.Add(cleanGV)
-
-	// if there are generic things that need to be done, a preStart function could be added here
-	// should it be extensive
-
-	// releaseFunc is if the provider starts a vm using a go command
-	// and we still need control of it while it is booting until the ready
-	// socket is tripped
+	defer callBackFuncs.CleanIfErr(&err)
+	if err != nil {
+		return err
+	}
 
 	releaseCmd, WaitForReady, err := mp.StartVM(mc)
 	if err != nil {
 		return err
 	}
 
+	// Ready means:
+	// 1. running gvproxy first
+	// 	  - podman forwardSocket, (host)podman-api.sock -> (guest)podman.sock.
+	//    - ssh port forward (host)ssh-port:[random-assigned] -> (guest)ssh-port:22
+	// 2. the virtualMachine boot succeed!
+	// 3. the ignition finished
+	// 4. the podman startup succeed
+	// 5. ready event send to bauklotze
 	if WaitForReady == nil {
 		return errors.New("no valid WaitForReady function returned")
 	}
 
 	// continue check krunkit runnning and wait ready event comming
-	if err := WaitForReady(); err != nil {
+	if err = WaitForReady(); err != nil {
 		return err
 	}
 
-	if releaseCmd != nil && releaseCmd() != nil { // some providers can return nil here (hyperv)
+	if releaseCmd != nil && releaseCmd() != nil {
 		if err := releaseCmd(); err != nil {
-			// I think it is ok for a "light" error?
 			logrus.Error(err)
 		}
 	}
 
-	err = mp.PostStartNetworking(mc, opts.NoInfo)
+	err = mp.PostStartNetworking(mc, false)
 	if err != nil {
 		return err
 	}
 
 	//Update state
-	stateF := func() (machineDefine.Status, error) {
-		return mp.State(mc, true)
+	stateF := func() (define.Status, error) {
+		return mp.State(mc)
 	}
 
-	connected, sshError, err := conductVMReadinessCheck(mc, maxBackoffs, defaultBackoff, stateF)
-	if err != nil {
-		return err
-	}
+	defaultBackoff := 500 * time.Millisecond
+	maxBackoffs := 6
 
-	if !connected {
-		msg := "machine did not transition into running state"
-		if sshError != nil {
-			return fmt.Errorf("%s: ssh error: %v", msg, sshError)
+	if mp.VMType() != define.WSLVirt {
+		connected, sshError, err := conductVMReadinessCheck(mc, maxBackoffs, defaultBackoff, stateF)
+		if err != nil {
+			return err
 		}
-		return errors.New(msg)
+		if !connected {
+			msg := "machine did not transition into running state"
+			if sshError != nil {
+				return fmt.Errorf("%s: ssh error: %v", msg, sshError)
+			}
+			return errors.New(msg)
+		}
 	}
 
 	// mount the volumes to the VM
-	if err := mp.MountVolumesToVM(mc, opts.Quiet); err != nil {
+	if err := mp.MountVolumesToVM(mc, false); err != nil {
 		return err
 	}
 
@@ -325,7 +348,7 @@ func Start(mc *vmconfigs.MachineConfig, mp vmconfigs.VMProvider, dirs *machineDe
 		forwardingState,
 		mc.Name,
 		forwardSocketPath,
-		noInfo,
+		false,
 		mc.HostUser.Rootful,
 	)
 
@@ -334,8 +357,8 @@ func Start(mc *vmconfigs.MachineConfig, mp vmconfigs.VMProvider, dirs *machineDe
 
 func Reset(mps []vmconfigs.VMProvider) error {
 	var resetErrors *multierror.Error
-	// 注意 machineDefine 是配置模板，不存储数据
-	var removeDirs []*machineDefine.MachineDirs
+	// 注意 define 是配置模板，不存储数据
+	var removeDirs []*define.MachineDirs
 
 	for _, mp := range mps {
 		// env.GetMachineDirs return .local .config ~
@@ -366,7 +389,7 @@ func Reset(mps []vmconfigs.VMProvider) error {
 }
 
 // Stop stops the machine as well as supporting binaries/processes
-func Stop(mc *vmconfigs.MachineConfig, mp vmconfigs.VMProvider, dirs *machineDefine.MachineDirs, hardStop bool) error {
+func Stop(mc *vmconfigs.MachineConfig, mp vmconfigs.VMProvider, dirs *define.MachineDirs, hardStop bool) error {
 	// state is checked here instead of earlier because stopping a stopped vm is not considered
 	// an error.  so putting in one place instead of sprinkling all over.
 	mc.Lock()
@@ -379,17 +402,17 @@ func Stop(mc *vmconfigs.MachineConfig, mp vmconfigs.VMProvider, dirs *machineDef
 }
 
 // stopLocked stops the machine and expects the caller to hold the machine's lock.
-func stopLocked(mc *vmconfigs.MachineConfig, mp vmconfigs.VMProvider, dirs *machineDefine.MachineDirs, hardStop bool) error {
-	state, err := mp.State(mc, false)
+func stopLocked(mc *vmconfigs.MachineConfig, mp vmconfigs.VMProvider, dirs *define.MachineDirs, hardStop bool) error {
+	state, err := mp.State(mc)
 	if err != nil {
 		return err
 	}
 	// stopping a stopped machine is NOT an error
-	if state == machineDefine.Stopped {
+	if state == define.Stopped {
 		return nil
 	}
-	if state != machineDefine.Running {
-		return machineDefine.ErrWrongState
+	if state != define.Running {
+		return define.ErrWrongState
 	}
 
 	// Provider stops the machine

@@ -1,4 +1,4 @@
-package machineDefine
+package define
 
 import (
 	"fmt"
