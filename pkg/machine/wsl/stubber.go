@@ -102,8 +102,7 @@ func (w WSLStubber) StopVM(mc *vmconfigs.MachineConfig, hardStop bool) error {
 }
 
 func (w WSLStubber) MountType() vmconfigs.VolumeMountType {
-	//TODO implement me
-	panic("implement me")
+	return vmconfigs.RawDisk
 }
 
 func (w WSLStubber) RequireExclusiveActive() bool {
@@ -181,7 +180,6 @@ func (w WSLStubber) StartVM(mc *vmconfigs.MachineConfig) (func() error, func() e
 
 // TODO mount bare image into wsl
 func (w WSLStubber) MountVolumesToVM(mc *vmconfigs.MachineConfig, quiet bool) error {
-
 	return nil
 }
 
@@ -191,17 +189,6 @@ func (w WSLStubber) Exists(distroName string) (bool, error) {
 
 func (w WSLStubber) VMType() define.VMType {
 	return define.WSLVirt
-}
-
-func (w WSLStubber) Remove(mc *vmconfigs.MachineConfig) ([]string, func() error, error) {
-	wslRemoveFunc := func() error {
-		if err := runCmdPassThrough(FindWSL(), "--unregister", mc.Name); err != nil {
-			return err
-		}
-		return nil
-	}
-
-	return []string{}, wslRemoveFunc, nil
 }
 
 func isRunning(dist string) (bool, error) {

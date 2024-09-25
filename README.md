@@ -22,10 +22,6 @@
 - evtsock [SOCK_PATH]
 发送虚拟机事件给 SOCK_PATH，这个 SOCK_PATH 应该是一个 UDF
 
-```bash
-machine init --twinpid [PID] --evtsock [SOCK_PATH]
-machine start --twinpid [PID] --evtsock [SOCK_PATH]
-```
 
 ## TODO LIST
 
@@ -41,4 +37,4 @@ machine start --twinpid [PID] --evtsock [SOCK_PATH]
  - machine init 需要更多的测试
 
 ### WSL2 实现部分
- = [X] machine init 基本实现
+- [X] machine init 基本实现

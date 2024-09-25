@@ -11,6 +11,7 @@ const (
 	// 9pfs
 	NineP VolumeMountType = iota
 	VirtIOFS
+	RawDisk
 	Unknown
 )
 

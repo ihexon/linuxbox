@@ -167,7 +167,7 @@ func NewMachineConfig(opts define.InitOptions, dirs *define.MachineDirs, sshIden
 	mc.SSH = sshConfig
 	mc.Created = time.Now()
 
-	mc.HostUser = HostUser{UID: getHostUID(), Rootful: opts.Rootful}
+	mc.HostUser = HostUser{UID: getHostUID(), Rootful: true}
 
 	return mc, nil
 }

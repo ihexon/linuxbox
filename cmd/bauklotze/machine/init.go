@@ -41,10 +41,6 @@ var (
 	now                bool
 )
 
-type InitOptionalFlags struct {
-	UserModeNetworking bool
-}
-
 func init() {
 	registry.Commands = append(registry.Commands, registry.CliCommand{
 		Command: initCmd,
@@ -54,7 +50,7 @@ func init() {
 	flags := initCmd.Flags()
 	// Calculate the default configuration
 	// CPU,MEMORY,VOLUME,etc..
-	// OvmInitConfig() 配置虚拟机的内存/CPU/磁盘大小，这些配置将被写入 machine 的 json 文件做到持久化
+	// OvmInitConfig() 配置虚拟机的内存/CPU/磁盘大小/外部挂载节点，这些配置将被写入 machine 的 json 文件做到持久化
 	cfg := registry.OvmInitConfig()
 
 	flags.BoolVar(
@@ -97,10 +93,6 @@ func init() {
 	flags.StringVar(&initOpts.Username, UsernameFlagName, cfg.ContainersConfDefaultsRO.Machine.User, "Username used in image")
 	_ = initCmd.RegisterFlagCompletionFunc(UsernameFlagName, completion.AutocompleteNone)
 	flags.MarkHidden(UsernameFlagName)
-
-	rootfulFlagName := "rootful"
-	flags.BoolVar(&initOpts.Rootful, rootfulFlagName, true, "Whether this machine should prefer rootful container execution")
-	flags.MarkHidden(rootfulFlagName)
 
 	VolumeFlagName := "volume"
 	flags.StringArrayVarP(&initOpts.Volumes, VolumeFlagName, "v", cfg.ContainersConfDefaultsRO.Machine.Volumes.Get(), "Volumes to mount, source:target")
@@ -174,6 +166,12 @@ func initMachine(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	//NewMachineEvent(events.Init, events.Event{Name: initOpts.Name})
+
+	if now {
+		logrus.Infof("starting machine now with %s", args)
+		return start(cmd, args)
+	}
+
+	fmt.Printf("To start your machine run:\n\n\tbauklotze machine start%s\n\n", initOpts.Name)
 	return nil
 }

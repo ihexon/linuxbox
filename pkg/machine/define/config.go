@@ -75,7 +75,6 @@ type InitOptions struct {
 	Memory       uint64
 	Name         string
 	Username     string
-	Rootful      bool
 	ReExec       bool
 	TwinPid      int
 	SendEvt      string

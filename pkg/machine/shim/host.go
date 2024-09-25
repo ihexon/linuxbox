@@ -106,9 +106,8 @@ func Init(opts define.InitOptions, mp vmconfigs.VMProvider) error {
 	mc.ImagePath = imagePath
 
 	// Mounts
-	if mp.VMType() != define.WSLVirt {
-		mc.Mounts = CmdLineVolumesToMounts(opts.Volumes, mp.MountType())
-	}
+
+	mc.Mounts = CmdLineVolumesToMounts(opts.Volumes, mp.MountType())
 
 	// Jump into Provider's GetDisk implementation, but we can using
 	// if err := diskpull.GetDisk(opts.Image, dirs, mc.ImagePath, mp.VMType(), mc.Name); err != nil {

@@ -75,27 +75,31 @@ func start(cmd *cobra.Command, args []string) error {
 
 	logrus.Infof("Machine %q started successfully\n", vmName)
 
-	if startOpts.WaitAndStop || (startOpts.TwinPid != -1) {
-		logrus.Infof("Waiting PPID[%d] exited then stop the machine\n", startOpts.TwinPid)
-		return WaitingAndKillProcess(cmd, args,
-			startOpts.TwinPid,
-			machine.GlobalPIDs.GetKrunkitPID(),
-			machine.GlobalPIDs.GetGvproxyPID())
-	}
-
-	return nil
+	return WaiteAndStopMachine(
+		startOpts,
+		args,
+		machine.GlobalPIDs.GetKrunkitPID(),
+		machine.GlobalPIDs.GetGvproxyPID(),
+	)
 }
 
-func WaitingAndKillProcess(cmd *cobra.Command, args []string, ovmppid, krunkit, gvproxy int) error {
+func WaiteAndStopMachine(startOpts define.StartOptions, args []string, krunkit, gvproxy int) error {
+	if startOpts.WaitAndStop || (startOpts.TwinPid != -1) {
+		logrus.Infof("Waiting PPID[%d] exited then stop the machine\n", startOpts.TwinPid)
+		return waiteAndStopMachine(args, startOpts.TwinPid, krunkit, gvproxy)
+	}
+	return nil
+
+}
+
+func waiteAndStopMachine(args []string, ovmppid, krunkit, gvproxy int) error {
 	var err error
 	somethingWrong := make(chan bool)
 	go func() {
 		for {
-			if ovmppid != -1 {
-				if ok := system.IsProcessAlive(ovmppid); !ok {
-					somethingWrong <- true
-					return
-				}
+			if ovmppid != -1 && !system.IsProcessAlive(ovmppid) {
+				somethingWrong <- true
+				return
 			}
 			// Notice the CheckProcessRunning is a NO-BLOCK function
 			if err := system.CheckProcessRunning("KRunkit", krunkit); err != nil {
@@ -112,43 +116,15 @@ func WaitingAndKillProcess(cmd *cobra.Command, args []string, ovmppid, krunkit, 
 		}
 	}()
 
-	select {
-	case exited := <-somethingWrong:
-		if exited == true {
-			machineStopCmd := reexec.Command(args...)
-			var stdout, stderr bytes.Buffer
-			machineStopCmd.Stdout = &stdout
-			machineStopCmd.Stderr = &stderr
-			if err = machineStopCmd.Start(); err != nil {
-				return err
-			}
-			if err := machineStopCmd.Wait(); err != nil {
-			}
+	if <-somethingWrong {
+		machineStopCmd := reexec.Command(args...)
+		var stdout, stderr bytes.Buffer
+		machineStopCmd.Stdout = &stdout
+		machineStopCmd.Stderr = &stderr
+		if err = machineStopCmd.Start(); err != nil {
+			return err
 		}
+		_ = machineStopCmd.Wait()
 	}
 	return err
-}
-
-// WaitingAndKillProcessV2 : Not testing, maybe do not work as I expect
-func WaitingAndKillProcessV2(cmd *cobra.Command, args []string, ovmppid, krunkit, gvproxy int) error {
-	somethingWrong := make(chan bool)
-	go func() {
-		for {
-			if ovmppid != -1 && !system.IsProcessAlive(ovmppid) {
-				somethingWrong <- true
-				return
-			}
-			if system.CheckProcessRunning("Krunkit", krunkit) != nil || system.CheckProcessRunning("GVproxy", gvproxy) != nil {
-				somethingWrong <- true
-				return
-			}
-			time.Sleep(400 * time.Millisecond)
-		}
-	}()
-
-	if <-somethingWrong {
-		logrus.Infof("ppid:[%d] exited ! stop machine now...", ovmppid)
-		//return stop(cmd, args)
-	}
-	return nil
 }
