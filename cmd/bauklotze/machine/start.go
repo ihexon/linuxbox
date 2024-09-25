@@ -72,19 +72,14 @@ func start(cmd *cobra.Command, args []string) error {
 
 	logrus.Infof("Machine %q started successfully\n", vmName)
 
-	if startOpts.WaitAndStop {
-		logrus.Infof("Waiting PPID[%q] exited then stop the machine\n", startOpts.TwinPid)
+	if startOpts.WaitAndStop || (startOpts.TwinPid != -1) {
+		logrus.Infof("Waiting PPID[%d] exited then stop the machine\n", startOpts.TwinPid)
 		return WaitingAndKillProcess(cmd, args,
 			startOpts.TwinPid,
 			machine.GlobalPIDs.GetKrunkitPID(),
 			machine.GlobalPIDs.GetGvproxyPID())
 	}
 
-	//
-	//err = NewMachineEvent(events.Start, "started", mc)
-	//if err != nil {
-	//	logrus.Warnf("Send event failed: %s", err.Error())
-	//}
 	return nil
 }
 
@@ -100,12 +95,12 @@ func WaitingAndKillProcess(cmd *cobra.Command, args []string, ovmppid, krunkit, 
 				}
 			}
 			// Notice the CheckProcessRunning is a NO-BLOCK function
-			if err := system.CheckProcessRunning("Krunkit", krunkit); err != nil {
+			if err := system.CheckProcessRunning("KRunkit", krunkit); err != nil {
 				somethingWrong <- true
 				return
 			}
 			// Notice the CheckProcessRunning is a NO-BLOCK function
-			if err := system.CheckProcessRunning("GVproxy", gvproxy); err != nil {
+			if err := system.CheckProcessRunning("GVProxy", gvproxy); err != nil {
 				somethingWrong <- true
 				return
 			}
@@ -142,7 +137,7 @@ func WaitingAndKillProcessV2(cmd *cobra.Command, args []string, ovmppid, krunkit
 
 	if <-somethingWrong {
 		logrus.Infof("ppid:[%d] exited ! stop machine now...", ovmppid)
-		return stop(cmd, args)
+		//return stop(cmd, args)
 	}
 	return nil
 }

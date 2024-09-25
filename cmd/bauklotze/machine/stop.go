@@ -32,19 +32,9 @@ func init() {
 		Parent:  machineCmd,
 	})
 
-	flags := initCmd.Flags()
-
-	twinPid := "twinpid"
-	flags.IntVar(&stopOpts.TwinPid, twinPid, -1, "self killing when [twin pid] exit")
-	flags.MarkHidden(twinPid)
-
-	sendEventToEndpoint := "evtsock"
-	flags.StringVar(&stopOpts.SendEvt, sendEventToEndpoint, "", "send events to somewhere")
-	flags.MarkHidden(sendEventToEndpoint)
 }
 
-func stop(cmd *cobra.Command, args []string) error {
-
+func stop(_ *cobra.Command, args []string) error {
 	var err error
 	vmName := defaultMachineName
 	if len(args) > 0 && len(args[0]) > 0 {
