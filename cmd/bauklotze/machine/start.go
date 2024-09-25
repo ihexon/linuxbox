@@ -8,6 +8,9 @@ import (
 	"bauklotze/pkg/machine/shim"
 	"bauklotze/pkg/machine/vmconfigs"
 	"bauklotze/pkg/system"
+	"bauklotze/pkg/utils/reexec"
+	_ "bauklotze/pkg/utils/reexec"
+	"bytes"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"time"
@@ -112,7 +115,15 @@ func WaitingAndKillProcess(cmd *cobra.Command, args []string, ovmppid, krunkit, 
 	select {
 	case exited := <-somethingWrong:
 		if exited == true {
-			return stop(cmd, args)
+			machineStopCmd := reexec.Command(args...)
+			var stdout, stderr bytes.Buffer
+			machineStopCmd.Stdout = &stdout
+			machineStopCmd.Stderr = &stderr
+			if err = machineStopCmd.Start(); err != nil {
+				return err
+			}
+			if err := machineStopCmd.Wait(); err != nil {
+			}
 		}
 	}
 	return err
