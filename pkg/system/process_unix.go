@@ -15,7 +15,6 @@ func IsProcessAlive(pid int) bool {
 	if err == nil || err == unix.EPERM {
 		return true
 	}
-
 	return false
 }
 
@@ -26,6 +25,8 @@ func KillProcess(pid int) {
 
 func CheckProcessRunning(processName string, pid int) error {
 	var status syscall.WaitStatus
+	// wait(): on success, returns the process ID of the terminated
+	// child; on failure, -1 is returned.
 	pid, err := syscall.Wait4(pid, &status, syscall.WNOHANG, nil)
 	if err != nil {
 		return fmt.Errorf("failed to read %s process status: %w", processName, err)

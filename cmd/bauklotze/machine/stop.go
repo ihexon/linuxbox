@@ -4,7 +4,7 @@ package machine
 
 import (
 	"bauklotze/cmd/registry"
-	"bauklotze/pkg/machine"
+	"bauklotze/pkg/machine/define"
 	"bauklotze/pkg/machine/env"
 	"bauklotze/pkg/machine/shim"
 	"bauklotze/pkg/machine/vmconfigs"
@@ -20,10 +20,10 @@ var (
 		PersistentPreRunE: machinePreRunE,
 		RunE:              stop,
 		Args:              cobra.MaximumNArgs(1),
-		Example:           `podman machine stop podman-machine-default`,
+		Example:           `bauklotze machine stop bugbox-machine-default`,
 		ValidArgsFunction: autocompleteMachine,
 	}
-	stopOpts = machine.StopOptions{}
+	stopOpts = define.StopOptions{}
 )
 
 func init() {
@@ -32,10 +32,19 @@ func init() {
 		Parent:  machineCmd,
 	})
 
+	flags := initCmd.Flags()
+
+	twinPid := "twinpid"
+	flags.IntVar(&stopOpts.TwinPid, twinPid, -1, "self killing when [twin pid] exit")
+	flags.MarkHidden(twinPid)
+
+	sendEventToEndpoint := "evtsock"
+	flags.StringVar(&stopOpts.SendEvt, sendEventToEndpoint, "", "send events to somewhere")
+	flags.MarkHidden(sendEventToEndpoint)
 }
 
-// TODO  Name shouldn't be required, need to create a default vm
 func stop(cmd *cobra.Command, args []string) error {
+
 	var err error
 	vmName := defaultMachineName
 	if len(args) > 0 && len(args[0]) > 0 {

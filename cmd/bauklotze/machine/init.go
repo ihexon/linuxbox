@@ -8,9 +8,9 @@ import (
 	"bauklotze/pkg/machine/vmconfigs"
 	"bauklotze/pkg/regexp"
 	strongunits "bauklotze/pkg/storage"
+	"bauklotze/pkg/system"
 	"errors"
 	"fmt"
-	"github.com/shirou/gopsutil/v3/mem"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"os"
@@ -64,6 +64,12 @@ func init() {
 	)
 	_ = flags.MarkHidden("reexec")
 
+	flags.BoolVar(&now,
+		"now",
+		false,
+		"Start machine now",
+	)
+
 	cpusFlagName := "cpus"
 	flags.Uint64Var(
 		&initOpts.CPUS,
@@ -90,6 +96,11 @@ func init() {
 	UsernameFlagName := "username"
 	flags.StringVar(&initOpts.Username, UsernameFlagName, cfg.ContainersConfDefaultsRO.Machine.User, "Username used in image")
 	_ = initCmd.RegisterFlagCompletionFunc(UsernameFlagName, completion.AutocompleteNone)
+	flags.MarkHidden(UsernameFlagName)
+
+	rootfulFlagName := "rootful"
+	flags.BoolVar(&initOpts.Rootful, rootfulFlagName, true, "Whether this machine should prefer rootful container execution")
+	flags.MarkHidden(rootfulFlagName)
 
 	VolumeFlagName := "volume"
 	flags.StringArrayVarP(&initOpts.Volumes, VolumeFlagName, "v", cfg.ContainersConfDefaultsRO.Machine.Volumes.Get(), "Volumes to mount, source:target")
@@ -98,9 +109,7 @@ func init() {
 	ImageFlagName := "image"
 	flags.StringVar(&initOpts.Image, ImageFlagName, cfg.ContainersConfDefaultsRO.Machine.Image, "Bootable image for machine")
 	_ = initCmd.RegisterFlagCompletionFunc(ImageFlagName, completion.AutocompleteDefault)
-
-	rootfulFlagName := "rootful"
-	flags.BoolVar(&initOpts.Rootful, rootfulFlagName, true, "Whether this machine should prefer rootful container execution")
+	flags.MarkHidden(ImageFlagName)
 
 	twinPid := "twinpid"
 	flags.IntVar(&initOpts.TwinPid, twinPid, -1, "self killing when [twin pid] exit")
@@ -108,13 +117,11 @@ func init() {
 
 	imageVersion := "image-version"
 	flags.StringVar(&initOpts.ImageVersion, imageVersion, "always-update", "Special bootable image version")
-	flags.MarkHidden(twinPid)
+	flags.MarkHidden(imageVersion)
 
 	sendEventToEndpoint := "evtsock"
 	flags.StringVar(&initOpts.SendEvt, sendEventToEndpoint, "", "send events to somewhere")
 	flags.MarkHidden(sendEventToEndpoint)
-
-	flags.BoolVar(&now, "now", false, "Start machine now")
 }
 
 func initMachine(cmd *cobra.Command, args []string) error {
@@ -149,7 +156,6 @@ func initMachine(cmd *cobra.Command, args []string) error {
 		}
 		return fmt.Errorf("%s: %w", initOpts.Name, define.ErrVMAlreadyExists)
 	case oldmc == nil:
-
 	case oldmc.ImageVersion != initOpts.ImageVersion:
 	default:
 	}
@@ -159,7 +165,7 @@ func initMachine(cmd *cobra.Command, args []string) error {
 	}
 
 	if cmd.Flags().Changed("memory") {
-		if err := checkMaxMemory(strongunits.MiB(initOpts.Memory)); err != nil {
+		if err := system.CheckMaxMemory(strongunits.MiB(initOpts.Memory)); err != nil {
 			return err
 		}
 	}
@@ -169,18 +175,5 @@ func initMachine(cmd *cobra.Command, args []string) error {
 		return err
 	}
 	//NewMachineEvent(events.Init, events.Event{Name: initOpts.Name})
-	return nil
-}
-
-// checkMaxMemory gets the total system memory and compares it to the variable.  if the variable
-// is larger than the total memory, it returns an error
-func checkMaxMemory(newMem strongunits.MiB) error {
-	memStat, err := mem.VirtualMemory()
-	if err != nil {
-		return err
-	}
-	if total := strongunits.B(memStat.Total); strongunits.B(memStat.Total) < newMem.ToBytes() {
-		return fmt.Errorf("requested amount of memory (%d MB) greater than total system memory (%d MB)", newMem, total)
-	}
 	return nil
 }

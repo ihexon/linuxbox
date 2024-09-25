@@ -15,7 +15,7 @@ var studiomodCmd = &cobra.Command{
 	},
 	PersistentPostRunE: closeMachineEvents,
 	RunE:               validata.SubCommandExists,
-	Hidden:             false,
+	Hidden:             true,
 }
 
 func init() {

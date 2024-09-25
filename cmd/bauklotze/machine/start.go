@@ -7,9 +7,10 @@ import (
 	"bauklotze/pkg/machine/env"
 	"bauklotze/pkg/machine/shim"
 	"bauklotze/pkg/machine/vmconfigs"
-	"fmt"
+	"bauklotze/pkg/system"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+	"time"
 )
 
 var (
@@ -23,7 +24,9 @@ var (
 		Example:           `bauklotze machine start`,
 		ValidArgsFunction: autocompleteMachine,
 	}
-	startOpts = define.StartOptions{}
+	startOpts = define.StartOptions{
+		WaitAndStop: false,
+	}
 )
 
 func init() {
@@ -33,11 +36,16 @@ func init() {
 	})
 	flags := startCmd.Flags()
 
-	noquitFlagName := "noquit"
-	flags.BoolVarP(&startOpts.NoQuit, noquitFlagName, "", false, "do not exit after start machine")
+	waitAndStop := "waitAndStop"
+	flags.BoolVarP(&startOpts.WaitAndStop,
+		waitAndStop,
+		"",
+		false,
+		"When any of ppid, gvproxy, and krunkit got exit, STOP the virtual Machine")
+	flags.MarkHidden(waitAndStop)
 
 	twinPid := "twinpid"
-	flags.IntVar(&startOpts.TwinPid, twinPid, -1, "self killing when [twin pid] exit")
+	flags.IntVar(&startOpts.TwinPid, twinPid, -1, "the pid of PPID")
 	flags.MarkHidden(twinPid)
 }
 
@@ -62,27 +70,79 @@ func start(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	fmt.Printf("Machine %q started successfully\n", vmName)
+	logrus.Infof("Machine %q started successfully\n", vmName)
+
+	if startOpts.WaitAndStop {
+		logrus.Infof("Waiting PPID[%q] exited then stop the machine\n", startOpts.TwinPid)
+		return WaitingAndKillProcess(cmd, args,
+			startOpts.TwinPid,
+			machine.GlobalPIDs.GetKrunkitPID(),
+			machine.GlobalPIDs.GetGvproxyPID())
+	}
 
 	//
 	//err = NewMachineEvent(events.Start, "started", mc)
 	//if err != nil {
 	//	logrus.Warnf("Send event failed: %s", err.Error())
 	//}
+	return nil
+}
 
-	if startOpts.TwinPid != -1 {
-		machine.OvmProcessKiller(mc.TwinPid,
-			machine.GlobalPIDs.GetKrunkitPID(),
-			machine.GlobalPIDs.GetGvproxyPID(),
-		)
+func WaitingAndKillProcess(cmd *cobra.Command, args []string, ovmppid, krunkit, gvproxy int) error {
+	var err error
+	somethingWrong := make(chan bool)
+	go func() {
+		for {
+			if ovmppid != -1 {
+				if ok := system.IsProcessAlive(ovmppid); !ok {
+					somethingWrong <- true
+					return
+				}
+			}
+			// Notice the CheckProcessRunning is a NO-BLOCK function
+			if err := system.CheckProcessRunning("Krunkit", krunkit); err != nil {
+				somethingWrong <- true
+				return
+			}
+			// Notice the CheckProcessRunning is a NO-BLOCK function
+			if err := system.CheckProcessRunning("GVproxy", gvproxy); err != nil {
+				somethingWrong <- true
+				return
+			}
+			// lets poll status every half second
+			time.Sleep(400 * time.Millisecond)
+		}
+	}()
+
+	select {
+	case exited := <-somethingWrong:
+		if exited == true {
+			return stop(cmd, args)
+		}
 	}
+	return err
+}
 
-	//api()
+// WaitingAndKillProcessV2 : Not testing, maybe do not work as I expect
+func WaitingAndKillProcessV2(cmd *cobra.Command, args []string, ovmppid, krunkit, gvproxy int) error {
+	somethingWrong := make(chan bool)
+	go func() {
+		for {
+			if ovmppid != -1 && !system.IsProcessAlive(ovmppid) {
+				somethingWrong <- true
+				return
+			}
+			if system.CheckProcessRunning("Krunkit", krunkit) != nil || system.CheckProcessRunning("GVproxy", gvproxy) != nil {
+				somethingWrong <- true
+				return
+			}
+			time.Sleep(400 * time.Millisecond)
+		}
+	}()
 
-	//err = stop(cmd, args)
-	//if err != nil {
-	//	return err
-	//}
-
+	if <-somethingWrong {
+		logrus.Infof("ppid:[%d] exited ! stop machine now...", ovmppid)
+		return stop(cmd, args)
+	}
 	return nil
 }

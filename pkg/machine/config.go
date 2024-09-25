@@ -2,9 +2,6 @@ package machine
 
 type APIForwardingState int
 
-type StopOptions struct {
-}
-
 var (
 	ForwarderBinaryName = "gvproxy"
 )

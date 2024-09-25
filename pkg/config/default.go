@@ -32,7 +32,7 @@ func newLocked(options *Options) (*Config, error) {
 	if err != nil {
 		return nil, err
 	}
-	
+
 	if options.SetDefault {
 		cachedConfig = config
 		cachedConfigError = nil
@@ -57,8 +57,10 @@ func defaultConfig() (*Config, error) {
 	return c, nil
 }
 
+const vmuser = "root"
+
 func getDefaultMachineUser() string {
-	return "root"
+	return vmuser
 }
 
 // defaultMachineConfig returns the default machine configuration.

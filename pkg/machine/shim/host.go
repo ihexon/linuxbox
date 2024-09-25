@@ -402,8 +402,9 @@ func Stop(mc *vmconfigs.MachineConfig, mp vmconfigs.VMProvider, dirs *define.Mac
 }
 
 // stopLocked stops the machine and expects the caller to hold the machine's lock.
-func stopLocked(mc *vmconfigs.MachineConfig, mp vmconfigs.VMProvider, dirs *define.MachineDirs, hardStop bool) error {
-	state, err := mp.State(mc)
+func stopLocked(mc *vmconfigs.MachineConfig, machineProvider vmconfigs.VMProvider, dirs *define.MachineDirs, hardStop bool) error {
+	var err error
+	state, err := machineProvider.State(mc)
 	if err != nil {
 		return err
 	}
@@ -416,7 +417,7 @@ func stopLocked(mc *vmconfigs.MachineConfig, mp vmconfigs.VMProvider, dirs *defi
 	}
 
 	// Provider stops the machine
-	if err := mp.StopVM(mc, hardStop); err != nil {
+	if err = machineProvider.StopVM(mc, hardStop); err != nil {
 		return err
 	}
 
@@ -438,7 +439,7 @@ func stopLocked(mc *vmconfigs.MachineConfig, mp vmconfigs.VMProvider, dirs *defi
 	}
 
 	// Stop GvProxy and remove PID file
-	if !mp.UseProviderNetworkSetup() {
+	if !machineProvider.UseProviderNetworkSetup() {
 		gvproxyPidFile, err := dirs.RuntimeDir.AppendToNewVMFile("gvproxy.pid")
 		if err != nil {
 			return err

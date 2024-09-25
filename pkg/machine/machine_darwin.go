@@ -7,13 +7,15 @@ import (
 	"time"
 )
 
-func OvmProcessKiller(ovmppid, krunkit, gvproxy int) {
+func WaitingAndKillProcess(ovmppid, krunkit, gvproxy int) {
 	somethingWrong := make(chan bool)
 	go func() {
 		for {
-			if ok := system.IsProcessAlive(ovmppid); !ok {
-				somethingWrong <- true
-				return
+			if ovmppid != -1 {
+				if ok := system.IsProcessAlive(ovmppid); !ok {
+					somethingWrong <- true
+					return
+				}
 			}
 			if err := system.CheckProcessRunning("Krunkit", krunkit); err != nil {
 				somethingWrong <- true

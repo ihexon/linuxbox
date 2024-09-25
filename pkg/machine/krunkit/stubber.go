@@ -23,8 +23,8 @@ func (l LibKrunStubber) State(mc *vmconfigs.MachineConfig) (define.Status, error
 	return mc.AppleKrunkitHypervisor.Krunkit.State()
 }
 
-func (l LibKrunStubber) StopVM(mc *vmconfigs.MachineConfig, hardStop bool) error {
-	return mc.AppleKrunkitHypervisor.Krunkit.Stop(hardStop, true)
+func (l LibKrunStubber) StopVM(mc *vmconfigs.MachineConfig, ifHardStop bool) error {
+	return mc.AppleKrunkitHypervisor.Krunkit.Stop(ifHardStop, true)
 }
 
 func (l LibKrunStubber) GetDisk(userInputPath string, dirs *define.MachineDirs, imagePath *define.VMFile, vmType define.VMType, name string) error {
