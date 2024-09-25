@@ -53,8 +53,34 @@ func (w WSLStubber) CreateVM(opts define.CreateVMOpts, mc *vmconfigs.MachineConf
 		return unprovisionWSL(mc)
 	}
 	callbackFuncs.Add(unprovisionCallbackFunc)
-	logrus.Infof("Configuring system...")
+	logrus.Info("Configuring system...")
+
+	if err = configureSystem(mc, dist); err != nil {
+		return err
+	}
+
 	return terminateDist(dist)
+}
+
+func configureSystem(mc *vmconfigs.MachineConfig, dist string) error {
+
+	if err := createKeys(mc, dist); err != nil {
+		return err
+	}
+
+	if err := configureBindMounts(mc, dist); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func configureBindMounts(mc *vmconfigs.MachineConfig, dist string) error {
+	return nil
+}
+
+func createKeys(mc *vmconfigs.MachineConfig, dist string) error {
+	return nil
 }
 
 // TODO like provisionWSL, i think this needs to be pushed to use common
@@ -83,16 +109,7 @@ func (w WSLStubber) StopVM(mc *vmconfigs.MachineConfig, hardStop bool) error {
 	if running, err := isRunning(mc.Name); !running {
 		return err
 	}
-	dist := (mc.Name)
-
-	// Stop user-mode networking if enabled
-	//if err := stopUserModeNetworking(mc); err != nil {
-	//	fmt.Fprintf(os.Stderr, "Could not cleanly stop user-mode networking: %s\n", err.Error())
-	//}
-
-	//if err := machine.StopWinProxy(mc.Name, vmtype); err != nil {
-	//	fmt.Fprintf(os.Stderr, "Could not stop API forwarding service (win-sshproxy.exe): %s\n", err.Error())
-	//}
+	dist := mc.Name
 
 	err := wslPipe("sync", dist)
 	if err != nil {
@@ -122,8 +139,13 @@ func (w WSLStubber) State(mc *vmconfigs.MachineConfig) (define.Status, error) {
 }
 
 func (w WSLStubber) UpdateSSHPort(mc *vmconfigs.MachineConfig, port int) error {
-	//TODO implement me
-	panic("implement me")
+	const changePort = `sed -E -i 's/^Port[[:space:]]+[0-9]+/Port %d/' /etc/ssh/sshd_config`
+	dist := mc.Name
+	if err := wslInvoke(dist, "sh", "-c", fmt.Sprintf(changePort, port)); err != nil {
+		return fmt.Errorf("could not change SSH port for guest OS: %w", err)
+	}
+
+	return nil
 }
 
 func (w WSLStubber) UseProviderNetworkSetup() bool {

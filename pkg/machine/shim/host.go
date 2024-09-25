@@ -269,9 +269,8 @@ func Start(mc *vmconfigs.MachineConfig, mp vmconfigs.VMProvider, dirs *define.Ma
 		forwardingState   = machine.NoForwarding
 	)
 
-	if mp.VMType() != define.WSLVirt {
-		forwardSocketPath, forwardingState, err = startNetAndForwardNow(&callBackFuncs, mc, mp, dirs)
-	}
+	forwardSocketPath, forwardingState, err = startNetAndForwardNow(&callBackFuncs, mc, mp, dirs)
+
 	defer callBackFuncs.CleanIfErr(&err)
 	if err != nil {
 		return err

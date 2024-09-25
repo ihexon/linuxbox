@@ -8,9 +8,6 @@ import (
 	"bauklotze/pkg/machine/shim"
 	"bauklotze/pkg/machine/vmconfigs"
 	"bauklotze/pkg/system"
-	"bauklotze/pkg/utils/reexec"
-	_ "bauklotze/pkg/utils/reexec"
-	"bytes"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"time"
@@ -117,14 +114,7 @@ func waiteAndStopMachine(args []string, ovmppid, krunkit, gvproxy int) error {
 	}()
 
 	if <-somethingWrong {
-		machineStopCmd := reexec.Command(args...)
-		var stdout, stderr bytes.Buffer
-		machineStopCmd.Stdout = &stdout
-		machineStopCmd.Stderr = &stderr
-		if err = machineStopCmd.Start(); err != nil {
-			return err
-		}
-		_ = machineStopCmd.Wait()
+		return stop(nil, args)
 	}
 	return err
 }

@@ -169,9 +169,12 @@ func initMachine(cmd *cobra.Command, args []string) error {
 
 	if now {
 		logrus.Infof("starting machine now with %s", args)
-		return start(cmd, args)
+		startOpts.TwinPid = initOpts.TwinPid
+		return start(nil, args)
+	} else {
+		fmt.Printf("To start your machine run:\n\n\tbauklotze machine start%s\n\n", initOpts.Name)
+
 	}
 
-	fmt.Printf("To start your machine run:\n\n\tbauklotze machine start%s\n\n", initOpts.Name)
 	return nil
 }

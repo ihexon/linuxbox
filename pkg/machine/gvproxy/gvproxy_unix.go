@@ -8,7 +8,6 @@ import (
 	"fmt"
 	psutil "github.com/shirou/gopsutil/v3/process"
 	"github.com/sirupsen/logrus"
-	"golang.org/x/sys/unix"
 	"syscall"
 	"time"
 )
@@ -41,30 +40,7 @@ func waitOnProcess(processID int) error {
 		}
 		return err
 	}
-	return backoffForProcess(p)
-}
-
-func backoffForProcess(p *psutil.Process) error {
-	sleepInterval := sleepTime
-	for i := 0; i < loops; i++ {
-		running, err := p.IsRunning()
-		if err != nil {
-			// It is possible that while in our loop, the PID vaporize triggering
-			// an input/output error (#21845)
-			if errors.Is(err, unix.EIO) {
-				return nil
-			}
-			return fmt.Errorf("checking if process running: %w", err)
-		}
-		if !running {
-			return nil
-		}
-
-		time.Sleep(sleepInterval)
-		// double the time
-		sleepInterval += sleepInterval
-	}
-	return fmt.Errorf("process %d has not ended", p.Pid)
+	return nil
 }
 
 func removeGVProxyPIDFile(f define.VMFile) error {

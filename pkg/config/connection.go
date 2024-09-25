@@ -20,9 +20,6 @@ type ConnectionsFile struct {
 
 // connectionsConfigFile returns the path to the rw connections config file
 func connectionsConfigFile() (string, error) {
-	if path, found := os.LookupEnv("PODMAN_CONNECTIONS_CONF"); found {
-		return path, nil
-	}
 	path, err := env.GetMachineConfDir()
 	if err != nil {
 		return "", err

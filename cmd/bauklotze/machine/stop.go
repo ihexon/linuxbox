@@ -31,10 +31,9 @@ func init() {
 		Command: stopCmd,
 		Parent:  machineCmd,
 	})
-
 }
 
-func stop(_ *cobra.Command, args []string) error {
+func stop(cmd *cobra.Command, args []string) error {
 	var err error
 	vmName := defaultMachineName
 	if len(args) > 0 && len(args[0]) > 0 {
