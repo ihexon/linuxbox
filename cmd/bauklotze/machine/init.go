@@ -47,19 +47,12 @@ func init() {
 		Parent:  machineCmd,
 	})
 
-	flags := initCmd.Flags()
 	// Calculate the default configuration
 	// CPU,MEMORY,VOLUME,etc..
 	// OvmInitConfig() 配置虚拟机的内存/CPU/磁盘大小/外部挂载节点，这些配置将被写入 machine 的 json 文件做到持久化
 	cfg := registry.OvmInitConfig()
 
-	flags.BoolVar(
-		&initOpts.ReExec,
-		"reexec", false,
-		"process was rexeced",
-	)
-	_ = flags.MarkHidden("reexec")
-
+	flags := initCmd.Flags()
 	flags.BoolVar(&now,
 		"now",
 		false,
@@ -173,7 +166,6 @@ func initMachine(cmd *cobra.Command, args []string) error {
 		return start(nil, args)
 	} else {
 		fmt.Printf("To start your machine run:\n\n\tbauklotze machine start%s\n\n", initOpts.Name)
-
 	}
 
 	return nil

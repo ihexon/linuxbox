@@ -7,7 +7,7 @@ var (
 	CustomHomeEnvOnce sync.Once
 )
 
-func InitCustomHomeEnv(value string) {
+func InitCustomHomeEnvOnce(value string) {
 	CustomHomeEnvOnce.Do(func() {
 		CustomHomeEnv = value
 	})

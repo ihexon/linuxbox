@@ -43,7 +43,7 @@ var provider vmconfigs.VMProvider
 func machinePreRunE(cmd *cobra.Command, args []string) error {
 	var err error = nil
 	d, _ := cmd.Flags().GetString("workdir")
-	env.InitCustomHomeEnv(d)
+	env.InitCustomHomeEnvOnce(d)
 
 	provider, err = provider2.Get()
 	if err != nil {
@@ -95,9 +95,7 @@ var machineCmd = &cobra.Command{
 }
 
 func init() {
-	registry.Commands = append(registry.Commands, registry.CliCommand{
-		Command: machineCmd,
-	})
+	registry.Commands = append(registry.Commands, registry.CliCommand{Command: machineCmd})
 }
 
 func closeMachineEvents(cmd *cobra.Command, _ []string) error {
