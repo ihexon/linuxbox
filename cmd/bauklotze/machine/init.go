@@ -2,7 +2,6 @@ package machine
 
 import (
 	"bauklotze/cmd/registry"
-	"bauklotze/pkg/completion"
 	"bauklotze/pkg/machine/define"
 	"bauklotze/pkg/machine/shim"
 	"bauklotze/pkg/machine/vmconfigs"
@@ -20,7 +19,6 @@ var (
 	NameRegex     = regexp.Delayed("^[a-zA-Z0-9][a-zA-Z0-9_.-]*$")
 	RegexError    = fmt.Errorf("names must match [a-zA-Z0-9][a-zA-Z0-9_.-]*: %w", ErrInvalidArg) // nolint:revive // This lint is new and we do not want to break the API.
 	ErrInvalidArg = errors.New("invalid argument")
-	NotHexRegex   = regexp.Delayed(`[^0-9a-fA-F]`)
 )
 
 const maxMachineNameSize = 30
@@ -34,7 +32,6 @@ var (
 		RunE:              initMachine,
 		Args:              cobra.MaximumNArgs(1), // max positional arguments
 		Example:           `machine init`,
-		ValidArgsFunction: completion.AutocompleteNone,
 	}
 	initOpts           = define.InitOptions{}
 	defaultMachineName = define.DefaultMachineName
@@ -65,7 +62,7 @@ func init() {
 		cpusFlagName, cfg.ContainersConfDefaultsRO.Machine.CPUs,
 		"Number of CPUs",
 	)
-	_ = initCmd.RegisterFlagCompletionFunc(cpusFlagName, completion.AutocompleteNone)
+	//_ = initCmd.RegisterFlagCompletionFunc(cpusFlagName, completion.AutocompleteNone)
 
 	diskSizeFlagName := "disk-size"
 	flags.Uint64Var(
@@ -80,20 +77,16 @@ func init() {
 		memoryFlagName, "m", cfg.ContainersConfDefaultsRO.Machine.Memory,
 		"Memory in MiB",
 	)
-	_ = initCmd.RegisterFlagCompletionFunc(memoryFlagName, completion.AutocompleteNone)
 
 	UsernameFlagName := "username"
 	flags.StringVar(&initOpts.Username, UsernameFlagName, cfg.ContainersConfDefaultsRO.Machine.User, "Username used in image")
-	_ = initCmd.RegisterFlagCompletionFunc(UsernameFlagName, completion.AutocompleteNone)
 	flags.MarkHidden(UsernameFlagName)
 
 	VolumeFlagName := "volume"
 	flags.StringArrayVarP(&initOpts.Volumes, VolumeFlagName, "v", cfg.ContainersConfDefaultsRO.Machine.Volumes.Get(), "Volumes to mount, source:target")
-	_ = initCmd.RegisterFlagCompletionFunc(VolumeFlagName, completion.AutocompleteDefault)
 
 	ImageFlagName := "image"
 	flags.StringVar(&initOpts.Image, ImageFlagName, cfg.ContainersConfDefaultsRO.Machine.Image, "Bootable image for machine")
-	_ = initCmd.RegisterFlagCompletionFunc(ImageFlagName, completion.AutocompleteDefault)
 	flags.MarkHidden(ImageFlagName)
 
 	twinPid := "twinpid"

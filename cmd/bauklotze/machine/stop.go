@@ -21,7 +21,7 @@ var (
 		RunE:              stop,
 		Args:              cobra.MaximumNArgs(1),
 		Example:           `bauklotze machine stop bugbox-machine-default`,
-		ValidArgsFunction: autocompleteMachine,
+		//ValidArgsFunction: autocompleteMachine,
 	}
 	stopOpts = define.StopOptions{}
 )

@@ -192,6 +192,7 @@ func StartGenericAppleVM(mc *vmconfigs.MachineConfig, cmdBinary string, bootload
 		logrus.Warnf("unable to delete previous ready socket: %q", err)
 	}
 	ignListen, err := net.Listen("unix", ignitionSocket.GetPath())
+
 	if err != nil {
 		return nil, nil, err
 	}
@@ -200,7 +201,6 @@ func StartGenericAppleVM(mc *vmconfigs.MachineConfig, cmdBinary string, bootload
 	if err != nil {
 		return nil, nil, err
 	}
-
 	logrus.Infof("Ignition finished")
 
 	returnFunc := func() error {

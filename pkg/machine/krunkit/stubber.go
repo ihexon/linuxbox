@@ -36,7 +36,7 @@ func (l LibKrunStubber) Exists(name string) (bool, error) {
 	return false, nil
 }
 
-// MountVolumesToVM do nothing cause we write guest:/etc/fstab
+// TODO MountVolumesToVM do nothing cause we write guest:/etc/fstab
 func (l LibKrunStubber) MountVolumesToVM(mc *vmconfigs.MachineConfig, quiet bool) error {
 	return nil
 }
