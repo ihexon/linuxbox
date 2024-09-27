@@ -111,6 +111,7 @@ func Init(opts define.InitOptions, mp vmconfigs.VMProvider) error {
 	//	}
 	// for simplify code, but for now keep using Provider's GetDisk implementation
 	initCmdOpts := opts
+	logrus.Errorf("A bootable Images provided: %s", initCmdOpts.Image)
 	if err = mp.GetDisk(initCmdOpts.Image, dirs, mc.ImagePath, mp.VMType(), mc.Name); err != nil {
 		return err
 	}

@@ -22,7 +22,6 @@ var (
 		RunE:              start,
 		Args:              cobra.MaximumNArgs(1),
 		Example:           `bauklotze machine start`,
-		//ValidArgsFunction: autocompleteMachine,
 	}
 	startOpts = define.StartOptions{
 		WaitAndStop: false,

@@ -59,6 +59,7 @@ var (
 type StartOptions struct {
 	WaitAndStop bool // NoQuit when machine start
 	TwinPid     int
+	SendEvt     string
 }
 
 type StopOptions struct {

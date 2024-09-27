@@ -17,9 +17,9 @@ func GetDisk(userInputPath string, dirs *define.MachineDirs, imagePath *define.V
 		err    error
 		mydisk provider.Disker
 	)
-
 	switch {
 	case userInputPath == "":
+
 		return fmt.Errorf("Please --image [IMAGE_PATH]")
 	case strings.HasPrefix(userInputPath, "http"):
 		return fmt.Errorf("Do not support download image from http(s)://")

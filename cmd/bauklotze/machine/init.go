@@ -51,7 +51,7 @@ func init() {
 
 	flags := initCmd.Flags()
 	flags.BoolVar(&now,
-		"now",
+		"startnow",
 		false,
 		"Start machine now",
 	)
@@ -103,6 +103,13 @@ func init() {
 }
 
 func initMachine(cmd *cobra.Command, args []string) error {
+
+	if now {
+		// Pass TwinPid/evtsock to startOpts
+		startOpts.TwinPid = initOpts.TwinPid
+		startOpts.SendEvt = initOpts.SendEvt
+	}
+
 	initOpts.Name = defaultMachineName
 	if len(args) > 0 {
 		if len(args[0]) > maxMachineNameSize {
@@ -155,7 +162,6 @@ func initMachine(cmd *cobra.Command, args []string) error {
 
 	if now {
 		logrus.Infof("starting machine now with %s", args)
-		startOpts.TwinPid = initOpts.TwinPid
 		return start(nil, args)
 	} else {
 		fmt.Printf("To start your machine run:\n\n\tbauklotze machine start%s\n\n", initOpts.Name)

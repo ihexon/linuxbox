@@ -130,10 +130,6 @@ func (mc *MachineConfig) RuntimeDir() (*define.VMFile, error) {
 	return mc.Dirs.RuntimeDir, nil
 }
 
-func (mc *MachineConfig) RemoveRuntimeFiles() ([]string, func() error, error) {
-	return nil, nil, nil
-}
-
 func NewMachineConfig(opts define.InitOptions, dirs *define.MachineDirs, sshIdentityPath string, mtype define.VMType) (*MachineConfig, error) {
 	mc := new(MachineConfig)
 	mc.Name = opts.Name
