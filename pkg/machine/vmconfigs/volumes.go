@@ -22,7 +22,7 @@ func extractSourcePath(paths []string) string {
 func (v VolumeMountType) String() string {
 	switch v {
 	case NineP:
-		return "9p"
+		return "9p" // Not Support for now
 	case VirtIOFS:
 		return "virtiofs"
 	default:

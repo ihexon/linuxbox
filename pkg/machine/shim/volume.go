@@ -15,8 +15,7 @@ func CmdLineVolumesToMounts(volumes []string, volumeType vmconfigs.VolumeMountTy
 		tag, source, target, readOnly, _ := vmconfigs.SplitVolume(i, volume)
 		switch volumeType {
 		case vmconfigs.VirtIOFS:
-			virtioMount := machine.NewVirtIoFsMount(source, target, readOnly)
-			mount = virtioMount.ToMount()
+			mount = machine.NewVirtIoFsMount(source, target, readOnly).ToMount()
 		default:
 			mount = vmconfigs.Mount{
 				Type:          volumeType.String(),

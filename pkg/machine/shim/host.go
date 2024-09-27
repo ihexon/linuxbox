@@ -101,8 +101,7 @@ func Init(opts define.InitOptions, mp vmconfigs.VMProvider) error {
 	imagePath, err = dirs.DataDir.AppendToNewVMFile(fmt.Sprintf("%s-%s%s", opts.Name, runtime.GOARCH, imageExtension))
 	mc.ImagePath = imagePath
 
-	// Mounts
-
+	// Generate the mc.Mounts structs from the opts.Volumes
 	mc.Mounts = CmdLineVolumesToMounts(opts.Volumes, mp.MountType())
 
 	// Jump into Provider's GetDisk implementation, but we can using
@@ -111,16 +110,13 @@ func Init(opts define.InitOptions, mp vmconfigs.VMProvider) error {
 	//	}
 	// for simplify code, but for now keep using Provider's GetDisk implementation
 	initCmdOpts := opts
-	logrus.Errorf("A bootable Images provided: %s", initCmdOpts.Image)
+	logrus.Infof("a bootable Images provided: %s", initCmdOpts.Image)
+	logrus.Infof("try to decompress %s to %s", initCmdOpts.Image, mc.ImagePath)
 	if err = mp.GetDisk(initCmdOpts.Image, dirs, mc.ImagePath, mp.VMType(), mc.Name); err != nil {
 		return err
 	}
-
 	callbackFuncs.Add(mc.ImagePath.Delete)
-	logrus.Infof("--> imagePath is %q", createOpts.UserImageFile)
 
-	// TODO AddSSHConnectionToPodmanSocket could take an machineconfig instead
-	//
 	if err = connection.AddSSHConnectionsToPodmanSocket(mc.HostUser.UID, mc.SSH.Port, mc.SSH.IdentityPath, mc.Name, mc.SSH.RemoteUsername, opts); err != nil {
 		return err
 	}

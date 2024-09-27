@@ -4,7 +4,7 @@ package ignition
 
 import (
 	"bauklotze/pkg/config"
-	"bauklotze/pkg/machine"
+	"bauklotze/pkg/machine/vmconfigs"
 	"fmt"
 	"os"
 	"strings"
@@ -28,15 +28,23 @@ func (ign *DynamicIgnition) generateSetTimeZoneIgnitionCfg() error {
 		fmt.Sprintf("ln -sf /usr/share/zoneinfo/%s /etc/localtime", tzInMacOS),
 		fmt.Sprintf("ln -sf /usr/share/zoneinfo/%s /usr/share/zoneinfo/localtime", tzInMacOS),
 		"sync",
+		"\n",
 	})
 
 	ign.Commands = append(ign.Commands, slice.Get()...)
 	return nil
 }
 
-// TODO: generateMountsIgnitionCfg
-func (ign *DynamicIgnition) generateMountsIgnitionCfg(mounts []machine.VirtIoFs) error {
-	slice := config.NewSlice([]string{})
+func (ign *DynamicIgnition) generateMountsIgnitionCfg(mnts []*vmconfigs.Mount) error {
+	var mountCmds []string
+	for _, source := range mnts {
+		mountCmds = append(mountCmds, fmt.Sprintf("mkdir -p %s", source.Target))
+		mountCmds = append(mountCmds, fmt.Sprintf("mount -t virtiofs %s %s", source.Tag, source.Target))
+		mountCmds = append(mountCmds, fmt.Sprintf("%s", "sync"))
+		mountCmds = append(mountCmds, fmt.Sprint("\n"))
+	}
+
+	slice := config.NewSlice(mountCmds)
 	ign.Commands = append(ign.Commands, slice.Get()...)
 	return nil
 }
@@ -46,6 +54,7 @@ func (ign *DynamicIgnition) generateSSHIgnitionCfg(sshkey_pub string) error {
 	slice := config.NewSlice([]string{
 		fmt.Sprintf("echo %s > /root/.ssh/authorized_keys", sshkey_pub),
 		"sync",
+		"\n",
 	})
 	ign.Commands = append(ign.Commands, slice.Get()...)
 	return nil

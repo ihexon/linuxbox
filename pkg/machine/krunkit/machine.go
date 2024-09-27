@@ -155,14 +155,6 @@ func StartGenericAppleVM(mc *vmconfigs.MachineConfig, cmdBinary string, bootload
 
 	cmd.Args = append(cmd.Args, endpointArgs...)
 
-	// TODO: firset boot things
-	firstBoot, err := mc.IsFirstBoot()
-	if err != nil {
-		return nil, nil, err
-	}
-	if firstBoot {
-	}
-
 	logrus.Infof("listening for ready on: %s", readySocket.GetPath())
 	if err := readySocket.Delete(); err != nil {
 		logrus.Warnf("unable to delete previous ready socket: %q", err)

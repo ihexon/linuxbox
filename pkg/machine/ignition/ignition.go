@@ -29,7 +29,13 @@ func ServeIgnitionOverSock(mc *vmconfigs.MachineConfig) (*DynamicIgnition, error
 	if err != nil {
 		return nil, err
 	}
+
 	err = ign.generateSSHIgnitionCfg(pub)
+	if err != nil {
+		return nil, err
+	}
+
+	err = ign.generateMountsIgnitionCfg(mc.Mounts)
 	if err != nil {
 		return nil, err
 	}

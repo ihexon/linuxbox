@@ -43,6 +43,7 @@ func (v VirtIoFs) generateTag() string {
 	stringSum := hex.EncodeToString(sum[:])
 	return stringSum[:36]
 }
+
 func NewVirtIoFsMount(src, target string, readOnly bool) VirtIoFs {
 	vfs := VirtIoFs{
 		ReadOnly: readOnly,
