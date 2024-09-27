@@ -145,9 +145,9 @@ func NewMachineConfig(opts define.InitOptions, dirs *define.MachineDirs, sshIden
 
 	// System Resources
 	mrc := define.ResourceConfig{
-		CPUs:     opts.CPUS,
-		DiskSize: strongunits.GiB(opts.DiskSize),
-		Memory:   strongunits.MiB(opts.Memory),
+		CPUs: opts.CPUS,
+		//DiskSize: strongunits.GiB(opts.DiskSize),
+		Memory: strongunits.MiB(opts.Memory),
 	}
 	mc.Resources = mrc
 

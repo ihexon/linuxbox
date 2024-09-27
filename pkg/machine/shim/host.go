@@ -112,7 +112,6 @@ func Init(opts define.InitOptions, mp vmconfigs.VMProvider) error {
 	// for simplify code, but for now keep using Provider's GetDisk implementation
 	initCmdOpts := opts
 	logrus.Infof("a bootable Images provided: %s", initCmdOpts.Image)
-	logrus.Infof("try to decompress %s to %s", initCmdOpts.Image, mc.ImagePath)
 	if err = mp.GetDisk(initCmdOpts.Image, dirs, mc.ImagePath, mp.VMType(), mc.Name); err != nil {
 		return err
 	}
@@ -412,13 +411,6 @@ func Set(mc *vmconfigs.MachineConfig, mp vmconfigs.VMProvider, opts define.SetOp
 
 	if opts.Memory != 0 {
 		mc.Resources.Memory = strongunits.MiB(opts.Memory)
-	}
-
-	if opts.DiskSize != 0 {
-		if strongunits.GiB(opts.DiskSize) <= mc.Resources.DiskSize {
-			return fmt.Errorf("new disk size must be larger than %d GB", mc.Resources.DiskSize)
-		}
-		mc.Resources.DiskSize = strongunits.GiB(opts.DiskSize)
 	}
 
 	if opts.Volumes != nil {

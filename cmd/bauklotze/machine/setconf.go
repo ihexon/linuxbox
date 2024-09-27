@@ -47,11 +47,6 @@ func init() {
 	_ = setCmd.RegisterFlagCompletionFunc(cpusFlagName, completion.AutocompleteNone)
 
 	diskSizeFlagName := "disk-size"
-	flags.Uint64Var(
-		&setOpts.DiskSize,
-		diskSizeFlagName, 0,
-		"Disk size in GiB",
-	)
 
 	_ = setCmd.RegisterFlagCompletionFunc(diskSizeFlagName, completion.AutocompleteNone)
 

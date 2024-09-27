@@ -12,11 +12,10 @@ const (
 )
 
 type CreateVMOpts struct {
-	Name               string
-	Dirs               *MachineDirs
-	ReExec             bool // re-exec as administrator
-	UserImageFile      string
-	UserModeNetworking bool
+	Name          string
+	Dirs          *MachineDirs
+	ReExec        bool // re-exec as administrator
+	UserImageFile string
 }
 
 type GiB uint64
@@ -24,15 +23,11 @@ type MiB uint64
 type cores uint64
 
 type WSLConfig struct {
-	// Uses usermode networking, not support now
-	UserModeNetworking bool
 }
 
 type ResourceConfig struct {
 	// CPUs to be assigned to the VM
 	CPUs uint64
-	// Disk size in gigabytes assigned to the vm
-	DiskSize strongunits.GiB
 	// Memory in megabytes assigned to the vm
 	Memory strongunits.MiB
 }
@@ -70,7 +65,6 @@ type StopOptions struct {
 type InitOptions struct {
 	IsDefault    bool
 	CPUS         uint64
-	DiskSize     uint64
 	Image        string
 	Volumes      []string
 	Memory       uint64
@@ -83,8 +77,7 @@ type InitOptions struct {
 }
 
 type SetOptions struct {
-	CPUs     uint64
-	DiskSize uint64
-	Memory   uint64
-	Volumes  []string
+	CPUs    uint64
+	Memory  uint64
+	Volumes []string
 }

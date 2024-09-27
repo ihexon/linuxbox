@@ -8,7 +8,6 @@ import (
 	"bauklotze/pkg/machine/define"
 	"bauklotze/pkg/machine/sockets"
 	"bauklotze/pkg/machine/vmconfigs"
-	strongunits "bauklotze/pkg/storage"
 	"context"
 	"errors"
 	"fmt"
@@ -126,7 +125,7 @@ func StartGenericAppleVM(mc *vmconfigs.MachineConfig, cmdBinary string, bootload
 	}
 	vm.Devices = append(vm.Devices, mounts...)
 
-	// To start the VM, we need to call vfkit
+	// To start the VM, we need to call krunkit
 	cfg, err := config.Default()
 	if err != nil {
 		return nil, nil, err
@@ -254,17 +253,6 @@ func SetProviderAttrs(mc *vmconfigs.MachineConfig, opts define.SetOptions, state
 	if state != define.Stopped {
 		return errors.New("unable to change settings unless vm is stopped")
 	}
-
-	if opts.DiskSize != 0 {
-		if err := ResizeDisk(mc, strongunits.GiB(opts.DiskSize)); err != nil {
-			return err
-		}
-	}
-
-	if opts.Volumes != nil {
-
-	}
-
 	// VFKit does not require saving memory, disk, or cpu
 	return nil
 }

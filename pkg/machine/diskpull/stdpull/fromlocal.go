@@ -29,6 +29,11 @@ func (s *StdDiskPull) Get() error {
 		return fmt.Errorf("could not find user input disk: %w", err)
 	}
 	// 解压 rootfs 或者镜像解压成文件名为 .local/share/containers/podman/machine/[vmType]/podman-machine-default-amd64
-	logrus.Infof("decompressing (if needed) %s to %s", s.inputPath.GetPath(), s.finalPath.GetPath())
-	return decompress.Decompress(s.inputPath, s.finalPath.GetPath())
+	logrus.Infof("try to decompress %s to %s", s.inputPath, s.finalPath.GetPath())
+	err := decompress.Decompress(s.inputPath, s.finalPath.GetPath())
+	if err != nil {
+		errors := fmt.Errorf("could not decompress %s to %s: %w", s.inputPath, s.finalPath.GetPath(), err)
+		return errors
+	}
+	return nil
 }

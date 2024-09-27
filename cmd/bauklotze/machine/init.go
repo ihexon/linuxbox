@@ -33,7 +33,9 @@ var (
 		Args:              cobra.MaximumNArgs(1), // max positional arguments
 		Example:           `machine init`,
 	}
-	initOpts           = define.InitOptions{}
+	initOpts = define.InitOptions{
+		Username: "root",
+	}
 	defaultMachineName = define.DefaultMachineName
 	now                bool
 )
@@ -64,23 +66,12 @@ func init() {
 	)
 	//_ = initCmd.RegisterFlagCompletionFunc(cpusFlagName, completion.AutocompleteNone)
 
-	diskSizeFlagName := "disk-size"
-	flags.Uint64Var(
-		&initOpts.DiskSize,
-		diskSizeFlagName, cfg.ContainersConfDefaultsRO.Machine.DiskSize,
-		"Disk size in GiB",
-	)
-
 	memoryFlagName := "memory"
 	flags.Uint64VarP(
 		&initOpts.Memory,
 		memoryFlagName, "m", cfg.ContainersConfDefaultsRO.Machine.Memory,
 		"Memory in MiB",
 	)
-
-	UsernameFlagName := "username"
-	flags.StringVar(&initOpts.Username, UsernameFlagName, cfg.ContainersConfDefaultsRO.Machine.User, "Username used in image")
-	flags.MarkHidden(UsernameFlagName)
 
 	VolumeFlagName := "volume"
 	flags.StringArrayVarP(&initOpts.Volumes, VolumeFlagName, "v", cfg.ContainersConfDefaultsRO.Machine.Volumes.Get(), "Volumes to mount, source:target")

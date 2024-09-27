@@ -12,7 +12,6 @@ import (
 	"fmt"
 	gvproxy "github.com/containers/gvisor-tap-vsock/pkg/types"
 	vfConfig "github.com/crc-org/vfkit/pkg/config"
-	"github.com/sirupsen/logrus"
 	"strconv"
 )
 
@@ -29,7 +28,6 @@ func (l LibKrunStubber) StopVM(mc *vmconfigs.MachineConfig, ifHardStop bool) err
 }
 
 func (l LibKrunStubber) GetDisk(userInputPath string, dirs *define.MachineDirs, imagePath *define.VMFile, vmType define.VMType, name string) error {
-	logrus.Infof("try to decompress %s to %s", userInputPath, imagePath.GetPath())
 	return diskpull.GetDisk(userInputPath, dirs, imagePath, l.VMType(), name)
 }
 
@@ -103,11 +101,7 @@ func (l LibKrunStubber) CreateVM(opts define.CreateVMOpts, mc *vmconfigs.Machine
 	for _, mnt := range mc.Mounts {
 		virtiofsMounts = append(virtiofsMounts, machine.MountToVirtIOFs(mnt))
 	}
-	//virtIOIgnitionMounts, err := apple.GenerateSystemDFilesForVirtiofsMounts(virtiofsMounts)
-	if err != nil {
-		return err
-	}
-	return ResizeDisk(mc, mc.Resources.DiskSize)
+	return nil
 }
 
 func (l LibKrunStubber) VMType() define.VMType {
