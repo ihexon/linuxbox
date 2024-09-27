@@ -8,6 +8,7 @@ import (
 	"bauklotze/pkg/machine/define"
 	"bauklotze/pkg/machine/sockets"
 	"bauklotze/pkg/machine/vmconfigs"
+	strongunits "bauklotze/pkg/storage"
 	"context"
 	"errors"
 	"fmt"
@@ -246,5 +247,24 @@ func CheckProcessRunning(processName string, pid int) error {
 		// child exited
 		return fmt.Errorf("%s exited unexpectedly with exit code %d", processName, status.ExitStatus())
 	}
+	return nil
+}
+
+func SetProviderAttrs(mc *vmconfigs.MachineConfig, opts define.SetOptions, state define.Status) error {
+	if state != define.Stopped {
+		return errors.New("unable to change settings unless vm is stopped")
+	}
+
+	if opts.DiskSize != 0 {
+		if err := ResizeDisk(mc, strongunits.GiB(opts.DiskSize)); err != nil {
+			return err
+		}
+	}
+
+	if opts.Volumes != nil {
+
+	}
+
+	// VFKit does not require saving memory, disk, or cpu
 	return nil
 }

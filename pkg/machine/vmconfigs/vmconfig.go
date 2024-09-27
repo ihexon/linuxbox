@@ -43,6 +43,7 @@ type VMProvider interface { //nolint:interfacebloat
 	PostStartNetworking(mc *MachineConfig, noInfo bool) error
 	StartVM(mc *MachineConfig) (func() error, func() error, error)
 	MountVolumesToVM(mc *MachineConfig, quiet bool) error
+	SetProviderAttrs(mc *MachineConfig, opts define.SetOptions) error
 }
 
 type machineImage interface { //nolint:unused

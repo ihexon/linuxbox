@@ -81,3 +81,10 @@ type InitOptions struct {
 	SendEvt      string
 	ImageVersion string
 }
+
+type SetOptions struct {
+	CPUs     uint64
+	DiskSize uint64
+	Memory   uint64
+	Volumes  []string
+}

@@ -12,6 +12,7 @@ import (
 	"fmt"
 	gvproxy "github.com/containers/gvisor-tap-vsock/pkg/types"
 	vfConfig "github.com/crc-org/vfkit/pkg/config"
+	"github.com/sirupsen/logrus"
 	"strconv"
 )
 
@@ -28,6 +29,7 @@ func (l LibKrunStubber) StopVM(mc *vmconfigs.MachineConfig, ifHardStop bool) err
 }
 
 func (l LibKrunStubber) GetDisk(userInputPath string, dirs *define.MachineDirs, imagePath *define.VMFile, vmType define.VMType, name string) error {
+	logrus.Infof("try to decompress %s to %s", userInputPath, imagePath.GetPath())
 	return diskpull.GetDisk(userInputPath, dirs, imagePath, l.VMType(), name)
 }
 
@@ -118,4 +120,12 @@ func (l LibKrunStubber) StartVM(mc *vmconfigs.MachineConfig) (func() error, func
 		return nil, nil, fmt.Errorf("unable to determine boot loader for this machine")
 	}
 	return StartGenericAppleVM(mc, krunkitBinary, bl, mc.AppleKrunkitHypervisor.Krunkit.Endpoint)
+}
+
+func (l LibKrunStubber) SetProviderAttrs(mc *vmconfigs.MachineConfig, opts define.SetOptions) error {
+	state, err := l.State(mc)
+	if err != nil {
+		return err
+	}
+	return SetProviderAttrs(mc, opts, state)
 }

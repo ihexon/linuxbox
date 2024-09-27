@@ -8,6 +8,7 @@ import (
 	"bauklotze/pkg/machine/gvproxy"
 	"bauklotze/pkg/machine/lock"
 	"bauklotze/pkg/machine/vmconfigs"
+	strongunits "bauklotze/pkg/storage"
 	"errors"
 	"fmt"
 	"github.com/sirupsen/logrus"
@@ -394,5 +395,40 @@ func stopLocked(mc *vmconfigs.MachineConfig, machineProvider vmconfigs.VMProvide
 	}
 	// Update last time up
 	mc.LastUp = time.Now()
+	return mc.Write()
+}
+
+func Set(mc *vmconfigs.MachineConfig, mp vmconfigs.VMProvider, opts define.SetOptions) error {
+	mc.Lock()
+	defer mc.Unlock()
+
+	if err := mc.Refresh(); err != nil {
+		return fmt.Errorf("reload config: %w", err)
+	}
+
+	if opts.CPUs != 0 {
+		mc.Resources.CPUs = opts.CPUs
+	}
+
+	if opts.Memory != 0 {
+		mc.Resources.Memory = strongunits.MiB(opts.Memory)
+	}
+
+	if opts.DiskSize != 0 {
+		if strongunits.GiB(opts.DiskSize) <= mc.Resources.DiskSize {
+			return fmt.Errorf("new disk size must be larger than %d GB", mc.Resources.DiskSize)
+		}
+		mc.Resources.DiskSize = strongunits.GiB(opts.DiskSize)
+	}
+
+	if opts.Volumes != nil {
+		mc.Mounts = CmdLineVolumesToMounts(opts.Volumes, mp.MountType())
+	}
+
+	if err := mp.SetProviderAttrs(mc, opts); err != nil {
+		return err
+	}
+
+	// Update the configuration file last if everything earlier worked
 	return mc.Write()
 }
