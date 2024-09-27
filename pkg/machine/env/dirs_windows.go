@@ -3,22 +3,24 @@
 package env
 
 import (
-	"os"
 	"path/filepath"
 )
 
-func getTMPDir() (string, error) {
+// getTmpDir return ${BauklotzeHomePath}/tmp/
+func getTmpDir() (string, error) {
 	if CustomHomeEnv != "" {
-		return filepath.Join(CustomHomeEnv, ".tmp"), nil
+		return filepath.Join(CustomHomeEnv, "tmp"), nil
+	}
+	p, err := GetBauklotzeHomePath()
+	if err != nil {
+		return "", err
 	}
 
-	tmpDir, ok := os.LookupEnv("TEMP")
-	if !ok {
-		tmpDir = filepath.Join(os.Getenv("LOCALAPPDATA"), "Temp")
-	}
-	return tmpDir, nil
+	// ${BauklotzeHomePath}/tmp/
+	return filepath.Join(p, "tmp"), nil
 }
 
+// getRuntimeDir: return ${BauklotzeHomePath}/tmp/
 func getRuntimeDir() (string, error) {
-	return getTMPDir()
+	return getTmpDir()
 }

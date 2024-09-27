@@ -122,12 +122,6 @@ func startNetworking(mc *vmconfigs.MachineConfig, provider vmconfigs.VMProvider)
 		}
 	}
 
-	// Provider has its own networking code path (e.g. WSL)
-	// In krunkit UseProviderNetworkSetup() always false
-	if provider.UseProviderNetworkSetup() {
-		return "", machine.NoForwarding, provider.StartNetworking(mc, nil)
-	}
-
 	dirs, err := env.GetMachineDirs(provider.VMType())
 	if err != nil {
 		return "", machine.NoForwarding, err

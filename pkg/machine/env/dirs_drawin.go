@@ -2,24 +2,20 @@
 
 package env
 
-import (
-	"os"
-)
-
-// os.LookupEnv("TMPDIR") in macos return the path like `/var/folders/cc/5844tzj53ljcm_ph48hqlr8w0000gn/T/`,
-// if CustomHomeDir is set, then return CustomHomeDIr/.tmp
-func getTMPDir() (string, error) {
+// getTmpDir return ${BauklotzeHomePath}/tmp/
+func getTmpDir() (string, error) {
 	if CustomHomeEnv != "" {
-		return CustomHomeEnv + ".tmp", nil
+		return filepath.Join(CustomHomeEnv, "tmp"), nil
+	}
+	p, err := GetBauklotzeHomePath()
+	if err != nil {
+		return "", err
 	}
 
-	tmpDir, ok := os.LookupEnv("TMPDIR")
-	if !ok {
-		tmpDir = "/tmp"
-	}
-	return tmpDir, nil
+	return filepath.Join(p, "tmp"), nil // ${BauklotzeHomePath}/tmp/
 }
 
+// getRuntimeDir: ${BauklotzeHomePath}/tmp/
 func getRuntimeDir() (string, error) {
-	return getTMPDir()
+	return getTmpDir() // ${BauklotzeHomePath}/tmp/
 }

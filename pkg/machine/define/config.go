@@ -9,6 +9,7 @@ const (
 	DefaultIdentityName  = "sshkey"
 	MachineConfigVersion = 1
 	MyName               = "Bauklotze"
+	WorkDir              = "." + MyName + "_dir"
 )
 
 type CreateVMOpts struct {

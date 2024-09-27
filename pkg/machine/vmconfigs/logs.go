@@ -7,5 +7,5 @@ func (mc *MachineConfig) LogFile() (*define.VMFile, error) {
 	if err != nil {
 		return nil, err
 	}
-	return rtDir.AppendToNewVMFile(mc.Name + ".log")
+	return rtDir.AppendToNewVMFile(mc.Name+".log", nil)
 }

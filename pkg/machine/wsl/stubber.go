@@ -220,3 +220,7 @@ func isRunning(dist string) (bool, error) {
 	}
 	return running, err
 }
+
+func (w WSLStubber) SetProviderAttrs(mc *vmconfigs.MachineConfig, opts define.SetOptions) error {
+	return nil
+}

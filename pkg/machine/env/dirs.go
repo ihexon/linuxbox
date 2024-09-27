@@ -6,75 +6,9 @@ import (
 	"path/filepath"
 )
 
-func GetMachineDirs(vmType define.VMType) (*define.MachineDirs, error) {
-	vmFiles := []*define.VMFile{}
-
-	d, err := getRuntimeDir()
-	if err != nil {
-		return nil, err
-	}
-	d = filepath.Join(d, define.MyName)
-	rtVMDir := &define.VMFile{Path: d}
-	vmFiles = append(vmFiles, rtVMDir)
-
-	vmconfDir, err := GetVMConfDir(vmType)
-	if err != nil {
-		return nil, err
-	}
-	configDir := &define.VMFile{Path: vmconfDir}
-	vmFiles = append(vmFiles, configDir)
-
-	vmdataDir, err := GetVMDataDir(vmType)
-	if err != nil {
-		return nil, err
-	}
-	dataDir := &define.VMFile{Path: vmdataDir}
-	vmFiles = append(vmFiles, dataDir)
-
-	imageCacheDir, err := GetImageCacheDir(vmType)
-	if err != nil {
-		return nil, err
-	}
-	cacheDir := &define.VMFile{Path: imageCacheDir}
-	vmFiles = append(vmFiles, cacheDir)
-
-	// Resolve VMFile
-	for _, vmf := range vmFiles {
-		if err = vmf.Abs(); err != nil {
-			return nil, err
-		}
-		err = vmf.CreatePath()
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	dirs := &define.MachineDirs{
-		ConfigDir:     configDir,
-		DataDir:       dataDir,
-		RuntimeDir:    rtVMDir,
-		ImageCacheDir: cacheDir,
-	}
-
-	return dirs, err
-}
-
-func GetImageCacheDir(vmType define.VMType) (string, error) {
-	p, err := GetVMDataDir(vmType)
-	if err != nil {
-		return "", err
-	}
-	return filepath.Join(p, "cache"), nil
-}
-
-// GetConfigHome return $HOME/.config,
-func GetConfigHome() (string, error) {
-	homeDir, _ := GetHomePath()
-	return filepath.Join(homeDir, ".config"), nil
-}
-
-// GetHomePath return $HOME, If the CustomHomeDir is set, then using CustomHomeDir
-func GetHomePath() (string, error) {
+// GetBauklotzeHomePath return $HOME/.Bauklotze_dir.
+// If the CustomHomeDir is set, then using CustomHomeDir/
+func GetBauklotzeHomePath() (string, error) {
 	if CustomHomeEnv != "" {
 		return CustomHomeEnv, nil
 	}
@@ -82,69 +16,86 @@ func GetHomePath() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return home, nil
+	return filepath.Join(home, define.WorkDir), nil
 }
 
-// GetVMConfDir return $HOME/.config/oomol/ovm/machine/{wsl,qemu,libkrun,applehv}
-func GetVMConfDir(vmType define.VMType) (string, error) {
-	confDirPrefix, err := GetMachineConfDir()
+// ConfDirPrefix return ${BauklotzeHomePath}/config,
+func ConfDirPrefix() (string, error) {
+	homeDir, _ := GetBauklotzeHomePath()
+	return filepath.Join(homeDir, "config"), nil // ${BauklotzeHomePath}/config
+}
+
+// GetConfDir ${BauklotzeHomePath}/config/{wsl,libkrun,qemu,hyper...}
+func GetConfDir(vmType define.VMType) (string, error) {
+	confDirPrefix, err := ConfDirPrefix() // ${BauklotzeHomePath}/config
 	if err != nil {
 		return "", err
 	}
 	confDir := filepath.Join(confDirPrefix, vmType.String())
 	mkdirErr := os.MkdirAll(confDir, 0755)
-	return confDir, mkdirErr
+	return confDir, mkdirErr // ${BauklotzeHomePath}/config/wsl2
 }
 
-// GetMachineConfDir return $HOME/.config/oomol/ovm/machine
-func GetMachineConfDir() (string, error) {
-	// configDirOfMachine ~/.config/
-	configDirOfMachine, err := GetConfigHome()
+// DataDirPrefix returns the path prefix for all machine data files
+func DataDirPrefix() (string, error) {
+	d, err := GetBauklotzeHomePath() // ${BauklotzeHomePath}
 	if err != nil {
 		return "", err
 	}
-	// ~/.config/oomol/ovm/machine/
-	configDirOfMachine = filepath.Join(configDirOfMachine, "oomol", "ovm", "machine")
-	return configDirOfMachine, nil
+	dataDir := filepath.Join(d, "data")
+	return dataDir, nil // ${BauklotzeHomePath}/data
 }
 
-// GetVMDataDir return $HOME/.local/share/oomol/ovm/machine/{wsl,libkrun}
-func GetVMDataDir(vmType define.VMType) (string, error) {
-	dataHomePrefix, err := DataDirMachine()
+// GetDataDir ${BauklotzeHomePath}/data/{wsl2,libkrun,qemu,hyper...}
+func GetDataDir(vmType define.VMType) (string, error) {
+	dataDirPrefix, err := DataDirPrefix() // ${BauklotzeHomePath}/data
 	if err != nil {
 		return "", err
 	}
-	dataDir := filepath.Join(dataHomePrefix, vmType.String())
+	dataDir := filepath.Join(dataDirPrefix, vmType.String())
 	mkdirErr := os.MkdirAll(dataDir, 0755)
-	return dataDir, mkdirErr
+	return dataDir, mkdirErr // ${BauklotzeHomePath}/data/{wsl2,libkrun,qemu,hyper...}
 }
 
-// DataDirMachine return $HOME/.local/share/oomol/ovm/machine/
-func DataDirMachine() (string, error) {
-	data, err := GetDataDirPrefix()
-	if err != nil {
-		return "", err
-	}
-	dataDir := filepath.Join(data, "machine")
-	return dataDir, nil
-}
-
-// GetDataDirPrefix return $HOME/.local/share/oomol/ovm/
-func GetDataDirPrefix() (string, error) {
-	home, err := GetHomePath()
-	if err != nil {
-		return "", err
-	}
-	return filepath.Join(home, ".local", "share", "oomol", "ovm"), nil
-}
-
-// GetGlobalDataDir return $HOME/.local/share/oomol/ovm/machine/
 func GetGlobalDataDir() (string, error) {
-	dataDir, err := DataDirMachine()
+	dataDir, err := DataDirPrefix()
 	if err != nil {
 		return "", err
 	}
 	return dataDir, os.MkdirAll(dataDir, 0755)
+}
+
+func GetMachineDirs(vmType define.VMType) (*define.MachineDirs, error) {
+	rtDir, err := getRuntimeDir()
+	if err != nil {
+		return nil, err
+	}
+	rtDirFile, err := define.NewMachineFile(rtDir, nil)
+
+	dataDir, err := GetDataDir(vmType)
+	dataDirFile, err := define.NewMachineFile(dataDir, nil)
+	imageCacheDir, err := dataDirFile.AppendToNewVMFile("cache", nil)
+
+	configDir, err := GetConfDir(vmType)
+	if err != nil {
+		return nil, err
+	}
+	configDirFile, err := define.NewMachineFile(configDir, nil)
+
+	dirs := define.MachineDirs{
+		ConfigDir:     configDirFile, // ${BauklotzeHomePath}/config/{wsl,libkrun,qemu,hyper...}
+		DataDir:       dataDirFile,   // ${BauklotzeHomePath}/data/{wsl2,libkrun,qemu,hyper...}
+		ImageCacheDir: imageCacheDir, // ${BauklotzeHomePath}/data/{wsl2,libkrun,qemu,hyper...}/cache
+		RuntimeDir:    rtDirFile,     // ${BauklotzeHomePath}/tmp/
+	}
+	if err = os.MkdirAll(rtDir, 0755); err != nil {
+		return nil, err
+	}
+	if err = os.MkdirAll(configDir, 0755); err != nil {
+		return nil, err
+	}
+	err = os.MkdirAll(imageCacheDir.GetPath(), 0755)
+	return &dirs, err
 }
 
 // GetSSHIdentityPath returns the path to the expected SSH private key
@@ -153,6 +104,5 @@ func GetSSHIdentityPath(name string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	datadir, err = filepath.Abs(datadir)
 	return filepath.Join(datadir, name), nil
 }

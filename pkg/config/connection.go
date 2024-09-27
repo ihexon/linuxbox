@@ -20,13 +20,13 @@ type ConnectionsFile struct {
 
 // connectionsConfigFile returns the path to the rw connections config file
 func connectionsConfigFile() (string, error) {
-	path, err := env.GetMachineConfDir()
+	path, err := env.ConfDirPrefix()
 	if err != nil {
 		return "", err
 	}
 	// file is stored next to containers.conf
-	p := filepath.Join(path, connectionsFile)
-	return p, nil
+	p := filepath.Join(path, "connectionCfg", connectionsFile)
+	return p, nil // ${BauklotzeHomePath}/config/connectionCfg/bugbox-connections.json
 }
 
 func readConnectionConf(path string) (*ConnectionsFile, error) {

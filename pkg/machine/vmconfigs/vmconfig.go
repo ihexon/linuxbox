@@ -38,7 +38,6 @@ type VMProvider interface { //nolint:interfacebloat
 	RequireExclusiveActive() bool
 	State(mc *MachineConfig) (define.Status, error)
 	UpdateSSHPort(mc *MachineConfig, port int) error
-	UseProviderNetworkSetup() bool
 	StartNetworking(mc *MachineConfig, cmd *gvproxy.GvproxyCommand) error
 	PostStartNetworking(mc *MachineConfig, noInfo bool) error
 	StartVM(mc *MachineConfig) (func() error, func() error, error)
@@ -137,7 +136,7 @@ func NewMachineConfig(opts define.InitOptions, dirs *define.MachineDirs, sshIden
 	mc.Dirs = dirs
 
 	// Assign Dirs
-	cf, err := define.NewMachineFile(filepath.Join(dirs.ConfigDir.GetPath(), fmt.Sprintf("%s.json", opts.Name)))
+	cf, err := define.NewMachineFile(filepath.Join(dirs.ConfigDir.GetPath(), fmt.Sprintf("%s.json", opts.Name)), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -174,7 +173,7 @@ func getHostUID() int {
 }
 
 func LoadMachineByName(name string, dirs *define.MachineDirs) (*MachineConfig, error) {
-	fullPath, err := dirs.ConfigDir.AppendToNewVMFile(name + ".json")
+	fullPath, err := dirs.ConfigDir.AppendToNewVMFile(name+".json", nil)
 	if err != nil {
 		return nil, err
 	}
@@ -204,7 +203,7 @@ func LoadMachinesInDir(dirs *define.MachineDirs) (map[string]*MachineConfig, err
 	mcs := make(map[string]*MachineConfig)
 	if err := filepath.WalkDir(dirs.ConfigDir.GetPath(), func(path string, d fs.DirEntry, err error) error {
 		if strings.HasSuffix(d.Name(), ".json") {
-			fullPath, err := dirs.ConfigDir.AppendToNewVMFile(d.Name())
+			fullPath, err := dirs.ConfigDir.AppendToNewVMFile(d.Name(), nil)
 			if err != nil {
 				return err
 			}

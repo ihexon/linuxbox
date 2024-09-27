@@ -6,21 +6,21 @@ import (
 )
 
 func readySocket(name string, machineRuntimeDir *define.VMFile) (*define.VMFile, error) {
-	socketName := name + "-ready.sock"
-	return machineRuntimeDir.AppendToNewVMFile(socketName)
+	socketName := fmt.Sprintf("%s-ready.sock", name)
+	return machineRuntimeDir.AppendToNewVMFile(socketName, nil)
 }
 
 func gvProxySocket(name string, machineRuntimeDir *define.VMFile) (*define.VMFile, error) {
 	socketName := fmt.Sprintf("%s-gvproxy.sock", name)
-	return machineRuntimeDir.AppendToNewVMFile(socketName)
+	return machineRuntimeDir.AppendToNewVMFile(socketName, nil)
 }
 
 func apiSocket(name string, socketDir *define.VMFile) (*define.VMFile, error) {
-	socketName := name + "-api.sock"
-	return socketDir.AppendToNewVMFile(socketName)
+	socketName := fmt.Sprintf("%s-api.sock", name)
+	return socketDir.AppendToNewVMFile(socketName, nil)
 }
 
 func ignitionSocket(name string, socketDir *define.VMFile) (*define.VMFile, error) {
-	socketName := name + "-ignition.sock"
-	return socketDir.AppendToNewVMFile(socketName)
+	socketName := fmt.Sprintf("%s-ignition.sock", name)
+	return socketDir.AppendToNewVMFile(socketName, nil)
 }

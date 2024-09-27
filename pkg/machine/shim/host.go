@@ -99,7 +99,7 @@ func Init(opts define.InitOptions, mp vmconfigs.VMProvider) error {
 		return fmt.Errorf("unknown VM type: %s", mp.VMType())
 	}
 
-	imagePath, err = dirs.DataDir.AppendToNewVMFile(fmt.Sprintf("%s-%s%s", opts.Name, runtime.GOARCH, imageExtension))
+	imagePath, err = dirs.DataDir.AppendToNewVMFile(fmt.Sprintf("%s-%s%s", opts.Name, runtime.GOARCH, imageExtension), nil)
 	mc.ImagePath = imagePath
 
 	// Generate the mc.Mounts structs from the opts.Volumes
@@ -189,7 +189,7 @@ func startNetAndForwardNow(
 	machine.APIForwardingState,
 	error,
 ) {
-	gvproxyPidFile, err := dirs.RuntimeDir.AppendToNewVMFile("gvproxy.pid")
+	gvproxyPidFile, err := dirs.RuntimeDir.AppendToNewVMFile(env.Gvpid, nil)
 	if err != nil {
 		return "", machine.NoForwarding, err
 	}
@@ -324,11 +324,6 @@ func Start(mc *vmconfigs.MachineConfig, mp vmconfigs.VMProvider, dirs *define.Ma
 		return err
 	}
 
-	// Provider is responsible for waiting
-	if mp.UseProviderNetworkSetup() {
-		return nil
-	}
-
 	return nil
 }
 
@@ -383,15 +378,14 @@ func stopLocked(mc *vmconfigs.MachineConfig, machineProvider vmconfigs.VMProvide
 	}
 
 	// Stop GvProxy and remove PID file
-	if !machineProvider.UseProviderNetworkSetup() {
-		gvproxyPidFile, err := dirs.RuntimeDir.AppendToNewVMFile("gvproxy.pid")
-		if err != nil {
-			return err
-		}
-		if err := gvproxy.CleanupGVProxy(*gvproxyPidFile); err != nil {
-			return fmt.Errorf("unable to clean up gvproxy: %w", err)
-		}
+	gvproxyPidFile, err := dirs.RuntimeDir.AppendToNewVMFile(env.Gvpid, nil)
+	if err != nil {
+		return err
 	}
+	if err := gvproxy.CleanupGVProxy(*gvproxyPidFile); err != nil {
+		return fmt.Errorf("unable to clean up gvproxy: %w", err)
+	}
+
 	// Update last time up
 	mc.LastUp = time.Now()
 	return mc.Write()
