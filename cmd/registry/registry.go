@@ -3,6 +3,7 @@ package registry
 import (
 	defconfig "bauklotze/pkg/config"
 	"fmt"
+	jsoniter "github.com/json-iterator/go"
 	"github.com/spf13/cobra"
 	"os"
 	"sync"
@@ -45,4 +46,17 @@ func SetExitCode(code int) {
 
 func GetExitCode() int {
 	return exitCode
+}
+
+var (
+	json     jsoniter.API
+	jsonSync sync.Once
+)
+
+// JSONLibrary provides a "encoding/json" compatible API
+func JSONLibrary() jsoniter.API {
+	jsonSync.Do(func() {
+		json = jsoniter.ConfigCompatibleWithStandardLibrary
+	})
+	return json
 }
