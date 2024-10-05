@@ -2,6 +2,8 @@
 
 package env
 
+import "path/filepath"
+
 // getTmpDir return ${BauklotzeHomePath}/tmp/
 func getTmpDir() (string, error) {
 	if CustomHomeEnv != "" {

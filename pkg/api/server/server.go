@@ -16,7 +16,7 @@ import (
 	"time"
 )
 
-func restService(flags *pflag.FlagSet, apiurl string) error {
+func RestService(flags *pflag.FlagSet, apiurl string) error {
 	var (
 		listener net.Listener
 		err      error

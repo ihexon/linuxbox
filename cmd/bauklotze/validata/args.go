@@ -25,3 +25,11 @@ func NoArgs(cmd *cobra.Command, args []string) error {
 	}
 	return nil
 }
+
+// AutocompleteDefaultOneArg - Autocomplete path only for the first argument.
+func AutocompleteDefaultOneArg(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	if len(args) == 0 {
+		return nil, cobra.ShellCompDirectiveDefault
+	}
+	return nil, cobra.ShellCompDirectiveNoFileComp
+}

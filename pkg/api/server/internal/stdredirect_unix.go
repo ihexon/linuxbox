@@ -2,7 +2,12 @@
 
 package internal
 
-func redirectStdin() error {
+import (
+	"golang.org/x/sys/unix"
+	"os"
+)
+
+func RedirectStdin() error {
 	devNullfile, err := os.Open(os.DevNull)
 	if err != nil {
 		return err

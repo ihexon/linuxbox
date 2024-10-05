@@ -15,7 +15,7 @@ type StdDiskPull struct {
 }
 
 func NewStdDiskPull(inputPath string, finalpath *define.VMFile) (*StdDiskPull, error) {
-	inputImage, err := define.NewMachineFile(inputPath)
+	inputImage, err := define.NewMachineFile(inputPath, nil)
 	if err != nil {
 		return nil, err
 	}
