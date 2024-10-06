@@ -50,10 +50,10 @@ func service(cmd *cobra.Command, args []string) error {
 
 	}
 	return server.RestService(cmd.Flags(), apiurl)
-
 }
 
 // TODO: Support unix socket as rest API
+// resolveAPIURI resolves the API URI from the given arguments, if no arguments are given, it tries to get the URI from the env.DefaultRootAPIAddress
 func resolveAPIURI(uri []string) (string, error) {
 	// If given no api addr, try to get restapi addr from environment
 	if len(uri) == 0 {

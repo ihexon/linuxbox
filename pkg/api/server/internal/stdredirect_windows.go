@@ -5,7 +5,6 @@ package internal
 import (
 	"golang.org/x/sys/windows"
 	"os"
-	"syscall"
 )
 
 func RedirectStdin() error {
@@ -16,7 +15,7 @@ func RedirectStdin() error {
 	defer devNullfile.Close()
 
 	handle := windows.Handle(devNullfile.Fd())
-	if err := windows.SetStdHandle(syscall.STD_INPUT_HANDLE, handle); err != nil {
+	if err := windows.SetStdHandle(windows.STD_INPUT_HANDLE, handle); err != nil {
 		return err
 	}
 	return nil

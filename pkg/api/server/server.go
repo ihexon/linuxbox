@@ -1,6 +1,7 @@
 package server
 
 import (
+	"bauklotze/pkg/api/server/handlers"
 	"bauklotze/pkg/api/server/internal"
 	"context"
 	"errors"
@@ -16,6 +17,15 @@ import (
 	"time"
 )
 
+type APIServer struct {
+	http.Server
+	net.Listener
+	context.Context
+	context.CancelFunc
+	CorsHeaders string // Inject Cross-Origin Resource Sharing (CORS) headers
+	idleTracker *idleTracker
+}
+
 func RestService(flags *pflag.FlagSet, apiurl string) error {
 	var (
 		listener net.Listener
@@ -28,28 +38,29 @@ func RestService(flags *pflag.FlagSet, apiurl string) error {
 	}
 	uri, err := url.Parse(apiurl)
 	if err != nil {
-		logrus.Errorf("%s is an invalid socket destination", apiurl)
 		return fmt.Errorf("%s is an invalid socket destination", apiurl)
 	}
 
 	switch uri.Scheme {
 	case "tcp":
-		listener, err = net.Listen("tcp", uri.Host)
+		listener, err = net.Listen(uri.Scheme, uri.Host)
 		if err != nil {
-			logrus.Errorf("Failed to listen on %s: %s", uri.Host, err)
 			return fmt.Errorf("Failed to listen on %s: %w", uri.Host, err)
 		}
 	default:
 		return fmt.Errorf("API Service endpoint scheme %q is not supported. Try tcp://%s", uri.Scheme, apiurl)
 	}
 
+	// Disable leaking the LISTEN_* into containers
 	for _, val := range []string{"LISTEN_FDS", "LISTEN_PID", "LISTEN_FDNAMES", "BAZ_API_LISTEN_DIR"} {
 		if err := os.Unsetenv(val); err != nil {
 			return fmt.Errorf("unsetting %s: %v", val, err)
 		}
 	}
 
+	// Set stdin to /dev/null
 	_ = internal.RedirectStdin()
+
 	server, _ := makeNewServer(listener)
 
 	defer func() {
@@ -66,6 +77,7 @@ func RestService(flags *pflag.FlagSet, apiurl string) error {
 	return err
 }
 
+// Serve is the wrapper of http.Server.Serve, will block the code path until the server stopping or getting error.
 func (s *APIServer) Serve() error {
 	errChan := make(chan error, 1)
 	go func() {
@@ -83,18 +95,21 @@ func makeNewServer(listener net.Listener) (*APIServer, error) {
 	logrus.Infof("API service listening on %q. URI: %q", listener.Addr())
 	router := mux.NewRouter().UseEncodedPath()
 
+	// setup a tracker to tracking every connections
 	tracker := newIdleTracker()
+
 	server := APIServer{
 		Server: http.Server{
-			ConnState: tracker.ConnState,
-			Handler:   router,
+			ConnState: tracker.ConnState, // connection tracker
+			Handler:   router,            // Mux
 		},
 		Listener:    listener,
 		idleTracker: tracker,
 	}
 
-	server.BaseContext = func(l net.Listener) context.Context {
-		return context.Background()
+	server.Server.BaseContext = func(l net.Listener) context.Context {
+		ctx := context.WithValue(context.Background(), DecoderKey, NewAPIDecoder()) // Decoder used in handlers as `decoder := r.Context().Value(api.DecoderKey).(*schema.Decoder)`
+		return ctx
 	}
 
 	router.Use(PanicHandler(), ReferenceIDHandler())
@@ -119,14 +134,6 @@ func makeNewServer(listener net.Listener) (*APIServer, error) {
 	return &server, nil
 }
 
-type APIServer struct {
-	http.Server
-	net.Listener
-	context.Context
-	context.CancelFunc
-	idleTracker *idleTracker
-}
-
 func (s *APIServer) Shutdown() error {
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel()
@@ -134,9 +141,7 @@ func (s *APIServer) Shutdown() error {
 }
 
 func setupRouter(router *mux.Router) *mux.Router {
-
-	router.Handle("/version", http.HandlerFunc(versionHandler)).Methods(http.MethodGet)
-	router.Handle("/getversion", http.HandlerFunc(versionHandler)).Methods(http.MethodGet)
+	router.Handle("/version", http.HandlerFunc(handlers.versionHandler)).Methods(http.MethodGet)
 	router.NotFoundHandler = http.HandlerFunc(notFoundHandler)
 	return router
 }
