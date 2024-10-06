@@ -3,6 +3,7 @@ package server
 import (
 	"bauklotze/pkg/api/backend"
 	"bauklotze/pkg/api/internal"
+	"bauklotze/pkg/api/types"
 	"context"
 	"errors"
 	"fmt"
@@ -108,7 +109,7 @@ func makeNewServer(listener net.Listener) (*APIServer, error) {
 	}
 
 	server.Server.BaseContext = func(l net.Listener) context.Context {
-		ctx := context.WithValue(context.Background(), DecoderKey, NewAPIDecoder()) // Decoder used in handlers as `decoder := r.Context().Value(api.DecoderKey).(*schema.Decoder)`
+		ctx := context.WithValue(context.Background(), types.DecoderKey, NewAPIDecoder()) // Decoder used in handlers as `decoder := r.Context().Value(api.DecoderKey).(*schema.Decoder)`
 		return ctx
 	}
 
@@ -141,7 +142,7 @@ func (s *APIServer) Shutdown() error {
 
 func (s *APIServer) setupRouter(r *mux.Router) *mux.Router {
 	r.Handle(("/version"), s.APIHandler(backend.VersionHandler)).Methods(http.MethodGet)
-	r.Handle(("/getversion"), s.APIHandler(backend.VersionHandler)).Methods(http.MethodGet)
+	r.Handle(("/{name}/diskuage"), s.APIHandler(backend.GetDiskUsage)).Methods(http.MethodGet)
 
 	return r
 }

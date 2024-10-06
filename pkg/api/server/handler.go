@@ -1,6 +1,7 @@
 package server
 
 import (
+	"bauklotze/pkg/api/types"
 	"bufio"
 	"fmt"
 	"github.com/containers/podman/v5/pkg/errorhandling"
@@ -15,15 +16,6 @@ import (
 )
 
 type APIContextKey int
-
-const (
-	DecoderKey APIContextKey = iota
-	RuntimeKey
-	IdleTrackerKey
-	ConnKey
-	CompatDecoderKey
-	defaultCORSAllowedHost = "http://127.0.0.1"
-)
 
 var json = jsoniter.ConfigCompatibleWithStandardLibrary
 
@@ -64,7 +56,7 @@ func ReferenceIDHandler() mux.MiddlewareFunc {
 			http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				rid := r.Header.Get("X-Reference-Id")
 				if rid == "" {
-					if c := r.Context().Value(ConnKey); c == nil {
+					if c := r.Context().Value(types.ConnKey); c == nil {
 						rid = uuid.New().String()
 					} else {
 						rid = fmt.Sprintf("%p", c)
@@ -121,7 +113,7 @@ func (s *APIServer) apiWrapper(h http.HandlerFunc, w http.ResponseWriter, r *htt
 	}
 
 	if s.CorsHeaders == "" {
-		w.Header().Set("Access-Control-Allow-Origin", defaultCORSAllowedHost)
+		w.Header().Set("Access-Control-Allow-Origin", types.DefaultCORSAllowedHost)
 		w.Header().Set("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, X-Registry-Auth, Connection, Upgrade, X-Registry-Config")
 		w.Header().Set("Access-Control-Allow-Methods", "HEAD, GET, POST")
 	}
