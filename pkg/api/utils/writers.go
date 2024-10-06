@@ -2,14 +2,24 @@ package utils
 
 import (
 	"fmt"
-	jsoniter "github.com/json-iterator/go"
 	"github.com/sirupsen/logrus"
 	"io"
 	"net/http"
 	"os"
 )
 
-var json = jsoniter.ConfigCompatibleWithStandardLibrary
+// WriteJSON writes an interface value encoded as JSON to w
+func WriteJSON(w http.ResponseWriter, code int, value interface{}) {
+	// FIXME: we don't need to write the header in all/some circumstances.
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(code)
+
+	coder := json.NewEncoder(w)
+	coder.SetEscapeHTML(true)
+	if err := coder.Encode(value); err != nil {
+		logrus.Errorf("Unable to write json: %q", err)
+	}
+}
 
 func WriteResponse(w http.ResponseWriter, code int, value interface{}) {
 	// RFC2616 explicitly states that the following status codes "MUST NOT
@@ -44,17 +54,5 @@ func WriteResponse(w http.ResponseWriter, code int, value interface{}) {
 		}
 	default:
 		WriteJSON(w, code, value)
-	}
-}
-
-func WriteJSON(w http.ResponseWriter, code int, value interface{}) {
-	// FIXME: we don't need to write the header in all/some circumstances.
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(code)
-
-	coder := json.NewEncoder(w)
-	coder.SetEscapeHTML(true)
-	if err := coder.Encode(value); err != nil {
-		logrus.Errorf("Unable to write json: %q", err)
 	}
 }

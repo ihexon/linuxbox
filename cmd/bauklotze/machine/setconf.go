@@ -10,8 +10,8 @@ import (
 	"bauklotze/pkg/machine/env"
 	"bauklotze/pkg/machine/shim"
 	"bauklotze/pkg/machine/vmconfigs"
-	strongunits "bauklotze/pkg/storage"
 	"bauklotze/pkg/system"
+	strongunits "github.com/containers/common/pkg/strongunits"
 	"github.com/spf13/cobra"
 )
 

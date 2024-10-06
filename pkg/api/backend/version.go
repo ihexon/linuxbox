@@ -1,8 +1,7 @@
-package handlers
+package backend
 
 import (
-	"bauklotze/pkg/api/server"
-	"bauklotze/pkg/api/server/utils"
+	"bauklotze/pkg/api/utils"
 	"net/http"
 	"runtime"
 )
@@ -29,10 +28,10 @@ func getVersion() (Version, error) {
 	}, nil
 }
 
-func versionHandler(w http.ResponseWriter, r *http.Request) {
+func VersionHandler(w http.ResponseWriter, r *http.Request) {
 	running, err := getVersion()
 	if err != nil {
-		server.Error(w, http.StatusInternalServerError, err)
+		utils.Error(w, http.StatusInternalServerError, err)
 		return
 	}
 	utils.WriteResponse(w, http.StatusOK, running)

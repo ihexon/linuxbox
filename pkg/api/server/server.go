@@ -1,8 +1,8 @@
 package server
 
 import (
-	"bauklotze/pkg/api/server/handlers"
-	"bauklotze/pkg/api/server/internal"
+	"bauklotze/pkg/api/backend"
+	"bauklotze/pkg/api/internal"
 	"context"
 	"errors"
 	"fmt"
@@ -128,8 +128,7 @@ func makeNewServer(listener net.Listener) (*APIServer, error) {
 			http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
 		},
 	)
-
-	setupRouter(router)
+	server.setupRouter(router)
 
 	return &server, nil
 }
@@ -140,8 +139,9 @@ func (s *APIServer) Shutdown() error {
 	return s.Server.Shutdown(ctx)
 }
 
-func setupRouter(router *mux.Router) *mux.Router {
-	router.Handle("/version", http.HandlerFunc(handlers.versionHandler)).Methods(http.MethodGet)
-	router.NotFoundHandler = http.HandlerFunc(notFoundHandler)
-	return router
+func (s *APIServer) setupRouter(r *mux.Router) *mux.Router {
+	r.Handle(("/version"), s.APIHandler(backend.VersionHandler)).Methods(http.MethodGet)
+	r.Handle(("/getversion"), s.APIHandler(backend.VersionHandler)).Methods(http.MethodGet)
+
+	return r
 }

@@ -1,8 +1,8 @@
 package system
 
 import (
-	strongunits "bauklotze/pkg/storage"
 	"fmt"
+	"github.com/containers/common/pkg/strongunits"
 	"github.com/shirou/gopsutil/v3/mem"
 )
 

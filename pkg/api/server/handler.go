@@ -120,7 +120,7 @@ func (s *APIServer) apiWrapper(h http.HandlerFunc, w http.ResponseWriter, r *htt
 		}).Info("Failed Request: unable to parse form: " + err.Error())
 	}
 
-	if s.CorsHeaders != "" {
+	if s.CorsHeaders == "" {
 		w.Header().Set("Access-Control-Allow-Origin", defaultCORSAllowedHost)
 		w.Header().Set("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, X-Registry-Auth, Connection, Upgrade, X-Registry-Config")
 		w.Header().Set("Access-Control-Allow-Methods", "HEAD, GET, POST")

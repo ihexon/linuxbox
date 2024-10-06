@@ -1,9 +1,9 @@
 package define
 
 import (
-	strongunits "bauklotze/pkg/storage"
 	"errors"
 	"fmt"
+	strongunits "github.com/containers/common/pkg/strongunits"
 )
 
 var (

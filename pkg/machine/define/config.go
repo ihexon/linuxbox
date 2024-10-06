@@ -1,7 +1,7 @@
 package define
 
 import (
-	strongunits "bauklotze/pkg/storage"
+	strongunits "github.com/containers/common/pkg/strongunits"
 	"os"
 )
 
