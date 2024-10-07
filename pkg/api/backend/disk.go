@@ -27,7 +27,4 @@ func GetDiskUsage(w http.ResponseWriter, r *http.Request) {
 		utils.Error(w, http.StatusBadRequest, fmt.Errorf("container name is required or malformed"))
 		return
 	}
-
-	// SSH into Machine and run df -h / to get disk usage
-
 }

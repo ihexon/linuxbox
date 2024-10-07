@@ -44,29 +44,40 @@ func InternalServerError(w http.ResponseWriter, err error) {
 	Error(w, http.StatusInternalServerError, err)
 }
 
-func ReferenceIDHandler() mux.MiddlewareFunc {
-	return func(h http.Handler) http.Handler {
+// A custom middleware
+func ReferenceIDHandler() mux.MiddlewareFunc /* Note type MiddlewareFunc func(http.Handler) http.Handler */ {
+	return func(h http.Handler) http.Handler { // 返回一个 http.Handler，实际上是返回 handlers.CombinedLoggingHandler
 		// Only log Apache access_log-like entries at Info level or below
 		out := io.Discard
 		if logrus.IsLevelEnabled(logrus.InfoLevel) {
 			out = logrus.StandardLogger().Out
 		}
 
+		// CombinedLoggingHandler 返回 loggingHandler struct 类型，而 loggingHandler struct 有自己的的
+		// ServeHTTP(w http.ResponseWriter, req *http.Request) 方法。所以 CombinedLoggingHandler 返回的是一个实现了 http.Handler 接口的对象
+		// type loggingHandler struct {
+		//	writer    io.Writer --> out
+		//	handler   http.Handler --> http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {...}
+		//	formatter LogFormatter
+		//}
 		return handlers.CombinedLoggingHandler(out,
-			http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				rid := r.Header.Get("X-Reference-Id")
-				if rid == "" {
-					if c := r.Context().Value(types.ConnKey); c == nil {
-						rid = uuid.New().String()
-					} else {
-						rid = fmt.Sprintf("%p", c)
+			http.HandlerFunc(
+				func(w http.ResponseWriter, r *http.Request) {
+					rid := r.Header.Get("X-Reference-Id")
+					if rid == "" {
+						if c := r.Context().Value(types.ConnKey); c == nil {
+							rid = uuid.New().String()
+						} else {
+							rid = fmt.Sprintf("%p", c)
+						}
 					}
-				}
 
-				r.Header.Set("X-Reference-Id", rid)
-				w.Header().Set("X-Reference-Id", rid)
-				h.ServeHTTP(w, r)
-			}))
+					r.Header.Set("X-Reference-Id", rid)
+					w.Header().Set("X-Reference-Id", rid)
+					h.ServeHTTP(w, r)
+				},
+			),
+		)
 	}
 }
 
