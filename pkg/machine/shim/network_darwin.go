@@ -15,14 +15,15 @@ import (
 )
 
 func setupMachineSockets(mc *vmconfigs.MachineConfig, dirs *define.MachineDirs) ([]string, string, machine.APIForwardingState, error) {
+	// all hostSocketIO will be forward in to Guest forwardSock
 	hostSocket, err := mc.APISocket()
 	if err != nil {
-		return nil, "", 0, err
+		return nil, "", machine.NoForwarding, err
 	}
 
 	forwardSock, state, err := setupForwardingLinks(hostSocket, dirs.DataDir)
 	if err != nil {
-		return nil, "", 0, err
+		return nil, "", machine.NoForwarding, err
 	}
 	return []string{hostSocket.GetPath()}, forwardSock, state, nil
 }
@@ -32,6 +33,7 @@ func setupForwardingLinks(hostSocket, dataDir *define.VMFile) (string, machine.A
 	return hostSocket.GetPath(), machine.NotInstalled, nil
 }
 
+// Note that mc is a **Point** to the vmconfigs.MachineConfig
 func startHostForwarder(mc *vmconfigs.MachineConfig, provider vmconfigs.VMProvider, dirs *define.MachineDirs, hostSocks []string) error {
 	forwardUser := mc.SSH.RemoteUsername
 
@@ -58,6 +60,7 @@ func startHostForwarder(mc *vmconfigs.MachineConfig, provider vmconfigs.VMProvid
 	cmd.LogFile = filepath.Join(runDir.GetPath(), "gvproxy.log")
 	cmd.SSHPort = mc.SSH.Port
 
+	// For now we only have one hostSocks that is podman api
 	for _, hostSock := range hostSocks {
 		cmd.AddForwardSock(hostSock)
 		cmd.AddForwardDest(guestSock)
@@ -80,5 +83,11 @@ func startHostForwarder(mc *vmconfigs.MachineConfig, provider vmconfigs.VMProvid
 		return fmt.Errorf("unable to execute: %q: %w", cmd.ToCmdline(), err)
 	}
 	machine.GlobalPIDs.SetGvproxyPID(c.Process.Pid)
+	mc.GvProxy.GvProxy.PidFile = cmd.PidFile
+	mc.GvProxy.GvProxy.LogFile = cmd.LogFile
+	mc.GvProxy.GvProxy.SSHPort = cmd.SSHPort
+	mc.GvProxy.GvProxy.MTU = cmd.MTU
+	mc.GvProxy.HostSocks = hostSocks
+	mc.GvProxy.RemoteSocks = guestSock
 	return nil
 }

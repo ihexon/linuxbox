@@ -102,7 +102,7 @@ type MachineConfig struct {
 	Resources  define.ResourceConfig
 	Version    uint
 	Mounts     []*Mount
-	GvProxy    gvproxy.GvproxyCommand
+	GvProxy    GvproxyCommand
 	SSH        SSHConfig
 	Starting   bool
 	lock       *lockfile.LockFile
@@ -110,6 +110,12 @@ type MachineConfig struct {
 	EvtSockPath  *define.VMFile `json:",omitempty"`
 	TwinPid      int            `json:",omitempty"`
 	ImageVersion string         `json:",omitempty"`
+}
+
+type GvproxyCommand struct {
+	GvProxy     gvproxy.GvproxyCommand
+	HostSocks   []string
+	RemoteSocks string
 }
 
 // SSHConfig contains remote access information for SSH

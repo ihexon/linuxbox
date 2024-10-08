@@ -2,7 +2,7 @@ package krunkit
 
 import (
 	"bauklotze/pkg/machine/vmconfigs"
-	strongunits "bauklotze/pkg/storage"
+	strongunits "github.com/containers/common/pkg/strongunits"
 	vfConfig "github.com/crc-org/vfkit/pkg/config"
 	"github.com/sirupsen/logrus"
 	"os"

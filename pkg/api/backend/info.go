@@ -53,20 +53,15 @@ func getPodmanConnection(vmName string) *vmconfigs.MachineConfig {
 
 		for name, mc := range mcs {
 			if name == vmName {
-
 				return mc
-
 			}
 		}
 	}
 	return nil
 }
 
-// TODO
 func GetInfos(w http.ResponseWriter, r *http.Request) {
-
 	name := utils.GetName(r)
 	mc := getPodmanConnection(name)
-
 	utils.WriteResponse(w, http.StatusOK, mc)
 }

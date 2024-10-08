@@ -36,6 +36,9 @@ func init() {
 }
 
 func service(cmd *cobra.Command, args []string) error {
+	d, _ := cmd.Flags().GetString("workdir")
+	env.InitCustomHomeEnvOnce(d)
+
 	apiurl, _ := resolveAPIURI(args)
 	if len(apiurl) > 0 {
 		uri, err := url.Parse(apiurl)
