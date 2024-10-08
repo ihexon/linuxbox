@@ -54,5 +54,7 @@ func TestHttpClient(t *testing.T) {
 		t.Errorf(err.Error())
 	}
 
-	defer response.Body.Close()
+	if response.Response != nil {
+		defer response.Response.Body.Close()
+	}
 }

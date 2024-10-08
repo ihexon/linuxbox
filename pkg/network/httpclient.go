@@ -71,12 +71,18 @@ func (c *Connection) DoRequest(ctx context.Context, httpMethod, endpoint string,
 		httpBody io.Reader
 	)
 
-	baseURL := "http://d"
-	if c.URI.Scheme == "tcp" {
+	baseURL := ""
+	if c.URI.Scheme == "tcp" || c.URI.Scheme == "http" {
 		// Allow path prefixes for tcp connections to match Docker behavior
 		baseURL = "http://" + c.URI.Host + c.URI.Path
 	}
-	uri := fmt.Sprintf(baseURL + "" + endpoint)
+
+	if c.URI.Scheme == "unix" {
+		// Allow path prefixes for tcp connections to match Docker behavior
+		baseURL = "http://local/"
+	}
+
+	uri := fmt.Sprintf(baseURL + "/" + endpoint)
 	logrus.Infof("DoRequest Method: %s URI: %v", httpMethod, uri)
 
 	req, err := http.NewRequestWithContext(ctx, httpMethod, uri, httpBody)
