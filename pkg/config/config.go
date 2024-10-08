@@ -21,9 +21,6 @@ type Destination struct {
 
 	// Identity file with ssh key, optional
 	Identity string `json:",omitempty" toml:"identity,omitempty"`
-
-	// isMachine describes if the remote destination is a machine.
-	IsMachine bool `json:",omitempty" toml:"is_machine,omitempty"`
 }
 
 // This is a higher-level configuration structure that includes more general settings for the virtual machine.

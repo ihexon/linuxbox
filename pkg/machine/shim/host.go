@@ -117,9 +117,10 @@ func Init(opts define.InitOptions, mp vmconfigs.VMProvider) error {
 	}
 	callbackFuncs.Add(mc.ImagePath.Delete)
 
-	if err = connection.AddSSHConnectionsToPodmanSocket(mc.HostUser.UID, mc.SSH.Port, mc.SSH.IdentityPath, mc.Name, mc.SSH.RemoteUsername, opts); err != nil {
+	if err = connection.AddSSHConnectionsToPodmanSocket(mc.SSH.Port, mc.SSH.IdentityPath, mc.Name, mc.SSH.RemoteUsername, opts); err != nil {
 		return err
 	}
+	// Clean config/connectionCfg/bugbox-connections.json
 	cleanup := func() error {
 		// TODO, remove -root endstr
 		return connection.RemoveConnections(mc.Name + "-root")

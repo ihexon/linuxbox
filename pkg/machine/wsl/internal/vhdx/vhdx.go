@@ -1,3 +1,5 @@
+//go:build !drawin && !linux && windows
+
 // SPDX-FileCopyrightText: 2024 OOMOL, Inc. <https://www.oomol.com>
 // SPDX-License-Identifier: MPL-2.0
 
@@ -20,7 +22,7 @@ const (
 )
 
 // VhdxCreate vhdx
-func VhdxCreate(path define.VMFile, maxSizeInBytes uint64) error {
+func VhdxCreate(path *define.VMFile, maxSizeInBytes uint64) error {
 	params := vhd.CreateVirtualDiskParameters{
 		Version: 2,
 		Version2: vhd.CreateVersion2{

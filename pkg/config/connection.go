@@ -78,6 +78,7 @@ func EditConnectionConfig(callback func(cfg *ConnectionsFile) error) error {
 
 	lockPath := path + ".lock"
 	lock, err := lockfile.GetLockFile(lockPath)
+
 	if err != nil {
 		return fmt.Errorf("obtain lock file: %w", err)
 	}

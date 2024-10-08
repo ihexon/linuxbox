@@ -6,80 +6,59 @@ import (
 	"bauklotze/pkg/config"
 	"errors"
 	"fmt"
-	"github.com/sirupsen/logrus"
 	"net"
 	"net/url"
-	"os"
 )
 
-const LocalhostIP = "127.0.0.1"
+const (
+	LocalhostIP      = "127.0.0.1"
+	guestPodmanAPI   = "/run/podman/podman.sock"
+	defaultGuestUser = "root"
+)
 
 type connection struct {
 	name string
 	uri  *url.URL
 }
 
-func addConnection(cons []connection, identity string, isDefault bool) error {
+func addConnection(cons []connection, identity string) error {
 	if len(identity) < 1 {
 		return errors.New("identity must be defined")
 	}
 
-	return config.EditConnectionConfig(func(cfg *config.ConnectionsFile) error {
-		for i, con := range cons {
-			//if _, ok := cfg.Connection.Connections[con.name]; ok {
-			//	return fmt.Errorf("cannot overwrite connection %q", con.name)
-			//}
-
-			dst := config.Destination{
-				URI:       con.uri.String(),
-				IsMachine: true,
-				Identity:  identity,
-			}
-
-			if isDefault && i == 0 {
-				cfg.Connection.Default = con.name
-			}
-
-			if cfg.Connection.Connections == nil {
-				cfg.Connection.Connections = map[string]config.Destination{
-					con.name: dst,
+	return config.EditConnectionConfig(
+		func(cfg *config.ConnectionsFile) error {
+			for _, con := range cons {
+				dst := config.Destination{
+					URI:      con.uri.String(),
+					Identity: identity,
 				}
-				cfg.Connection.Default = con.name
-			} else {
-				cfg.Connection.Connections[con.name] = dst
-			}
-		}
 
-		return nil
-	})
+				if cfg.Connection.Connections == nil {
+					cfg.Connection.Connections = map[string]config.Destination{
+						con.name: dst,
+					}
+					cfg.Connection.Default = con.name
+				} else {
+					cfg.Connection.Connections[con.name] = dst
+				}
+			}
+			return nil
+		},
+	)
 }
 
-func UpdateConnectionPairPort(name string, port, uid int, remoteUsername string, identityPath string) error {
-	cons := createConnections(name, uid, port, remoteUsername)
+func UpdateConnectionPairPort(name string, port int, remoteUsername string, identityPath string) error {
+	cons := createConnections(name, port, remoteUsername)
 	return config.EditConnectionConfig(func(cfg *config.ConnectionsFile) error {
 		for _, con := range cons {
 			dst := config.Destination{
-				IsMachine: true,
-				URI:       con.uri.String(),
-				Identity:  identityPath,
+				URI:      con.uri.String(),
+				Identity: identityPath,
 			}
 			cfg.Connection.Connections[con.name] = dst
 		}
 
-		return nil
-	})
-}
-
-// UpdateConnectionIfDefault updates the default connection to the rootful/rootless when depending
-// on the bool but only if other rootful/less connection was already the default.
-// Returns true if it modified the default
-func UpdateConnectionIfDefault(rootful bool, name, rootfulName string) error {
-	return config.EditConnectionConfig(func(cfg *config.ConnectionsFile) error {
-		if name == cfg.Connection.Default && rootful {
-			cfg.Connection.Default = rootfulName
-		} else if rootfulName == cfg.Connection.Default && !rootful {
-			cfg.Connection.Default = name
-		}
 		return nil
 	})
 }
@@ -103,18 +82,6 @@ func RemoveConnections(names ...string) error {
 		}
 		return nil
 	})
-}
-
-// removeFilesAndConnections removes any files and connections with the given names
-func RemoveFilesAndConnections(files []string, names ...string) {
-	for _, f := range files {
-		if err := os.Remove(f); err != nil && !errors.Is(err, os.ErrNotExist) {
-			logrus.Error(err)
-		}
-	}
-	if err := RemoveConnections(names...); err != nil {
-		logrus.Error(err)
-	}
 }
 
 // makeSSHURL creates a URL from the given input

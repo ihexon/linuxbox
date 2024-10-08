@@ -98,7 +98,7 @@ func reassignSSHPort(mc *vmconfigs.MachineConfig, provider vmconfigs.VMProvider)
 	}
 
 	mc.SSH.Port = newPort
-	if err := connection.UpdateConnectionPairPort(mc.Name, newPort, mc.HostUser.UID, mc.SSH.RemoteUsername, mc.SSH.IdentityPath); err != nil {
+	if err := connection.UpdateConnectionPairPort(mc.Name, newPort, mc.SSH.RemoteUsername, mc.SSH.IdentityPath); err != nil {
 		return fmt.Errorf("could not update remote connection configuration: %w", err)
 	}
 

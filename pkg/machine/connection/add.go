@@ -7,19 +7,18 @@ import (
 	"strconv"
 )
 
-// AddSSHConnectionsToPodmanSocket adds SSH connections(host) to the podman socket(guest) if
-// no ignition path is provided
-func AddSSHConnectionsToPodmanSocket(uid, port int, identityPath, name, remoteUsername string, opts define.InitOptions) error {
-	cons := createConnections(name, uid, port, remoteUsername)
-	return addConnection(cons, identityPath, opts.IsDefault)
+// AddSSHConnectionsToPodmanSocket
+func AddSSHConnectionsToPodmanSocket(port int, identityPath, name, remoteUsername string, opts define.InitOptions) error {
+	cons := createConnections(name, port, remoteUsername) // return a uriSSH connection
+	return addConnection(cons, identityPath)
 }
 
-func createConnections(name string, uid, port int, remoteUsername string) []connection {
-	uriRoot := makeSSHURL(LocalhostIP, "/run/podman/podman.sock", strconv.Itoa(port), "root")
+func createConnections(name string, port int, remoteUsername string) []connection {
+	uriSSH := makeSSHURL(LocalhostIP, guestPodmanAPI, strconv.Itoa(port), remoteUsername)
 	return []connection{
 		{
 			name: name + "-root",
-			uri:  uriRoot,
+			uri:  uriSSH,
 		},
 	}
 }

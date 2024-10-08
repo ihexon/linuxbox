@@ -11,6 +11,7 @@ import (
 	"fmt"
 	gvproxy "github.com/containers/gvisor-tap-vsock/pkg/types"
 	"github.com/sirupsen/logrus"
+	"os"
 	"strings"
 )
 
@@ -41,19 +42,21 @@ func (w WSLStubber) CreateVM(opts define.CreateVMOpts, mc *vmconfigs.MachineConf
 	go callbackFuncs.CleanOnSignal()
 	mc.WSLHypervisor = new(vmconfigs.WSLConfig)
 
-	const prompt = "Importing operating system into WSL (this may take a few minutes on a new WSL install)..."
-
 	_ = setupWslProxyEnv()
-	dist, err := provisionWSLDist(opts, mc.ImagePath.GetPath(), prompt)
+
+	err = unprovisionWSL(mc, false)
+	if err != nil {
+		return err
+	}
+	dist, err := provisionWSLDist(opts, mc.ImagePath.GetPath())
 	if err != nil {
 		return err
 	}
 
 	unprovisionCallbackFunc := func() error {
-		return unprovisionWSL(mc)
+		return unprovisionWSL(mc, true)
 	}
 	callbackFuncs.Add(unprovisionCallbackFunc)
-	logrus.Info("Configuring system...")
 
 	if err = configureSystem(mc, dist); err != nil {
 		return err
@@ -63,29 +66,13 @@ func (w WSLStubber) CreateVM(opts define.CreateVMOpts, mc *vmconfigs.MachineConf
 }
 
 func configureSystem(mc *vmconfigs.MachineConfig, dist string) error {
-
-	if err := createKeys(mc, dist); err != nil {
-		return err
-	}
-
-	if err := configureBindMounts(mc, dist); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func configureBindMounts(mc *vmconfigs.MachineConfig, dist string) error {
-	return nil
-}
-
-func createKeys(mc *vmconfigs.MachineConfig, dist string) error {
+	// Do nothing...
 	return nil
 }
 
 // TODO like provisionWSL, i think this needs to be pushed to use common
 // paths and types where possible
-func unprovisionWSL(mc *vmconfigs.MachineConfig) error {
+func unprovisionWSL(mc *vmconfigs.MachineConfig, ifDeleteDir bool) error {
 	dist := mc.Name
 	if err := terminateDist(dist); err != nil {
 		logrus.Error(err)
@@ -93,16 +80,22 @@ func unprovisionWSL(mc *vmconfigs.MachineConfig) error {
 	if err := unregisterDist(dist); err != nil {
 		logrus.Error(err)
 	}
-	vmDataDir := mc.Dirs.DataDir.GetPath()
-	return utils.GuardedRemoveAll(vmDataDir)
+	if ifDeleteDir {
+		vmDataDir := mc.Dirs.DataDir.GetPath()
+		err := utils.GuardedRemoveAll(vmDataDir)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
-func provisionWSLDist(opts define.CreateVMOpts, distroInstallDir string, prompt string) (string, error) {
+func provisionWSLDist(opts define.CreateVMOpts, distroInstallDir string) (string, error) {
+	_ = os.MkdirAll(distroInstallDir, 0755)
 	if err := runCmdPassThrough(FindWSL(), "--import", opts.Name, distroInstallDir, opts.UserImageFile, "--version", "2"); err != nil {
 		return "", fmt.Errorf("the WSL import of guest OS failed: %w", err)
 	}
 	return opts.Name, nil
-
 }
 
 func (w WSLStubber) StopVM(mc *vmconfigs.MachineConfig, hardStop bool) error {
