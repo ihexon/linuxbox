@@ -8,35 +8,6 @@ import (
 	"net/http"
 )
 
-type connType int64
-
-const (
-	type_tcp connType = iota
-	type_udf
-)
-
-const (
-	tcp    = "TCP"
-	udf    = "UDF"
-	unkown = "Unknown"
-)
-
-type Infos struct {
-	PodmanConnection string
-	connectionType   string
-}
-
-func (v connType) String() string {
-	switch v {
-	case type_tcp:
-		return tcp
-	case type_udf:
-		return udf
-	default:
-	}
-	return unkown
-}
-
 var providers []vmconfigs.VMProvider
 
 func getPodmanConnection(vmName string) *vmconfigs.MachineConfig {
