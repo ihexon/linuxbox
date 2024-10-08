@@ -12,7 +12,6 @@ import (
 
 // WriteJSON writes an interface value encoded as JSON to w
 func WriteJSON(w http.ResponseWriter, code int, value interface{}) {
-	// FIXME: we don't need to write the header in all/some circumstances.
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(code)
 
