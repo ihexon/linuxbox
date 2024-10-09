@@ -4,6 +4,7 @@ package krunkit
 
 import (
 	"bauklotze/pkg/config"
+	"bauklotze/pkg/fileutils"
 	"bauklotze/pkg/machine"
 	"bauklotze/pkg/machine/define"
 	"bauklotze/pkg/machine/sockets"
@@ -110,15 +111,23 @@ func StartGenericAppleVM(mc *vmconfigs.MachineConfig, cmdBinary string, bootload
 	// create a one-time virtual machine for starting because we dont want all this information in the
 	// machineconfig if possible.  the preference was to derive this stuff
 	vm := vfConfig.NewVirtualMachine(uint(mc.Resources.CPUs), uint64(mc.Resources.Memory), bootloader)
-
 	defaultDevices, readySocket, err := GetDefaultDevices(mc)
-
-	external_disk, err := vfConfig.VirtioBlkNew(mc.ExternalDisk.GetPath())
-	if err != nil {
-		return nil, nil, err
-	}
 	vm.Devices = append(vm.Devices, defaultDevices...)
-	vm.Devices = append(vm.Devices, external_disk)
+
+	// Make virIO devices for external_disk
+	if mc.ExternalDisk.GetPath() != "" {
+		if err := fileutils.Exists(mc.ExternalDisk.GetPath()); err != nil {
+			logrus.Errorf("external disk does not exist: %s", mc.ExternalDisk.GetPath())
+			return nil, nil, err
+		}
+
+		external_disk, err := vfConfig.VirtioBlkNew(mc.ExternalDisk.GetPath())
+		if err != nil {
+			return nil, nil, err
+		}
+		vm.Devices = append(vm.Devices, external_disk)
+	}
+
 	vm.Devices = append(vm.Devices, netDevice)
 
 	mounts, err := VirtIOFsToVFKitVirtIODevice(mc.Mounts)
@@ -171,37 +180,33 @@ func StartGenericAppleVM(mc *vmconfigs.MachineConfig, cmdBinary string, bootload
 	readyChan := make(chan error)
 	go sockets.ListenAndWaitOnSocket(readyChan, readyListen)
 
-	logrus.Debugf("helper command-line: %v", cmd.Args)
-
-	if err := cmd.Start(); err != nil {
-		return nil, nil, err
-	}
-
 	ignitionSocket, err := mc.IgnitionSocket()
 	if err != nil {
 		return nil, nil, err
 	}
 	logrus.Infof("IgnitionSocket on: %s", ignitionSocket.GetPath())
 	if err = ignitionSocket.Delete(); err != nil {
-		logrus.Warnf("unable to delete previous ready socket: %q", err)
+		logrus.Errorf("unable to delete previous ready socket: %q", err)
+		return nil, nil, err
 	}
 	ignListen, err := net.Listen("unix", ignitionSocket.GetPath())
-
 	if err != nil {
 		return nil, nil, err
 	}
 
-	err = sockets.ListenAndExecCommandOnUnixSocketFile(ignListen, mc)
-	if err != nil {
+	logrus.Debugf("helper command-line: %v", cmd.Args)
+
+	if err := cmd.Start(); err != nil {
 		return nil, nil, err
 	}
-	logrus.Infof("Ignition finished")
 
 	returnFunc := func() error {
 		processErrChan := make(chan error)
 		machine.GlobalPIDs.SetKrunkitPID(cmd.Process.Pid)
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
+
+		// Go routine to check if the process gvproxy and krunkit is running
 		go func() {
 			defer close(processErrChan)
 			for {
@@ -214,8 +219,22 @@ func StartGenericAppleVM(mc *vmconfigs.MachineConfig, cmdBinary string, bootload
 					processErrChan <- err
 					return
 				}
+
+				if err := CheckProcessRunning(cmdBinary, machine.GlobalPIDs.GetGvproxyPID()); err != nil {
+					processErrChan <- err
+					return
+				}
 				// lets poll status every half second
 				time.Sleep(500 * time.Millisecond)
+			}
+		}()
+
+		// Go routine to do Ignition to Machine thought vsock
+		go func() {
+			err = sockets.ListenAndExecCommandOnUnixSocketFile(ignListen, mc)
+			if err != nil {
+				processErrChan <- err
+				return
 			}
 		}()
 
@@ -229,10 +248,11 @@ func StartGenericAppleVM(mc *vmconfigs.MachineConfig, cmdBinary string, bootload
 			if err != nil {
 				return err
 			}
-			logrus.Infof("podman ready notification received")
+			logrus.Infof("machine ready notification received")
 		}
 		return nil
 	}
+
 	return cmd.Process.Release, returnFunc, nil
 }
 

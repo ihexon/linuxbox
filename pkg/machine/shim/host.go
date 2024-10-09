@@ -244,7 +244,10 @@ func Start(mc *vmconfigs.MachineConfig, mp vmconfigs.VMProvider, dirs *define.Ma
 
 	// Set starting to true
 	mc.Starting = true
-	mc.ExternalDisk = &define.VMFile{Path: opts.ExternImage}
+	// Set the external disk
+	if opts.ExternImage != "" {
+		mc.ExternalDisk = &define.VMFile{Path: opts.ExternImage}
+	}
 
 	if err := mc.Write(); err != nil {
 		logrus.Error(err)
@@ -267,6 +270,7 @@ func Start(mc *vmconfigs.MachineConfig, mp vmconfigs.VMProvider, dirs *define.Ma
 		return err
 	}
 
+	// Start krunkit now
 	releaseCmd, WaitForReady, err := mp.StartVM(mc)
 	if err != nil {
 		return err

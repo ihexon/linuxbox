@@ -59,3 +59,13 @@ func (ign *DynamicIgnition) generateSSHIgnitionCfg(sshkey_pub string) error {
 	ign.Commands = append(ign.Commands, slice.Get()...)
 	return nil
 }
+
+func (ign *DynamicIgnition) generateReadyEvent() error {
+	slice := config.NewSlice([]string{
+		fmt.Sprintf("%s", "/bin/echo Ready | /usr/bin/socat - VSOCK-CONNECT:2:1025"),
+		"sync",
+		"\n",
+	})
+	ign.Commands = append(ign.Commands, slice.Get()...)
+	return nil
+}

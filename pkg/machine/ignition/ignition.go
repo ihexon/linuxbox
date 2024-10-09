@@ -40,6 +40,11 @@ func ServeIgnitionOverSock(mc *vmconfigs.MachineConfig) (*DynamicIgnition, error
 		return nil, err
 	}
 
+	err = ign.generateReadyEvent()
+	if err != nil {
+		return nil, err
+	}
+
 	return &ign, err
 
 }

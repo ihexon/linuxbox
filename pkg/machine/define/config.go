@@ -19,10 +19,6 @@ type CreateVMOpts struct {
 	UserImageFile string
 }
 
-type GiB uint64
-type MiB uint64
-type cores uint64
-
 type WSLConfig struct {
 }
 
