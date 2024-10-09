@@ -62,49 +62,6 @@ func (vf *Helper) State() (define.Status, error) {
 	return "", err
 }
 
-func (vf *Helper) get(endpoint string, payload io.Reader) (*http.Response, error) {
-	client := &http.Client{}
-	req, err := http.NewRequest(http.MethodGet, endpoint, payload)
-	if err != nil {
-		return nil, err
-	}
-	return client.Do(req)
-}
-
-func (vf *Helper) post(endpoint string, payload io.Reader) (*http.Response, error) {
-	client := &http.Client{}
-	req, err := http.NewRequest(http.MethodPost, endpoint, payload)
-	if err != nil {
-		return nil, err
-	}
-	return client.Do(req)
-}
-
-func (vf *Helper) stateChange(newState rest.StateChange) error {
-	b, err := json.Marshal(rest.VMState{State: string(newState)})
-	if err != nil {
-		return err
-	}
-	payload := bytes.NewReader(b)
-	serverResponse, err := vf.post(vf.Endpoint+state, payload)
-	_ = serverResponse.Body.Close()
-	return err
-}
-
-func ToMachineStatus(val string) (define.Status, error) {
-	switch val {
-	case string(VZMachineStateRunning), string(VZMachineStatePausing), string(VZMachineStateResuming), string(VZMachineStateStopping), string(VZMachineStatePaused):
-		return define.Running, nil
-	case string(VZMachineStateStopped):
-		return define.Stopped, nil
-	case string(VZMachineStateStarting):
-		return define.Starting, nil
-	case string(VZMachineStateError):
-		return "", errors.New("machine is in error state")
-	}
-	return "", fmt.Errorf("unknown machine state: %s", val)
-}
-
 // getRawState asks hvhelper for virtual machine state unmodified (see state())
 func (vf *Helper) getRawState() (define.Status, error) {
 	var response rest.VMState
@@ -124,6 +81,38 @@ func (vf *Helper) getRawState() (define.Status, error) {
 		logrus.Error(err)
 	}
 	return ToMachineStatus(response.State)
+}
+
+func (vf *Helper) get(endpoint string, payload io.Reader) (*http.Response, error) {
+	client := &http.Client{}
+	req, err := http.NewRequest(http.MethodGet, endpoint, payload)
+	if err != nil {
+		return nil, err
+	}
+	return client.Do(req)
+}
+
+func (vf *Helper) post(endpoint string, payload io.Reader) (*http.Response, error) {
+	client := &http.Client{}
+	req, err := http.NewRequest(http.MethodPost, endpoint, payload)
+	if err != nil {
+		return nil, err
+	}
+	return client.Do(req)
+}
+
+func ToMachineStatus(val string) (define.Status, error) {
+	switch val {
+	case string(VZMachineStateRunning), string(VZMachineStatePausing), string(VZMachineStateResuming), string(VZMachineStateStopping), string(VZMachineStatePaused):
+		return define.Running, nil
+	case string(VZMachineStateStopped):
+		return define.Stopped, nil
+	case string(VZMachineStateStarting):
+		return define.Starting, nil
+	case string(VZMachineStateError):
+		return "", errors.New("machine is in error state")
+	}
+	return "", fmt.Errorf("unknown machine state: %s", val)
 }
 
 func (vf *Helper) Stop(force, wait bool) error {
@@ -149,4 +138,15 @@ func (vf *Helper) Stop(force, wait bool) error {
 	logrus.Warn("Failed to gracefully stop machine, performing hard stop")
 	// we waited long enough do a hard stop
 	return vf.stateChange(rest.HardStop)
+}
+
+func (vf *Helper) stateChange(newState rest.StateChange) error {
+	b, err := json.Marshal(rest.VMState{State: string(newState)})
+	if err != nil {
+		return err
+	}
+	payload := bytes.NewReader(b)
+	serverResponse, err := vf.post(vf.Endpoint+state, payload)
+	_ = serverResponse.Body.Close()
+	return err
 }
