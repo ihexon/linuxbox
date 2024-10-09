@@ -173,7 +173,6 @@ func NewMachineConfig(opts define.InitOptions, dirs *define.MachineDirs, sshIden
 		UID:     getHostUID(),
 		Rootful: true, // Default root
 	}
-	mc.ExternalDisk = &define.VMFile{Path: opts.ExternImage}
 
 	return mc, nil
 }

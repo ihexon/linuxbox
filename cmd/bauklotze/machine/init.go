@@ -78,10 +78,6 @@ func init() {
 
 	ImageFlagName := "image"
 	flags.StringVar(&initOpts.Image, ImageFlagName, cfg.ContainersConfDefaultsRO.Machine.Image, "Bootable image for machine")
-	flags.MarkHidden(ImageFlagName)
-
-	ExternalImageFlagName := "external-disk"
-	flags.StringVar(&initOpts.ExternImage, ExternalImageFlagName, "", "External image for machine")
 
 	imageVersion := "image-version"
 	flags.StringVar(&initOpts.ImageVersion, imageVersion, "always-update", "Special bootable image version")

@@ -62,7 +62,6 @@ type InitOptions struct {
 	IsDefault    bool
 	CPUS         uint64
 	Image        string
-	ExternImage  string
 	Volumes      []string
 	Memory       uint64
 	Name         string
