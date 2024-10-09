@@ -133,7 +133,6 @@ func Init(opts define.InitOptions, mp vmconfigs.VMProvider) error {
 	}
 
 	mc.EvtSockPath = &define.VMFile{Path: opts.SendEvt}
-	mc.TwinPid = opts.TwinPid
 	mc.ImageVersion = opts.ImageVersion
 
 	return mc.Write()

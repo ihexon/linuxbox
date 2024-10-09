@@ -83,10 +83,6 @@ func init() {
 	ExternalImageFlagName := "external-disk"
 	flags.StringVar(&initOpts.ExternImage, ExternalImageFlagName, "", "External image for machine")
 
-	twinPid := "twinpid"
-	flags.IntVar(&initOpts.TwinPid, twinPid, -1, "self killing when [twin pid] exit")
-	flags.MarkHidden(twinPid)
-
 	imageVersion := "image-version"
 	flags.StringVar(&initOpts.ImageVersion, imageVersion, "always-update", "Special bootable image version")
 	flags.MarkHidden(imageVersion)
@@ -97,10 +93,7 @@ func init() {
 }
 
 func initMachine(cmd *cobra.Command, args []string) error {
-
 	if now {
-		// Pass TwinPid/evtsock to startOpts
-		startOpts.TwinPid = initOpts.TwinPid
 		startOpts.SendEvt = initOpts.SendEvt
 	}
 

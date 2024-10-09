@@ -49,14 +49,12 @@ var (
 )
 
 type StartOptions struct {
-	WaitAndStop bool // NoQuit when machine start
-	TwinPid     int
+	TwinPid     int32
 	SendEvt     string
 	ExternImage string
 }
 
 type StopOptions struct {
-	TwinPid int
 	SendEvt string
 }
 
@@ -70,7 +68,6 @@ type InitOptions struct {
 	Name         string
 	Username     string
 	ReExec       bool
-	TwinPid      int
 	SendEvt      string
 	ImageVersion string
 }

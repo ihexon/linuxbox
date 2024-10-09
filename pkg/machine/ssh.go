@@ -5,31 +5,14 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"os/exec"
-	"strconv"
 	"strings"
 
 	"github.com/sirupsen/logrus"
 	"golang.org/x/crypto/ssh"
 )
 
-// CommonSSH is a common function for ssh'ing to a podman machine using system-connections
-// and a port
-// TODO This should probably be taught about an machineconfig to reduce input
-func CommonSSH(username, identityPath, name string, sshPort int, inputArgs []string) error {
-	return commonBuiltinSSH(username, identityPath, name, sshPort, inputArgs, true, os.Stdin)
-}
-
-func CommonSSHShell(username, identityPath, name string, sshPort int, inputArgs []string) error {
-	return commonNativeSSH(username, identityPath, name, sshPort, inputArgs, os.Stdin)
-}
-
 func CommonSSHSilent(username, identityPath, name string, sshPort int, inputArgs []string) error {
 	return commonBuiltinSSH(username, identityPath, name, sshPort, inputArgs, false, nil)
-}
-
-func CommonSSHWithStdin(username, identityPath, name string, sshPort int, inputArgs []string, stdin io.Reader) error {
-	return commonBuiltinSSH(username, identityPath, name, sshPort, inputArgs, true, stdin)
 }
 
 func commonBuiltinSSH(username, identityPath, name string, sshPort int, inputArgs []string, passOutput bool, stdin io.Reader) error {
@@ -107,32 +90,4 @@ func createConfig(user string, identityPath string) (*ssh.ClientConfig, error) {
 		Auth:            []ssh.AuthMethod{ssh.PublicKeys(signer)},
 		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
 	}, nil
-}
-
-func commonNativeSSH(username, identityPath, name string, sshPort int, inputArgs []string, stdin io.Reader) error {
-	sshDestination := username + "@127.0.0.1"
-	port := strconv.Itoa(sshPort)
-
-	args := []string{"-i", identityPath, "-p", port, sshDestination,
-		"-o", "IdentitiesOnly=yes",
-		"-o", "StrictHostKeyChecking=no",
-		"-o", "UserKnownHostsFile=" + os.DevNull,
-		"-o", "CheckHostIP=no",
-		"-o", "LogLevel=ERROR", "-o", "SetEnv=LC_ALL="}
-	if len(inputArgs) > 0 {
-		args = append(args, inputArgs...)
-	} else {
-		// ensure we have a tty
-		args = append(args, "-t")
-		fmt.Printf("Connecting to vm %s. To close connection, use `~.` or `exit`\n", name)
-	}
-
-	cmd := exec.Command("ssh", args...)
-	logrus.Debugf("Executing: ssh %v\n", args)
-
-	cmd.Stdin = stdin
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-
-	return cmd.Run()
 }

@@ -23,9 +23,7 @@ var (
 		Args:              cobra.MaximumNArgs(1),
 		Example:           `bauklotze machine start`,
 	}
-	startOpts = define.StartOptions{
-		WaitAndStop: false,
-	}
+	startOpts = define.StartOptions{}
 )
 
 func init() {
@@ -35,16 +33,8 @@ func init() {
 	})
 	flags := startCmd.Flags()
 
-	waitAndStop := "waitAndStop"
-	flags.BoolVarP(&startOpts.WaitAndStop,
-		waitAndStop,
-		"",
-		false,
-		"When any of ppid, gvproxy, and krunkit got exit, STOP the virtual Machine")
-	flags.MarkHidden(waitAndStop)
-
 	twinPid := "twinpid"
-	flags.IntVar(&startOpts.TwinPid, twinPid, -1, "the pid of PPID")
+	flags.Int32Var(&startOpts.TwinPid, twinPid, -1, "the pid of PPID")
 	flags.MarkHidden(twinPid)
 
 	externalImage := "external-disk"
@@ -74,6 +64,14 @@ func start(cmd *cobra.Command, args []string) error {
 
 	logrus.Infof("Machine %q started successfully\n", vmName)
 
+	// If user do not --twinpid, get my PPID
+	if startOpts.TwinPid == -1 {
+		startOpts.TwinPid, err = system.GetMyPPID()
+		if err != nil {
+			return err
+		}
+	}
+
 	return WaiteAndStopMachine(
 		startOpts,
 		args,
@@ -83,9 +81,9 @@ func start(cmd *cobra.Command, args []string) error {
 }
 
 func WaiteAndStopMachine(startOpts define.StartOptions, args []string, krunkit, gvproxy int) error {
-	if startOpts.WaitAndStop || (startOpts.TwinPid != -1) {
+	if startOpts.TwinPid != -1 {
 		logrus.Infof("Waiting PPID[%d] exited then stop the machine\n", startOpts.TwinPid)
-		return waiteAndStopMachine(args, startOpts.TwinPid, krunkit, gvproxy)
+		return waiteAndStopMachine(args, int(startOpts.TwinPid), krunkit, gvproxy)
 	}
 	return nil
 }
