@@ -112,11 +112,13 @@ func StartGenericAppleVM(mc *vmconfigs.MachineConfig, cmdBinary string, bootload
 	vm := vfConfig.NewVirtualMachine(uint(mc.Resources.CPUs), uint64(mc.Resources.Memory), bootloader)
 
 	defaultDevices, readySocket, err := GetDefaultDevices(mc)
+
+	external_disk, err := vfConfig.VirtioBlkNew(mc.ExternalDisk.GetPath())
 	if err != nil {
 		return nil, nil, err
 	}
-
 	vm.Devices = append(vm.Devices, defaultDevices...)
+	vm.Devices = append(vm.Devices, external_disk)
 	vm.Devices = append(vm.Devices, netDevice)
 
 	mounts, err := VirtIOFsToVFKitVirtIODevice(mc.Mounts)

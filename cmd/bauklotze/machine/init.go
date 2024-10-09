@@ -80,6 +80,9 @@ func init() {
 	flags.StringVar(&initOpts.Image, ImageFlagName, cfg.ContainersConfDefaultsRO.Machine.Image, "Bootable image for machine")
 	flags.MarkHidden(ImageFlagName)
 
+	ExternalImageFlagName := "external-image"
+	flags.StringVar(&initOpts.ExternImage, ExternalImageFlagName, "", "External image for machine")
+
 	twinPid := "twinpid"
 	flags.IntVar(&initOpts.TwinPid, twinPid, -1, "self killing when [twin pid] exit")
 	flags.MarkHidden(twinPid)

@@ -244,6 +244,8 @@ func Start(mc *vmconfigs.MachineConfig, mp vmconfigs.VMProvider, dirs *define.Ma
 
 	// Set starting to true
 	mc.Starting = true
+	mc.ExternalDisk = &define.VMFile{Path: opts.ExternImage}
+
 	if err := mc.Write(); err != nil {
 		logrus.Error(err)
 	}

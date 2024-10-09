@@ -51,12 +51,6 @@ func Default() (*Config, error) {
 	return cachedConfig, cachedConfigError
 }
 
-func defaultConfig() (*Config, error) {
-	c := &Config{Machine: defaultMachineConfig()}
-	c.Machine.HelperBinariesDir.Set(defaultHelperBinariesDir)
-	return c, nil
-}
-
 const vmuser = "root"
 
 func getDefaultMachineUser() string {

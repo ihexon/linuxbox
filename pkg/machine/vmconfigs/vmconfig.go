@@ -90,10 +90,11 @@ type MachineConfig struct {
 	Created time.Time
 	LastUp  time.Time
 
-	Dirs      *define.MachineDirs
-	HostUser  HostUser
-	Name      string
-	ImagePath *define.VMFile
+	Dirs         *define.MachineDirs
+	HostUser     HostUser
+	Name         string
+	ImagePath    *define.VMFile
+	ExternalDisk *define.VMFile
 
 	AppleKrunkitHypervisor *AppleKrunkitConfig `json:",omitempty"`
 	WSLHypervisor          *WSLConfig          `json:",omitempty"`
@@ -169,7 +170,11 @@ func NewMachineConfig(opts define.InitOptions, dirs *define.MachineDirs, sshIden
 	mc.SSH = sshConfig
 	mc.Created = time.Now()
 
-	mc.HostUser = HostUser{UID: getHostUID(), Rootful: true}
+	mc.HostUser = HostUser{
+		UID:     getHostUID(),
+		Rootful: true, // Default root
+	}
+	mc.ExternalDisk = &define.VMFile{Path: opts.ExternImage}
 
 	return mc, nil
 }

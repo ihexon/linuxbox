@@ -56,6 +56,7 @@ type StartOptions struct {
 	WaitAndStop bool // NoQuit when machine start
 	TwinPid     int
 	SendEvt     string
+	ExternImage string
 }
 
 type StopOptions struct {
@@ -67,6 +68,7 @@ type InitOptions struct {
 	IsDefault    bool
 	CPUS         uint64
 	Image        string
+	ExternImage  string
 	Volumes      []string
 	Memory       uint64
 	Name         string

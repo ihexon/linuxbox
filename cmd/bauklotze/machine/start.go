@@ -46,6 +46,9 @@ func init() {
 	twinPid := "twinpid"
 	flags.IntVar(&startOpts.TwinPid, twinPid, -1, "the pid of PPID")
 	flags.MarkHidden(twinPid)
+
+	externalImage := "external-disk"
+	flags.StringVar(&startOpts.ExternImage, externalImage, "", "Use an external image as disk")
 }
 
 func start(cmd *cobra.Command, args []string) error {
@@ -85,7 +88,6 @@ func WaiteAndStopMachine(startOpts define.StartOptions, args []string, krunkit, 
 		return waiteAndStopMachine(args, startOpts.TwinPid, krunkit, gvproxy)
 	}
 	return nil
-
 }
 
 func waiteAndStopMachine(args []string, ovmppid, krunkit, gvproxy int) error {
