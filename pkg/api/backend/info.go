@@ -8,8 +8,6 @@ import (
 	"net/http"
 )
 
-var providers []vmconfigs.VMProvider
-
 func getPodmanConnection(vmName string) *vmconfigs.MachineConfig {
 	providers = provider2.GetAll()
 	for _, s := range providers {

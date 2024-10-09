@@ -6,6 +6,7 @@ import (
 	"bauklotze/pkg/machine/env"
 	provider2 "bauklotze/pkg/machine/provider"
 	"bauklotze/pkg/machine/vmconfigs"
+	"errors"
 	"net/http"
 )
 
@@ -35,29 +36,31 @@ func (v statType) String() string {
 	return "Unknown"
 }
 
-func getVMstat(vmName string) statType {
+func getVMstat(vmName string) (statType, error) {
 	providers = provider2.GetAll()
 	for _, sprovider := range providers {
 		dirs, err := env.GetMachineDirs(sprovider.VMType())
 		if err != nil {
-			return unknown
+			return unknown, err
 		}
 		mcs, err := vmconfigs.LoadMachinesInDir(dirs)
 		if err != nil {
-			return unknown
+			return unknown, err
 		}
-		for name, mc := range mcs {
-			if name == vmName {
-				state, _ := sprovider.State(mc)
-				if state == define.Running {
-					return running
-				} else {
-					return stopped
-				}
+		if mc, exists := mcs[vmName]; exists {
+			state, err := sprovider.State(mc)
+			if err != nil {
+				return unknown, err
+			}
+			switch state {
+			case define.Running:
+				return running, nil
+			case define.Stopped:
+				return stopped, nil
 			}
 		}
 	}
-	return unknown
+	return unknown, errors.New("unknown state")
 }
 
 func GetVMStat(w http.ResponseWriter, r *http.Request) {
@@ -66,9 +69,14 @@ func GetVMStat(w http.ResponseWriter, r *http.Request) {
 	}
 
 	name := utils.GetName(r)
-	stat := getVMstat(name)
-	s.CurrentStat = stat.String()
+	stat, err := getVMstat(name)
+	if err != nil {
+		utils.Error(w, http.StatusInternalServerError, err)
+		return
+	}
+
 	s.VMName = name
+	s.CurrentStat = stat.String()
 
 	utils.WriteResponse(w, http.StatusOK, s.CurrentStat)
 }
