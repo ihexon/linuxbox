@@ -246,6 +246,8 @@ func Start(mc *vmconfigs.MachineConfig, mp vmconfigs.VMProvider, dirs *define.Ma
 	// Set the external disk
 	if opts.ExternImage != "" {
 		mc.ExternalDisk = &define.VMFile{Path: opts.ExternImage}
+	} else {
+		mc.ExternalDisk = &define.VMFile{Path: ""}
 	}
 
 	if err := mc.Write(); err != nil {

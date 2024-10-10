@@ -116,9 +116,11 @@ func StartGenericAppleVM(mc *vmconfigs.MachineConfig, cmdBinary string, bootload
 
 	// Make virIO devices for external_disk
 	if mc.ExternalDisk.GetPath() != "" {
-		if err := fileutils.Exists(mc.ExternalDisk.GetPath()); err != nil {
-			logrus.Errorf("external disk does not exist: %s", mc.ExternalDisk.GetPath())
-			return nil, nil, err
+		if err = fileutils.Exists(mc.ExternalDisk.GetPath()); err != nil {
+			logrus.Warnf("external disk does not exist: %s", mc.ExternalDisk.GetPath())
+			if err = CreateAndResizeDisk(mc.ExternalDisk.GetPath(), 500); err != nil {
+				return nil, nil, err
+			}
 		}
 
 		external_disk, err := vfConfig.VirtioBlkNew(mc.ExternalDisk.GetPath())
