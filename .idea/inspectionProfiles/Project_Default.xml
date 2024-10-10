@@ -4,6 +4,7 @@
     <inspection_tool class="GoDfaErrorMayBeNotNil" enabled="true" level="WARNING" enabled_by_default="true">
       <functions>
         <function importPath="bauklotze/pkg/machine/shim" name="startNetAndForwardNow" />
+        <function importPath="bauklotze/pkg/network" name="NewConnection" />
       </functions>
     </inspection_tool>
   </profile>

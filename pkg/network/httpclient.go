@@ -11,12 +11,15 @@ import (
 	"strings"
 )
 
-const clientKey = "myclient"
-
 type Connection struct {
-	URI    *url.URL
-	Client *http.Client
+	URI          *url.URL
+	TcpClient    *http.Client
+	UnixClient   *http.Client
+	urlParameter url.Values
+	headers      http.Header
 }
+
+var myConnection = &Connection{}
 
 type APIResponse struct {
 	*http.Response
@@ -28,14 +31,13 @@ func JoinURL(elements ...string) string {
 	return "/" + strings.Join(elements, "/")
 }
 
-var tcpConn Connection
-var unixConn Connection
+func NewConnection(uri string) (*Connection, error) {
 
-func NewConnection(ctx context.Context, uri string) (context.Context, error) {
 	_url, err := url.Parse(uri)
 	if err != nil {
 		return nil, fmt.Errorf("not a valid url: %s: %w", uri, err)
 	}
+	myConnection.URI = _url
 
 	switch _url.Scheme {
 	case "unix":
@@ -44,71 +46,60 @@ func NewConnection(ctx context.Context, uri string) (context.Context, error) {
 			_url.Path = JoinURL(_url.Host, _url.Path)
 			_url.Host = ""
 		}
-		unixConn.URI = _url
-		unixConn.Client = unixClient(unixConn)
-		ctx = context.WithValue(ctx, clientKey, &unixConn)
+		myConnection.URI = _url
+		myConnection.UnixClient = unixClient(myConnection)
 	case "tcp":
 		if !strings.HasPrefix(uri, "tcp://") {
-			return nil, errors.New("tcp URIs should begin with tcp://")
+			return myConnection, errors.New("tcp URIs should begin with tcp://")
 		}
-		tcpConn.URI = _url
-		tcpConn.Client, err = tcpClient(tcpConn)
+		myConnection.URI = _url
+		myConnection.TcpClient, err = tcpClient(myConnection)
 		if err != nil {
 			return nil, err
 		}
-		ctx = context.WithValue(ctx, clientKey, &tcpConn)
 	default:
 		return nil, fmt.Errorf("unable to create connection. %q is not a supported schema", _url.Scheme)
 	}
-
-	return ctx, nil
+	return myConnection, nil
 }
 
-func (c *Connection) DoRequest(ctx context.Context, httpMethod, endpoint string, queryParams url.Values, headers http.Header) (*APIResponse, error) {
+func (c *Connection) DoRequest(httpMethod, endpoint string, httpBody io.Reader) (*APIResponse, error) {
 	var (
 		err      error
 		response *http.Response
-		httpBody io.Reader
+		client   *http.Client
 	)
 
 	baseURL := ""
 	if c.URI.Scheme == "tcp" || c.URI.Scheme == "http" {
 		// Allow path prefixes for tcp connections to match Docker behavior
 		baseURL = "http://" + c.URI.Host + c.URI.Path
+		client = c.TcpClient
 	}
 
 	if c.URI.Scheme == "unix" {
 		// Allow path prefixes for tcp connections to match Docker behavior
 		baseURL = "http://local/"
+		client = c.UnixClient
 	}
 
 	uri := fmt.Sprintf(baseURL + "/" + endpoint)
 	logrus.Infof("DoRequest Method: %s URI: %v", httpMethod, uri)
 
-	req, err := http.NewRequestWithContext(ctx, httpMethod, uri, httpBody)
+	req, err := http.NewRequestWithContext(context.Background(), httpMethod, uri, httpBody)
 	if err != nil {
 		return nil, err
 	}
-	if len(queryParams) > 0 {
-		req.URL.RawQuery = queryParams.Encode()
+	if len(c.urlParameter) > 0 {
+		req.URL.RawQuery = c.urlParameter.Encode()
 	}
 
-	for key, val := range headers {
+	for key, val := range c.headers {
 		for _, v := range val {
 			req.Header.Add(key, v)
 		}
 	}
 
-	// Give the Do three chances in the case of a comm/service hiccup
-	response, err = c.Client.Do(req) //nolint:bodyclose // The caller has to close the body.
-
+	response, err = client.Do(req)
 	return &APIResponse{response, req}, err
-}
-
-// GetClient from context build by NewConnection()
-func GetClient(ctx context.Context) (*Connection, error) {
-	if c, ok := ctx.Value(clientKey).(*Connection); ok {
-		return c, nil
-	}
-	return nil, fmt.Errorf("%s not set in context", clientKey)
 }
