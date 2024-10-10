@@ -250,6 +250,10 @@ func Start(mc *vmconfigs.MachineConfig, mp vmconfigs.VMProvider, dirs *define.Ma
 		mc.ExternalDisk = &define.VMFile{Path: ""}
 	}
 
+	if opts.Volumes != nil {
+		mc.Mounts = CmdLineVolumesToMounts(opts.Volumes, mp.MountType())
+	}
+
 	if err := mc.Write(); err != nil {
 		logrus.Error(err)
 	}

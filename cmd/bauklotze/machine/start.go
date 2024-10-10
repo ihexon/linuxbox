@@ -2,6 +2,8 @@ package machine
 
 import (
 	"bauklotze/cmd/registry"
+	"bauklotze/pkg/completion"
+	"bauklotze/pkg/config"
 	"bauklotze/pkg/machine"
 	"bauklotze/pkg/machine/define"
 	"bauklotze/pkg/machine/env"
@@ -36,6 +38,15 @@ func init() {
 	twinPid := "twinpid"
 	flags.Int32Var(&startOpts.TwinPid, twinPid, -1, "the pid of PPID")
 	flags.MarkHidden(twinPid)
+
+	volumeFlagName := "volume"
+	slice := config.NewSlice([]string{})
+	flags.StringArrayVarP(
+		&startOpts.Volumes,
+		volumeFlagName, "v", slice.Get(),
+		"Volume to be mounted in the VM",
+	)
+	_ = setCmd.RegisterFlagCompletionFunc(volumeFlagName, completion.AutocompleteNone)
 
 	externalImage := "external-disk"
 	flags.StringVar(&startOpts.ExternImage, externalImage, "", "Use an external image as disk")

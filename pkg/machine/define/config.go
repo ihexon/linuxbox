@@ -51,6 +51,7 @@ var (
 type StartOptions struct {
 	TwinPid     int32
 	SendEvt     string
+	Volumes     []string
 	ExternImage string
 }
 
