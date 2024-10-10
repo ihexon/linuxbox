@@ -10,7 +10,7 @@ func pathsFromVolume(volume string) []string {
 
 func extractTargetPath(paths []string) string {
 	if len(paths) > 1 {
-		return paths[1]
+		return paths[1] + "/" // Add trailing slash to target path
 	}
-	return paths[0]
+	return paths[0] + "/" // Add trailing slash to target path
 }

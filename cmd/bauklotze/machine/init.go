@@ -47,7 +47,7 @@ func init() {
 	})
 
 	// Calculate the default configuration
-	// CPU,MEMORY,VOLUME,etc..
+	// CPU,MEMORY,etc..
 	// OvmInitConfig() 配置虚拟机的内存/CPU/磁盘大小/外部挂载节点，这些配置将被写入 machine 的 json 文件做到持久化
 	cfg := registry.OvmInitConfig()
 
@@ -64,7 +64,6 @@ func init() {
 		cpusFlagName, cfg.ContainersConfDefaultsRO.Machine.CPUs,
 		"Number of CPUs",
 	)
-	//_ = initCmd.RegisterFlagCompletionFunc(cpusFlagName, completion.AutocompleteNone)
 
 	memoryFlagName := "memory"
 	flags.Uint64VarP(
@@ -75,13 +74,14 @@ func init() {
 
 	VolumeFlagName := "volume"
 	flags.StringArrayVarP(&initOpts.Volumes, VolumeFlagName, "v", cfg.ContainersConfDefaultsRO.Machine.Volumes.Get(), "Volumes to mount, source:target")
+	flags.MarkHidden(VolumeFlagName)
 
 	ImageFlagName := "image"
 	flags.StringVar(&initOpts.Image, ImageFlagName, cfg.ContainersConfDefaultsRO.Machine.Image, "Bootable image for machine")
 
 	imageVersion := "image-version"
 	flags.StringVar(&initOpts.ImageVersion, imageVersion, "always-update", "Special bootable image version")
-	flags.MarkHidden(imageVersion)
+	//flags.MarkHidden(imageVersion)
 
 	sendEventToEndpoint := "evtsock"
 	flags.StringVar(&initOpts.SendEvt, sendEventToEndpoint, "", "send events to somewhere")

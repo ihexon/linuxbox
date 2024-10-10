@@ -16,7 +16,7 @@ const (
 )
 
 func extractSourcePath(paths []string) string {
-	return paths[0]
+	return paths[0] + "/" // Add trailing slash to source path
 }
 
 func (v VolumeMountType) String() string {

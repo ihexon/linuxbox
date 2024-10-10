@@ -54,7 +54,7 @@ func ListenAndExecCommandOnUnixSocketFile(listener net.Listener, mc *vmconfigs.M
 	}
 	conn, err := listener.Accept()
 	if err != nil {
-		logrus.Errorf("failed to connect to c2 socket")
+		logrus.Errorf("the virtual machine failed to connect to the ignition socket in 10 sceonds, gvie up")
 		return err
 	}
 
@@ -64,7 +64,7 @@ func ListenAndExecCommandOnUnixSocketFile(listener net.Listener, mc *vmconfigs.M
 	}
 
 	for _, c := range ignCfgs.Commands {
-		logrus.Infof("Exec: %s", c)
+		logrus.Infof("ExecCommands: %s", c)
 		_, err := conn.Write([]byte(c + "\n"))
 		if err != nil {
 			return err
