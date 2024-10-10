@@ -56,4 +56,12 @@ r.Handle(("/apiversion"), s.APIHandler(backend.VersionHandler)).Methods(http.Met
 
 ## 快捷启动脚本
 
-
+```
+./ovm.sh \
+    --workdir=/Users/danhexon/myvm/ \
+    --image=/Users/danhexon/alpine_virt/bugbox-machine-default-arm64.raw.xz  \
+    --image-version="1.0" \
+    --volume=/tmp/:/tmp/macos/tmp \
+    --external-disk=/Users/danhexon/alpine_virt/mydisk.raw  \
+    --twinpid=1000
+```
