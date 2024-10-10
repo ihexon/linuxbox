@@ -8,7 +8,7 @@ import (
 	"bauklotze/pkg/system"
 	"errors"
 	"fmt"
-	strongunits "github.com/containers/common/pkg/strongunits"
+	"github.com/containers/common/pkg/strongunits"
 	"github.com/containers/storage/pkg/regexp"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -83,9 +83,8 @@ func init() {
 	flags.StringVar(&initOpts.ImageVersion, imageVersion, "always-update", "Special bootable image version")
 	//flags.MarkHidden(imageVersion)
 
-	sendEventToEndpoint := "evtsock"
+	sendEventToEndpoint := "report-url"
 	flags.StringVar(&initOpts.SendEvt, sendEventToEndpoint, "", "send events to somewhere")
-	flags.MarkHidden(sendEventToEndpoint)
 }
 
 func initMachine(cmd *cobra.Command, args []string) error {
@@ -105,26 +104,22 @@ func initMachine(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	oldmc, exists, err := shim.VMExists(initOpts.Name, []vmconfigs.VMProvider{provider})
+	oldMc, exists, err := shim.VMExists(initOpts.Name, []vmconfigs.VMProvider{provider})
 	if err != nil {
 		return err
 	}
 
 	switch {
-	case exists == true && oldmc != nil && oldmc.ImageVersion != initOpts.ImageVersion:
-		logrus.Infof("%s: %s", initOpts.Name, define.ErrVMAlreadyExists)
-		logrus.Infof("New image-version:%s, old image-version: %s, Force Initialize....", initOpts.ImageVersion, oldmc.ImageVersion)
-		break
 	case initOpts.ImageVersion == "always-update":
 		break
-	case exists == true && oldmc != nil:
-		logrus.Infof("%s: %s, skip initialize !", initOpts.Name, define.ErrVMAlreadyExists)
-		if now {
-			return start(cmd, args)
-		}
-		return fmt.Errorf("%s: %w", initOpts.Name, define.ErrVMAlreadyExists)
-	case oldmc == nil:
-	case oldmc.ImageVersion != initOpts.ImageVersion:
+	case oldMc == nil:
+		break
+	case oldMc.ImageVersion != initOpts.ImageVersion:
+		break
+	case exists == true && oldMc.ImageVersion == initOpts.ImageVersion:
+		return fmt.Errorf("machine %s already exists, new image-version %s == old image-version %s skip initialize... ", define.ErrVMAlreadyExists, initOpts.ImageVersion, oldMc.ImageVersion)
+	case exists == true && oldMc.ImageVersion != initOpts.ImageVersion:
+		break
 	default:
 	}
 

@@ -10,7 +10,7 @@ import (
 	"bauklotze/pkg/machine/vmconfigs"
 	"errors"
 	"fmt"
-	strongunits "github.com/containers/common/pkg/strongunits"
+	"github.com/containers/common/pkg/strongunits"
 	"github.com/sirupsen/logrus"
 	"runtime"
 	"time"
@@ -403,6 +403,7 @@ func stopLocked(mc *vmconfigs.MachineConfig, machineProvider vmconfigs.VMProvide
 	return mc.Write()
 }
 
+// Set set configure for virtualMachine configuration
 func Set(mc *vmconfigs.MachineConfig, mp vmconfigs.VMProvider, opts define.SetOptions) error {
 	mc.Lock()
 	defer mc.Unlock()

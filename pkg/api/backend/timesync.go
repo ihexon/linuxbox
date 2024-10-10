@@ -20,7 +20,7 @@ func getCurrentTime() *timeStruct {
 	currentTime := time.Now()
 	tz, _ := currentTime.Zone()
 	return &timeStruct{
-		Time: currentTime.Format(time.RFC3339),
+		Time: currentTime.Format("2006-01-02 15:04:05"),
 		Tz:   tz,
 	}
 }
@@ -54,7 +54,7 @@ func TimeSync(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if sshError := machine.CommonSSHSilent(mc.SSH.RemoteUsername, mc.SSH.IdentityPath, mc.Name, mc.SSH.Port, []string{"sudo date -s " + timeSt.Time}); sshError != nil {
+	if sshError := machine.CommonSSHSilent(mc.SSH.RemoteUsername, mc.SSH.IdentityPath, mc.Name, mc.SSH.Port, []string{"sudo date -s " + "'" + timeSt.Time + "'"}); sshError != nil {
 		utils.Error(w, http.StatusInternalServerError, sshError)
 		return
 	}
