@@ -1,39 +1,59 @@
-> It is like the game with toy blocks
-
-# VM Provider（但全都没实现）
-- ~~support MacOS via vfkit (aarch64)~~(没必要，作用和 krunkit 有重叠)
-- ~~Support Linux via Qemu-KVM (aarch64, x86_64)~~(前提是我没被开除)
-- Support Windows via WSL (x86_64) (没完成，写了一半，很多地方没跑通)
-- support MacOS via krunkit (aarch64)
-
-# 已经实现的子命令
-- [X] `machine init [vm_name]` 初始化虚拟机
-- [X] `machine start [vm_name]` 启动虚拟机
-- [X] `machine stop  [vm_name]` 停止虚拟机
-- [ ] `machine rm    [vm_name]` 删除虚拟机
-- [ ] `machine reset`  重置所有系统
-- [ ] `machine set`    修改虚拟机配置文件
-- [ ] `支持点火器 :)`
-
-#  oomol studio 相关的参数
-- twinpid [PID]
-监视 PID ，如果 PID 找不到，则退出 ovm
-
-- evtsock [SOCK_PATH]
-发送虚拟机事件给 SOCK_PATH，这个 SOCK_PATH 应该是一个 UDF
+# OVM IHEXON BRANCH
 
 
-## TODO LIST
- - ~~2024-08-25 VFKIT EFI BOOT 模式方式并不能启动常规的 Linux 发行版，并且连自家的 Fedora Core 也启动不来，原因未知~~
- - ~~Sat Aug 31 15:39:16 HKT 2024 EFI Boot 的坑基本上踩完了，我只能说：不过如此：）~~
- - ~~Mon Sep  9 16:50:17 HKT 2024 现在 machine start 可以启动一个基于 alpine rootfs 的虚拟机~~
- - ~~machine start 似乎不会退出主进程，我的期望是退出主进程~~
- - ~~gvproxy 生成的 socks file 会与 podman 本身的 socks files 冲突。~~
- - ~~machine stop 无法正确停止 gvproxy 和 krunkit~~
- - wsl2v1 完整抄袭 podman，先跑起来再说...
- - wsl2v2 重新实现
- - machine stop 需要更多的测试
- - machine init 需要更多的测试
+# 业务使用
 
-### WSL2 实现部分
-- [X] machine init 基本实现
+## 初始化虚拟机
+```
+$ ovm-arm64 \
+    --workdir /Users/danhexon/myvm/ \
+    machine init \
+    --image /Users/danhexon/alpine_virt/alpine_krunkit.raw.xz \
+    --image-version "1.0"
+```
+初始化后，再次初始化的行为根据传入的 --image-version 判断，如果 --image-version 字段和之前不一样，就触发初始化，
+如果一样就跳过初始化。
+
+- --workdir 是 ovm-arm64 命令的参数，制定工作目录，所有的文件将会被存储在这里
+- machine init 定义了行为
+- --image 是 machine init 的参数，指定了虚拟机的镜像
+- --image-version 是 machine init 的参数，指定了虚拟机的镜像版本
+
+
+## 启动虚拟机
+```
+ovm-arm64 --workdir /Users/danhexon/myvm \
+    machine start \
+    --twinpid [PPID]
+    --external-disk /Users/danhexon/alpine_virt/mydisk.raw \
+    --volume /tmp/:/tmp/macos/tmp \
+    --volume /tmp1/:/tmp/macos/tmp1 \
+```
+- --external-disk 指定一个额外的 raw 虚拟磁盘映射到 /dev/vdX 下
+- --volume 指定一个目录映射到虚拟机的目录下
+- --twinpid 指定一个 PPID，等待这个PPID 消失，虚拟机也会关闭，如果你不指定，**如果不指定 twinpid ，那么 twinpid 是当前进程的 PPID**
+
+
+## REST API
+```
+ovm-arm64 --workdir /Users/danhexon/fucknewhome system service tcp://HOST:PORT
+```
+默认是 tcp://127.0.0.1:65176
+```go
+r.Handle(("/apiversion"), s.APIHandler(backend.VersionHandler)).Methods(http.MethodGet)
+	r.Handle(("/{name}/diskuage"), s.APIHandler(backend.GetDiskUsage)).Methods(http.MethodGet)
+	r.Handle(("/{name}/info"), s.APIHandler(backend.GetInfos)).Methods(http.MethodGet)
+	r.Handle(("/{name}/vmstat"), s.APIHandler(backend.GetVMStat)).Methods(http.MethodGet)
+	r.Handle(("/{name}/synctime"), s.APIHandler(backend.TimeSync)).Methods(http.MethodGet)
+```
+
+
+- diskuage: 获取磁盘使用量
+- info:     获取虚拟机上次运行时的信息
+- vmstat:   获取 vm 运行状态[stopped,running]
+- synctime: host 时间同步到 guest 的时间
+文档以后写....
+
+## 快捷启动脚本
+
+
