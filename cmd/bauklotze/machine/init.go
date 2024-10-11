@@ -10,7 +10,6 @@ import (
 	"fmt"
 	"github.com/containers/common/pkg/strongunits"
 	"github.com/containers/storage/pkg/regexp"
-	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"os"
 )
@@ -20,8 +19,6 @@ var (
 	RegexError    = fmt.Errorf("names must match [a-zA-Z0-9][a-zA-Z0-9_.-]*: %w", ErrInvalidArg) // nolint:revive // This lint is new and we do not want to break the API.
 	ErrInvalidArg = errors.New("invalid argument")
 )
-
-const maxMachineNameSize = 30
 
 var (
 	initCmd = &cobra.Command{
@@ -34,10 +31,9 @@ var (
 		Example:           `machine init`,
 	}
 	initOpts = define.InitOptions{
-		Username: "root",
+		Username: define.DefaultUserInGuest,
 	}
 	defaultMachineName = define.DefaultMachineName
-	now                bool
 )
 
 func init() {
@@ -47,43 +43,36 @@ func init() {
 	})
 
 	// Calculate the default configuration
-	// CPU,MEMORY,etc..
-	// OvmInitConfig() 配置虚拟机的内存/CPU/磁盘大小/外部挂载节点，这些配置将被写入 machine 的 json 文件做到持久化
+	// CPU, MEMORY, etc.
+	// OvmInitConfig() configures the memory/CPU/disk size/external mount points for the virtual machine.
+	// These configurations will be written to the machine's JSON file for persistence.
 	cfg := registry.OvmInitConfig()
-
 	flags := initCmd.Flags()
-	startFlag := "startnow"
-	flags.BoolVar(&now,
-		startFlag,
-		false,
-		"Start machine now",
-	)
-	flags.MarkHidden(startFlag)
 
-	cpusFlagName := "cpus"
+	cpusFlagName := cpus
 	flags.Uint64Var(
 		&initOpts.CPUS,
 		cpusFlagName, cfg.ContainersConfDefaultsRO.Machine.CPUs,
 		"Number of CPUs",
 	)
 
-	memoryFlagName := "memory"
+	memoryFlagName := memory
 	flags.Uint64VarP(
 		&initOpts.Memory,
 		memoryFlagName, "m", cfg.ContainersConfDefaultsRO.Machine.Memory,
 		"Memory in MiB",
 	)
 
-	VolumeFlagName := "volume"
+	VolumeFlagName := volume
 	flags.StringArrayVarP(&initOpts.Volumes, VolumeFlagName, "v", cfg.ContainersConfDefaultsRO.Machine.Volumes.Get(), "Volumes to mount, source:target")
 
-	ImageFlagName := "bootable-image"
+	ImageFlagName := bootImage
 	flags.StringVar(&initOpts.Images.BootableImage, ImageFlagName, cfg.ContainersConfDefaultsRO.Machine.Image, "Bootable image for machine")
 
-	ExternalDisk := "external-disk"
+	ExternalDisk := externalDisk
 	flags.StringVar(&initOpts.Images.ExternalDisk, ExternalDisk, "", "External disk for machine")
 
-	sendEventToEndpoint := "report-url"
+	sendEventToEndpoint := reportUrl
 	flags.StringVar(&initOpts.SendEvt, sendEventToEndpoint, "", "send events to somewhere")
 }
 
@@ -140,13 +129,6 @@ func initMachine(cmd *cobra.Command, args []string) error {
 	err = shim.Init(initOpts, provider)
 	if err != nil {
 		return err
-	}
-
-	if now {
-		logrus.Infof("starting machine now with %s", args)
-		return start(nil, args)
-	} else {
-		fmt.Printf("To start your machine run:\n\n\tbauklotze machine start %s\n\n", initOpts.Name)
 	}
 
 	return nil

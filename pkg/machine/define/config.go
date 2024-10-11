@@ -42,6 +42,7 @@ type ResetOptions struct {
 
 const (
 	DefaultMachineName string = "bugbox-machine-default"
+	DefaultUserInGuest        = "root"
 )
 
 var (

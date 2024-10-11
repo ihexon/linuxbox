@@ -35,10 +35,10 @@ func init() {
 	})
 	flags := startCmd.Flags()
 
-	twinPid := "ppid"
+	twinPid := ppid
 	flags.Int32Var(&startOpts.TwinPid, twinPid, -1, "the pid of PPID")
 
-	reportUrl := "report-url"
+	reportUrl := reportUrl
 	flags.StringVar(&startOpts.ReportUrl, reportUrl, "", "Report events to the url")
 }
 

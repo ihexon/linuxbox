@@ -36,9 +36,9 @@ func init() {
 		Command: setCmd,
 		Parent:  machineCmd,
 	})
-	flags := setCmd.Flags()
 
-	cpusFlagName := "cpus"
+	flags := setCmd.Flags()
+	cpusFlagName := cpus
 	flags.Uint64Var(
 		&setOpts.CPUs,
 		cpusFlagName, 0,
@@ -46,11 +46,7 @@ func init() {
 	)
 	_ = setCmd.RegisterFlagCompletionFunc(cpusFlagName, completion.AutocompleteNone)
 
-	diskSizeFlagName := "disk-size"
-
-	_ = setCmd.RegisterFlagCompletionFunc(diskSizeFlagName, completion.AutocompleteNone)
-
-	memoryFlagName := "memory"
+	memoryFlagName := memory
 	flags.Uint64VarP(
 		&setOpts.Memory,
 		memoryFlagName, "m", 0,
@@ -59,7 +55,7 @@ func init() {
 	_ = setCmd.RegisterFlagCompletionFunc(memoryFlagName, completion.AutocompleteNone)
 
 	slice := config.NewSlice([]string{})
-	volumeFlagName := "volume"
+	volumeFlagName := volume
 	flags.StringArrayVarP(
 		&setOpts.Volumes,
 		volumeFlagName, "v", slice.Get(),

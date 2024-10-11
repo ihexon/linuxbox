@@ -3,8 +3,16 @@ package machine
 import "strings"
 
 const (
-	MarkUpdate = "always-update"
-	Workspace  = "workspace"
+	MarkUpdate         = "always-update"
+	Workspace          = "workspace"
+	reportUrl          = "report-url"
+	externalDisk       = "external-disk"
+	bootImage          = "bootable-image"
+	volume             = "volume"
+	memory             = "memory"
+	cpus               = "cpus"
+	ppid               = "ppid"
+	maxMachineNameSize = 30
 )
 
 // SplitField returns the version field after @[version] and the file after @[version] from a string

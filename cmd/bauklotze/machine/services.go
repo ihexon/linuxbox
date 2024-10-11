@@ -36,7 +36,7 @@ func init() {
 }
 
 func service(cmd *cobra.Command, args []string) error {
-	d, _ := cmd.Flags().GetString("workdir")
+	d, _ := cmd.Flags().GetString(Workspace)
 	env.InitCustomHomeEnvOnce(d)
 
 	apiurl, _ := resolveAPIURI(args)
