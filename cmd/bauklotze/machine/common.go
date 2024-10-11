@@ -41,7 +41,7 @@ var provider vmconfigs.VMProvider
 
 func machinePreRunE(cmd *cobra.Command, args []string) error {
 	var err error = nil
-	d, _ := cmd.Flags().GetString("workdir")
+	d, _ := cmd.Flags().GetString(Workspace)
 	env.InitCustomHomeEnvOnce(d)
 
 	provider, err = provider2.Get()

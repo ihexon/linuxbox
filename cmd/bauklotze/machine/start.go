@@ -2,8 +2,6 @@ package machine
 
 import (
 	"bauklotze/cmd/registry"
-	"bauklotze/pkg/completion"
-	"bauklotze/pkg/config"
 	"bauklotze/pkg/machine"
 	"bauklotze/pkg/machine/define"
 	"bauklotze/pkg/machine/env"
@@ -37,25 +35,11 @@ func init() {
 	})
 	flags := startCmd.Flags()
 
-	twinPid := "twinpid"
+	twinPid := "ppid"
 	flags.Int32Var(&startOpts.TwinPid, twinPid, -1, "the pid of PPID")
-	flags.MarkHidden(twinPid)
-
-	volumeFlagName := "volume"
-	slice := config.NewSlice([]string{})
-	flags.StringArrayVarP(
-		&startOpts.Volumes,
-		volumeFlagName, "v", slice.Get(),
-		"Volume to be mounted in the VM",
-	)
-	_ = setCmd.RegisterFlagCompletionFunc(volumeFlagName, completion.AutocompleteNone)
-
-	externalImage := "external-disk"
-	flags.StringVar(&startOpts.ExternImage, externalImage, "", "Use an external image as disk")
 
 	reportUrl := "report-url"
 	flags.StringVar(&startOpts.ReportUrl, reportUrl, "", "Report events to the url")
-
 }
 
 func start(cmd *cobra.Command, args []string) error {
@@ -74,7 +58,6 @@ func start(cmd *cobra.Command, args []string) error {
 	}
 
 	logrus.Infof("starting machine %q\n", vmName)
-
 	if err = shim.Start(mc, provider, dirs, startOpts); err != nil {
 		return err
 	}
@@ -82,14 +65,14 @@ func start(cmd *cobra.Command, args []string) error {
 	if startOpts.ReportUrl != "" {
 		connCtx, err := network.NewConnection(startOpts.ReportUrl)
 		if err != nil {
-			return err
+			logrus.Errorf("Failed to connect to %q: %v\n", startOpts.ReportUrl, err)
 		}
 		connCtx.UrlParameter = url.Values{
 			"event":   []string{"running"},
 			"message": []string{"ready"},
 		}
 		// ? Should I return error ?
-		_, _ = connCtx.DoRequest("POST", "/notify", nil)
+		_, _ = connCtx.DoRequest("GET", "/notify", nil)
 	}
 
 	logrus.Infof("Machine %q started successfully\n", vmName)

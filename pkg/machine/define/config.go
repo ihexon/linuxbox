@@ -49,11 +49,10 @@ var (
 )
 
 type StartOptions struct {
-	TwinPid     int32
-	SendEvt     string
-	Volumes     []string
-	ExternImage string
-	ReportUrl   string
+	TwinPid   int32
+	SendEvt   string
+	Volumes   []string
+	ReportUrl string
 }
 
 type StopOptions struct {
@@ -63,13 +62,13 @@ type StopOptions struct {
 type InitOptions struct {
 	IsDefault    bool
 	CPUS         uint64
-	Images       ImagesStruct
 	Volumes      []string
 	Memory       uint64
 	Name         string
 	Username     string
 	ReExec       bool
 	SendEvt      string
+	Images       ImagesStruct
 	ImageVersion ImageVerStruct
 }
 

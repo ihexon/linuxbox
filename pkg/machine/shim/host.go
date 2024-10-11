@@ -134,6 +134,7 @@ func Init(opts define.InitOptions, mp vmconfigs.VMProvider) error {
 
 	mc.EvtSockPath = &define.VMFile{Path: opts.SendEvt}
 	mc.ImageVersion = opts.ImageVersion.BootableImageVersion
+	mc.ExternalDisk = &define.VMFile{Path: opts.Images.ExternalDisk}
 	mc.ExternalDiskVersion = opts.ImageVersion.ExternalDiskVersion
 
 	return mc.Write()
@@ -244,17 +245,6 @@ func Start(mc *vmconfigs.MachineConfig, mp vmconfigs.VMProvider, dirs *define.Ma
 
 	// Set starting to true
 	mc.Starting = true
-	// Set the external disk
-	if opts.ExternImage != "" {
-		mc.ExternalDisk = &define.VMFile{Path: opts.ExternImage}
-	} else {
-		mc.ExternalDisk = &define.VMFile{Path: ""}
-	}
-
-	if opts.Volumes != nil {
-		mc.Mounts = CmdLineVolumesToMounts(opts.Volumes, mp.MountType())
-	}
-
 	if err := mc.Write(); err != nil {
 		logrus.Error(err)
 	}

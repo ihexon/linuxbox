@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"time"
 )
 
 type Connection struct {
@@ -86,7 +87,10 @@ func (c *Connection) DoRequest(httpMethod, endpoint string, httpBody io.Reader) 
 	uri := fmt.Sprintf(baseURL + "/" + endpoint)
 	logrus.Infof("DoRequest Method: %s URI: %v", httpMethod, uri)
 
-	req, err := http.NewRequestWithContext(context.Background(), httpMethod, uri, httpBody)
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	req, err := http.NewRequestWithContext(ctx, httpMethod, uri, httpBody)
 	if err != nil {
 		return nil, err
 	}

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bauklotze/cmd/bauklotze/machine"
 	_ "bauklotze/cmd/bauklotze/machine"
 	"bauklotze/cmd/bauklotze/validata"
 	"bauklotze/cmd/registry"
@@ -74,7 +75,7 @@ func init() {
 	pFlags.StringVar(&logLevel, logLevelFlagName, logLevel, fmt.Sprintf("Log messages above specified level (%s)", strings.Join(completion.LogLevels, ", ")))
 	//_ = rootCmd.RegisterFlagCompletionFunc(logLevelFlagName, completion.AutocompleteLogLevel)
 
-	ovmHomedir := "workdir"
+	ovmHomedir := machine.Workspace
 	pFlags.StringVar(&ovmHomedir, ovmHomedir, "", "Bauklotze's HOME dif, default get by $HOME")
 }
 

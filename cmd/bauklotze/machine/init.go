@@ -96,10 +96,6 @@ func initMachine(cmd *cobra.Command, args []string) error {
 	initOpts.Images.ExternalDisk = file
 	initOpts.ImageVersion.ExternalDiskVersion = version
 
-	if now {
-		startOpts.SendEvt = initOpts.SendEvt
-	}
-
 	initOpts.Name = defaultMachineName
 	if len(args) > 0 {
 		if len(args[0]) > maxMachineNameSize {
@@ -150,7 +146,7 @@ func initMachine(cmd *cobra.Command, args []string) error {
 		logrus.Infof("starting machine now with %s", args)
 		return start(nil, args)
 	} else {
-		fmt.Printf("To start your machine run:\n\n\tbauklotze machine start%s\n\n", initOpts.Name)
+		fmt.Printf("To start your machine run:\n\n\tbauklotze machine start %s\n\n", initOpts.Name)
 	}
 
 	return nil

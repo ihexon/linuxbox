@@ -3,7 +3,8 @@ package machine
 import "strings"
 
 const (
-	markUpdate = "always-update"
+	MarkUpdate = "always-update"
+	Workspace  = "workspace"
 )
 
 // SplitField returns the version field after @[version] and the file after @[version] from a string
@@ -15,7 +16,7 @@ func SplitField(str string) (string, string) {
 	)
 	parts := strings.Split(str, "@")
 	if len(parts) < 2 {
-		versionField = markUpdate
+		versionField = MarkUpdate
 		fileField = parts[0]
 		return str, versionField
 	} else {

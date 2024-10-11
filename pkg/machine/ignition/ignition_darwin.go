@@ -40,6 +40,7 @@ func (ign *DynamicIgnition) generateMountsIgnitionCfg(mnts []*vmconfigs.Mount) e
 	for _, source := range mnts {
 		mountCmds = append(mountCmds, fmt.Sprintf("mkdir -p %s", source.Target))
 		mountCmds = append(mountCmds, fmt.Sprintf("mount -t virtiofs %s %s", source.Tag, source.Target))
+		mountCmds = append(mountCmds, fmt.Sprint("\n"))
 		mountCmds = append(mountCmds, fmt.Sprintf("%s", "sync"))
 		mountCmds = append(mountCmds, fmt.Sprint("\n"))
 	}
@@ -53,6 +54,7 @@ func (ign *DynamicIgnition) generateMountsIgnitionCfg(mnts []*vmconfigs.Mount) e
 func (ign *DynamicIgnition) generateSSHIgnitionCfg(sshkey_pub string) error {
 	slice := config.NewSlice([]string{
 		fmt.Sprintf("echo %s > /root/.ssh/authorized_keys", sshkey_pub),
+		"\n",
 		"sync",
 		"\n",
 	})
