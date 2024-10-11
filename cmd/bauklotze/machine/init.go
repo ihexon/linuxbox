@@ -52,11 +52,13 @@ func init() {
 	cfg := registry.OvmInitConfig()
 
 	flags := initCmd.Flags()
+	startFlag := "startnow"
 	flags.BoolVar(&now,
-		"startnow",
+		startFlag,
 		false,
 		"Start machine now",
 	)
+	flags.MarkHidden(startFlag)
 
 	cpusFlagName := "cpus"
 	flags.Uint64Var(
@@ -74,20 +76,26 @@ func init() {
 
 	VolumeFlagName := "volume"
 	flags.StringArrayVarP(&initOpts.Volumes, VolumeFlagName, "v", cfg.ContainersConfDefaultsRO.Machine.Volumes.Get(), "Volumes to mount, source:target")
-	flags.MarkHidden(VolumeFlagName)
 
-	ImageFlagName := "image"
-	flags.StringVar(&initOpts.Image, ImageFlagName, cfg.ContainersConfDefaultsRO.Machine.Image, "Bootable image for machine")
+	ImageFlagName := "bootable-image"
+	flags.StringVar(&initOpts.Images.BootableImage, ImageFlagName, cfg.ContainersConfDefaultsRO.Machine.Image, "Bootable image for machine")
 
-	imageVersion := "image-version"
-	flags.StringVar(&initOpts.ImageVersion, imageVersion, "always-update", "Special bootable image version")
-	//flags.MarkHidden(imageVersion)
+	ExternalDisk := "external-disk"
+	flags.StringVar(&initOpts.Images.ExternalDisk, ExternalDisk, "", "External disk for machine")
 
 	sendEventToEndpoint := "report-url"
 	flags.StringVar(&initOpts.SendEvt, sendEventToEndpoint, "", "send events to somewhere")
 }
 
 func initMachine(cmd *cobra.Command, args []string) error {
+	file, version := SplitField(initOpts.Images.BootableImage)
+	initOpts.Images.BootableImage = file
+	initOpts.ImageVersion.BootableImageVersion = version
+
+	file, version = SplitField(initOpts.Images.ExternalDisk)
+	initOpts.Images.ExternalDisk = file
+	initOpts.ImageVersion.ExternalDiskVersion = version
+
 	if now {
 		startOpts.SendEvt = initOpts.SendEvt
 	}
@@ -110,15 +118,15 @@ func initMachine(cmd *cobra.Command, args []string) error {
 	}
 
 	switch {
-	case initOpts.ImageVersion == "always-update":
+	case initOpts.ImageVersion.BootableImageVersion == "always-update":
 		break
 	case oldMc == nil:
 		break
-	case oldMc.ImageVersion != initOpts.ImageVersion:
+	case oldMc.ImageVersion != initOpts.ImageVersion.BootableImageVersion:
 		break
-	case exists == true && oldMc.ImageVersion == initOpts.ImageVersion:
-		return fmt.Errorf("machine %s already exists, new image-version %s == old image-version %s skip initialize... ", define.ErrVMAlreadyExists, initOpts.ImageVersion, oldMc.ImageVersion)
-	case exists == true && oldMc.ImageVersion != initOpts.ImageVersion:
+	case exists == true && oldMc.ImageVersion == initOpts.ImageVersion.BootableImageVersion:
+		return fmt.Errorf("machine %s already exists, new image-version %s == old image-version %s skip initialize... ", define.ErrVMAlreadyExists, initOpts.ImageVersion.BootableImageVersion, oldMc.ImageVersion)
+	case exists == true && oldMc.ImageVersion != initOpts.ImageVersion.BootableImageVersion:
 		break
 	default:
 	}

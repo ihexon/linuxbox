@@ -93,8 +93,11 @@ type MachineConfig struct {
 	Dirs         *define.MachineDirs
 	HostUser     HostUser
 	Name         string
-	ImagePath    *define.VMFile
-	ExternalDisk *define.VMFile
+	ImagePath    *define.VMFile // Bootable Image file
+	ImageVersion string         `json:",omitempty"` // Bootable Image for now
+
+	ExternalDisk        *define.VMFile // External Disk file
+	ExternalDiskVersion string         `json:",omitempty"` // External Disk for now
 
 	AppleKrunkitHypervisor *AppleKrunkitConfig `json:",omitempty"`
 	WSLHypervisor          *WSLConfig          `json:",omitempty"`
@@ -108,8 +111,7 @@ type MachineConfig struct {
 	Starting   bool
 	lock       *lockfile.LockFile
 	// Oomol Studio
-	EvtSockPath  *define.VMFile `json:",omitempty"`
-	ImageVersion string         `json:",omitempty"`
+	EvtSockPath *define.VMFile `json:",omitempty"`
 }
 
 type GvproxyCommand struct {

@@ -63,14 +63,24 @@ type StopOptions struct {
 type InitOptions struct {
 	IsDefault    bool
 	CPUS         uint64
-	Image        string
+	Images       ImagesStruct
 	Volumes      []string
 	Memory       uint64
 	Name         string
 	Username     string
 	ReExec       bool
 	SendEvt      string
-	ImageVersion string
+	ImageVersion ImageVerStruct
+}
+
+type ImageVerStruct struct {
+	BootableImageVersion string
+	ExternalDiskVersion  string
+}
+
+type ImagesStruct struct {
+	BootableImage string
+	ExternalDisk  string
 }
 
 type SetOptions struct {

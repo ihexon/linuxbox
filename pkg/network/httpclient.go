@@ -90,11 +90,11 @@ func (c *Connection) DoRequest(httpMethod, endpoint string, httpBody io.Reader) 
 	if err != nil {
 		return nil, err
 	}
-	if len(c.urlParameter) > 0 {
-		req.URL.RawQuery = c.urlParameter.Encode()
+	if len(c.UrlParameter) > 0 {
+		req.URL.RawQuery = c.UrlParameter.Encode()
 	}
 
-	for key, val := range c.headers {
+	for key, val := range c.Headers {
 		for _, v := range val {
 			req.Header.Add(key, v)
 		}

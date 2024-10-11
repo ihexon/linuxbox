@@ -87,7 +87,7 @@ func Init(opts define.InitOptions, mp vmconfigs.VMProvider) error {
 		Name: opts.Name,
 		Dirs: dirs,
 		// UserImageFile: Image Path form machine init --image [rootfs.tar]
-		UserImageFile: opts.Image,
+		UserImageFile: opts.Images.BootableImage,
 	}
 
 	switch mp.VMType() {
@@ -111,8 +111,8 @@ func Init(opts define.InitOptions, mp vmconfigs.VMProvider) error {
 	//	}
 	// for simplify code, but for now keep using Provider's GetDisk implementation
 	initCmdOpts := opts
-	logrus.Infof("a bootable Images provided: %s", initCmdOpts.Image)
-	if err = mp.GetDisk(initCmdOpts.Image, dirs, mc.ImagePath, mp.VMType(), mc.Name); err != nil {
+	logrus.Infof("a bootable Images provided: %s", initCmdOpts.Images.BootableImage)
+	if err = mp.GetDisk(initCmdOpts.Images.BootableImage, dirs, mc.ImagePath, mp.VMType(), mc.Name); err != nil {
 		return err
 	}
 	callbackFuncs.Add(mc.ImagePath.Delete)
@@ -133,7 +133,8 @@ func Init(opts define.InitOptions, mp vmconfigs.VMProvider) error {
 	}
 
 	mc.EvtSockPath = &define.VMFile{Path: opts.SendEvt}
-	mc.ImageVersion = opts.ImageVersion
+	mc.ImageVersion = opts.ImageVersion.BootableImageVersion
+	mc.ExternalDiskVersion = opts.ImageVersion.ExternalDiskVersion
 
 	return mc.Write()
 }
