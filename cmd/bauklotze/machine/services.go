@@ -6,8 +6,11 @@ import (
 	"bauklotze/pkg/api/server"
 	"bauklotze/pkg/machine/env"
 	"fmt"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"net/url"
+	"reflect"
+	"runtime"
 )
 
 var (
@@ -44,17 +47,11 @@ func service(cmd *cobra.Command, args []string) error {
 
 // resolveAPIURI resolves the API URI from the given arguments, if no arguments are given, it tries to get the URI from the env.DefaultRootAPIAddress
 func resolveAPIURI(uri []string) (*url.URL, error) {
-	var apiuri string
+	apiuri := env.DefaultRootAPIAddress
 
-	switch {
-	case len(uri) <= 0:
-		apiuri = env.DefaultRootAPIAddress
-	case len(uri) > 0 && uri[0] != "":
+	if len(uri) > 0 && uri[0] != "" {
 		apiuri = uri[0]
-	default:
-		// Default return tcp://127.0.0.1:65176
 	}
-
+	logrus.Infof("%s @ try listen URI: %s", runtime.FuncForPC(reflect.ValueOf(resolveAPIURI).Pointer()).Name(), apiuri)
 	return url.Parse(apiuri)
-
 }

@@ -42,15 +42,15 @@ func RestService(apiurl *url.URL) error {
 		}
 		listener, err = net.Listen(apiurl.Scheme, path)
 		if err != nil {
-			return fmt.Errorf("Failed to listen on %s: %w", path, err)
+			return fmt.Errorf("failed to listen on %s: %w", path, err)
 		}
 	case "tcp":
 		listener, err = net.Listen(apiurl.Scheme, apiurl.Host)
 		if err != nil {
-			return fmt.Errorf("Failed to listen on %s: %w", apiurl.Host, err)
+			return fmt.Errorf("failed to listen on %s: %w", apiurl.Host, err)
 		}
 	default:
-		return fmt.Errorf("API Service endpoint scheme %q is not supported. Try tcp://%s", apiurl.Scheme, apiurl)
+		return fmt.Errorf("API Service endpoint scheme %q is not supported", apiurl.Scheme)
 	}
 
 	// Disable leaking the LISTEN_* into containers
@@ -66,16 +66,12 @@ func RestService(apiurl *url.URL) error {
 
 	defer func() {
 		if err := server.Shutdown(); err != nil {
-			logrus.Warnf("Error when stopping API service: %s", err)
+			logrus.Warnf("error when stopping API service: %s", err)
+			_ = server.Close()
 		}
 	}()
 
-	err = server.Serve()
-
-	if listener != nil {
-		return listener.Close()
-	}
-	return err
+	return server.Serve()
 }
 
 // Serve is the wrapper of http.Server.Serve, will block the code path until the server stopping or getting error.
