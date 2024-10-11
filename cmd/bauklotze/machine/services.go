@@ -5,11 +5,9 @@ import (
 	"bauklotze/cmd/registry"
 	"bauklotze/pkg/api/server"
 	"bauklotze/pkg/machine/env"
-	"github.com/sirupsen/logrus"
+	"fmt"
 	"github.com/spf13/cobra"
 	"net/url"
-	"os"
-	"syscall"
 )
 
 var (
@@ -22,6 +20,7 @@ Enable a listening service for API access to Podman commands.
 		Args:              cobra.MaximumNArgs(1),
 		Short:             "Run API service",
 		Long:              srvDescription,
+		PersistentPreRunE: machinePreRunE,
 		RunE:              service,
 		ValidArgsFunction: validata.AutocompleteDefaultOneArg,
 		Example:           `bauklotze system service tcp://127.0.0.1:8888`,
@@ -36,44 +35,26 @@ func init() {
 }
 
 func service(cmd *cobra.Command, args []string) error {
-	d, _ := cmd.Flags().GetString(Workspace)
-	env.InitCustomHomeEnvOnce(d)
-
-	apiurl, _ := resolveAPIURI(args)
-	if len(apiurl) > 0 {
-		uri, err := url.Parse(apiurl)
-		if err != nil {
-			return err
-		}
-
-		// We do not support unix socket file as api endpoint now
-		if uri.Scheme == "unix" {
-			if err := syscall.Unlink(uri.Path); err != nil && !os.IsNotExist(err) {
-				return err
-			}
-			mask := syscall.Umask(0177)
-			defer syscall.Umask(mask)
-		}
+	listenUrl, err := resolveAPIURI(args)
+	if err != nil {
+		return fmt.Errorf("%s is an invalid socket destination", args[0])
 	}
-	return server.RestService(cmd.Flags(), apiurl)
+	return server.RestService(listenUrl)
 }
 
-// TODO: Support unix socket as rest API
 // resolveAPIURI resolves the API URI from the given arguments, if no arguments are given, it tries to get the URI from the env.DefaultRootAPIAddress
-func resolveAPIURI(uri []string) (string, error) {
-	// If given no api addr, try to get restapi addr from environment
-	if len(uri) == 0 {
-		if v, found := os.LookupEnv(env.DefaultRootAPIEnv); found {
-			logrus.Infof("System environment %s: %q used to determine API endpoint", env.DefaultRootAPIEnv, v)
-			uri = []string{v}
-		}
-	}
+func resolveAPIURI(uri []string) (*url.URL, error) {
+	var apiuri string
 
 	switch {
+	case len(uri) <= 0:
+		apiuri = env.DefaultRootAPIAddress
 	case len(uri) > 0 && uri[0] != "":
-		return uri[0], nil
+		apiuri = uri[0]
 	default:
 		// Default return tcp://127.0.0.1:65176
-		return env.DefaultRootAPIAddress, nil
 	}
+
+	return url.Parse(apiuri)
+
 }

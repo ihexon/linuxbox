@@ -9,8 +9,11 @@ import (
 	"bauklotze/pkg/machine/vmconfigs"
 	"bauklotze/pkg/network"
 	"bauklotze/pkg/system"
+	"context"
+	"fmt"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+	"golang.org/x/sync/errgroup"
 	"net/url"
 	"time"
 )
@@ -77,6 +80,89 @@ func start(cmd *cobra.Command, args []string) error {
 
 	logrus.Infof("Machine %q started successfully\n", vmName)
 
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	g, ctx := errgroup.WithContext(ctx)
+	g.Go(func() error {
+		if err := waiteAndStopMachine(
+			ctx,
+			startOpts,
+			args,
+			machine.GlobalPIDs.GetKrunkitPID(),
+			machine.GlobalPIDs.GetGvproxyPID(),
+		); err != nil {
+			return err
+		}
+		return nil
+	})
+
+	// Start func2 in a goroutine
+	g.Go(func() error {
+		listenPath := "unix:///" + dirs.RuntimeDir.GetPath() + "/ovm_restapi.socks"
+		if err := startRestApi(ctx, listenPath); err != nil {
+			return err
+		}
+		return nil
+	})
+
+	if err := g.Wait(); err != nil {
+		fmt.Println("Error:", err)
+	}
+
+	//ctx, cancel := context.WithCancel(context.Background())
+	//defer cancel()
+	//g, ctx := errgroup.WithContext(ctx)
+	//
+	//g.Go(func() error {
+	//	return waiteAndStopMachine(
+	//		ctx,
+	//		startOpts,
+	//		args,
+	//		machine.GlobalPIDs.GetKrunkitPID(),
+	//		machine.GlobalPIDs.GetGvproxyPID(),
+	//	)
+	//})
+	//
+	//g.Go(func() error {
+	//	listenPath := "unix:///" + dirs.RuntimeDir.GetPath() + "/ovm_restapi.socks"
+	//	s, err := startRestApi(listenPath)
+	//	if err != nil {
+	//		return err
+	//	}
+	//
+	//	context.AfterFunc(ctx, func() {
+	//		s.Close()
+	//	})
+	//
+	//	return s.Run()
+	//})
+	//
+	//if err := g.Wait(); err != nil {
+	//	return stop(nil, args)
+	//}
+	//
+	//return err
+	return err
+}
+
+func startRestApi(ctx context.Context, listenPath string) error {
+	ctx, cancel := context.WithCancelCause(ctx)
+	go func() {
+		if err := service(nil, []string{listenPath}); err != nil {
+			cancel(err)
+			//errChan <- err
+		}
+	}()
+
+	<-ctx.Done()
+	return context.Cause(ctx)
+}
+
+func waiteAndStopMachine(ctx context.Context, startOpts define.StartOptions, args []string, krunkit, gvproxy int) error {
+	ctx, cancel := context.WithCancelCause(ctx)
+
+	var err error
 	// If user do not --twinpid, get my PPID
 	if startOpts.TwinPid == -1 {
 		startOpts.TwinPid, err = system.GetMyPPID()
@@ -84,60 +170,25 @@ func start(cmd *cobra.Command, args []string) error {
 			return err
 		}
 	}
+	logrus.Infof("Waiting PPID[%d] exited then stop the machine\n", startOpts.TwinPid)
 
-	errChan := make(chan error)
-	listenPath := "unix:///" + dirs.RuntimeDir.GetPath() + "/ovm_restapi.socks"
-	go func(cmd *cobra.Command, args []string) {
-		errChan <- service(cmd, args)
-	}(cmd, []string{listenPath})
-
-	if err := <-errChan; err != nil {
-		logrus.Errorf("Failed to start API service: %s \n\nError: %v\n", listenPath, err)
-		return err
-	}
-
-	return WaiteAndStopMachine(
-		startOpts,
-		args,
-		machine.GlobalPIDs.GetKrunkitPID(),
-		machine.GlobalPIDs.GetGvproxyPID(),
-	)
-}
-
-func WaiteAndStopMachine(startOpts define.StartOptions, args []string, krunkit, gvproxy int) error {
-	if startOpts.TwinPid != -1 {
-		logrus.Infof("Waiting PPID[%d] exited then stop the machine\n", startOpts.TwinPid)
-		return waiteAndStopMachine(args, int(startOpts.TwinPid), krunkit, gvproxy)
-	}
-	return nil
-}
-
-func waiteAndStopMachine(args []string, ovmppid, krunkit, gvproxy int) error {
-	var err error
-	somethingWrong := make(chan bool)
-	go func() {
-		for {
-			if ovmppid != -1 && !system.IsProcessAlive(ovmppid) {
-				somethingWrong <- true
-				return
+	for {
+		select {
+		case <-ctx.Done():
+			return context.Cause(ctx)
+		default:
+			if !system.IsProcessAlive(int(startOpts.TwinPid)) {
+				cancel(fmt.Errorf("%s exited, stop the krunkit and gvproxy", startOpts.TwinPid))
 			}
-			// Notice the CheckProcessRunning is a NO-BLOCK function
+
 			if err := system.CheckProcessRunning("KRunkit", krunkit); err != nil {
-				somethingWrong <- true
-				return
+				cancel(err)
 			}
-			// Notice the CheckProcessRunning is a NO-BLOCK function
+
 			if err := system.CheckProcessRunning("GVProxy", gvproxy); err != nil {
-				somethingWrong <- true
-				return
+				cancel(err)
 			}
-			// lets poll status every half second
 			time.Sleep(400 * time.Millisecond)
 		}
-	}()
-
-	if <-somethingWrong {
-		return stop(nil, args)
 	}
-	return err
 }

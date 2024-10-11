@@ -5,17 +5,14 @@ import (
 	"bauklotze/pkg/api/internal"
 	"bauklotze/pkg/api/types"
 	"context"
-	"errors"
 	"fmt"
 	"github.com/gorilla/mux"
 	"github.com/sirupsen/logrus"
-	"github.com/spf13/pflag"
 	"net"
 	"net/http"
 	"net/url"
 	"os"
 	"path/filepath"
-
 	"time"
 )
 
@@ -28,38 +25,32 @@ type APIServer struct {
 	idleTracker *idleTracker
 }
 
-func RestService(flags *pflag.FlagSet, apiurl string) error {
+func RestService(apiurl *url.URL) error {
 	var (
 		listener net.Listener
 		err      error
 	)
-	if apiurl == "" {
-		if _, found := os.LookupEnv("BAZ_API_LISTEN_DIR"); !found {
-			return errors.New("no service URI provided and socket activation protocol is not active")
-		}
-	}
-	uri, err := url.Parse(apiurl)
-	if err != nil {
-		return fmt.Errorf("%s is an invalid socket destination", apiurl)
-	}
 
-	switch uri.Scheme {
+	switch apiurl.Scheme {
 	case "unix":
-		path, err := filepath.Abs(uri.Path)
+		path, err := filepath.Abs(apiurl.Path)
 		if err != nil {
 			return err
 		}
-		listener, err = net.Listen(uri.Scheme, path)
+		if err = os.Remove(path); err != nil {
+			return err
+		}
+		listener, err = net.Listen(apiurl.Scheme, path)
 		if err != nil {
 			return fmt.Errorf("Failed to listen on %s: %w", path, err)
 		}
 	case "tcp":
-		listener, err = net.Listen(uri.Scheme, uri.Host)
+		listener, err = net.Listen(apiurl.Scheme, apiurl.Host)
 		if err != nil {
-			return fmt.Errorf("Failed to listen on %s: %w", uri.Host, err)
+			return fmt.Errorf("Failed to listen on %s: %w", apiurl.Host, err)
 		}
 	default:
-		return fmt.Errorf("API Service endpoint scheme %q is not supported. Try tcp://%s", uri.Scheme, apiurl)
+		return fmt.Errorf("API Service endpoint scheme %q is not supported. Try tcp://%s", apiurl.Scheme, apiurl)
 	}
 
 	// Disable leaking the LISTEN_* into containers
@@ -71,8 +62,7 @@ func RestService(flags *pflag.FlagSet, apiurl string) error {
 
 	// Set stdin to /dev/null
 	_ = internal.RedirectStdin()
-
-	server, _ := makeNewServer(listener)
+	server := makeNewServer(listener)
 
 	defer func() {
 		if err := server.Shutdown(); err != nil {
@@ -81,10 +71,10 @@ func RestService(flags *pflag.FlagSet, apiurl string) error {
 	}()
 
 	err = server.Serve()
-	if listener != nil {
-		_ = listener.Close()
-	}
 
+	if listener != nil {
+		return listener.Close()
+	}
 	return err
 }
 
@@ -102,7 +92,7 @@ func (s *APIServer) Serve() error {
 	return <-errChan
 }
 
-func makeNewServer(listener net.Listener) (*APIServer, error) {
+func makeNewServer(listener net.Listener) *APIServer {
 	logrus.Infof("API service listening on %q.", listener.Addr())
 	router := mux.NewRouter().UseEncodedPath()
 
@@ -140,7 +130,7 @@ func makeNewServer(listener net.Listener) (*APIServer, error) {
 		},
 	)
 	server.setupRouter(router)
-	return &server, nil
+	return &server
 }
 
 func (s *APIServer) Shutdown() error {
@@ -157,4 +147,9 @@ func (s *APIServer) setupRouter(r *mux.Router) *mux.Router {
 	r.Handle(("/{name}/synctime"), s.APIHandler(backend.TimeSync)).Methods(http.MethodGet)
 
 	return r
+}
+
+// Close immediately stops responding to clients and exits
+func (s *APIServer) Close() error {
+	return s.Server.Close()
 }
