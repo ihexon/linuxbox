@@ -85,6 +85,17 @@ func start(cmd *cobra.Command, args []string) error {
 		}
 	}
 
+	errChan := make(chan error)
+	listenPath := "unix:///" + dirs.RuntimeDir.GetPath() + "/ovm_restapi.socks"
+	go func(cmd *cobra.Command, args []string) {
+		errChan <- service(cmd, args)
+	}(cmd, []string{listenPath})
+
+	if err := <-errChan; err != nil {
+		logrus.Errorf("Failed to start API service: %s \n\nError: %v\n", listenPath, err)
+		return err
+	}
+
 	return WaiteAndStopMachine(
 		startOpts,
 		args,

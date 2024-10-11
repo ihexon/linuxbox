@@ -14,6 +14,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"path/filepath"
 
 	"time"
 )
@@ -43,6 +44,15 @@ func RestService(flags *pflag.FlagSet, apiurl string) error {
 	}
 
 	switch uri.Scheme {
+	case "unix":
+		path, err := filepath.Abs(uri.Path)
+		if err != nil {
+			return err
+		}
+		listener, err = net.Listen(uri.Scheme, path)
+		if err != nil {
+			return fmt.Errorf("Failed to listen on %s: %w", path, err)
+		}
 	case "tcp":
 		listener, err = net.Listen(uri.Scheme, uri.Host)
 		if err != nil {
@@ -93,7 +103,7 @@ func (s *APIServer) Serve() error {
 }
 
 func makeNewServer(listener net.Listener) (*APIServer, error) {
-	logrus.Infof("API service listening on %q. URI: %q", listener.Addr())
+	logrus.Infof("API service listening on %q.", listener.Addr())
 	router := mux.NewRouter().UseEncodedPath()
 
 	// setup a tracker to tracking every connections

@@ -5,11 +5,11 @@ import (
 	"bauklotze/cmd/registry"
 	"bauklotze/pkg/api/server"
 	"bauklotze/pkg/machine/env"
-	"fmt"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"net/url"
 	"os"
+	"syscall"
 )
 
 var (
@@ -48,9 +48,12 @@ func service(cmd *cobra.Command, args []string) error {
 
 		// We do not support unix socket file as api endpoint now
 		if uri.Scheme == "unix" {
-			return fmt.Errorf("we do not support unix socket file as api endpoint now")
+			if err := syscall.Unlink(uri.Path); err != nil && !os.IsNotExist(err) {
+				return err
+			}
+			mask := syscall.Umask(0177)
+			defer syscall.Umask(mask)
 		}
-
 	}
 	return server.RestService(cmd.Flags(), apiurl)
 }
