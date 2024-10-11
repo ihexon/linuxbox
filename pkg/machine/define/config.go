@@ -53,6 +53,7 @@ type StartOptions struct {
 	SendEvt     string
 	Volumes     []string
 	ExternImage string
+	ReportUrl   string
 }
 
 type StopOptions struct {

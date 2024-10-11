@@ -11,10 +11,10 @@ import (
 func TestHttpClient(t *testing.T) {
 
 	connCtx, err := NewConnection("tcp://127.0.0.1:8080")
-	connCtx.headers = http.Header{
+	connCtx.Headers = http.Header{
 		"Content-Type": []string{"application/json"},
 	}
-	connCtx.urlParameter = url.Values{
+	connCtx.UrlParameter = url.Values{
 		"key": []string{"value"},
 	}
 	dataReader := strings.NewReader("Hello, World!")

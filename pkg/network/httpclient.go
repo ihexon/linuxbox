@@ -15,8 +15,8 @@ type Connection struct {
 	URI          *url.URL
 	TcpClient    *http.Client
 	UnixClient   *http.Client
-	urlParameter url.Values
-	headers      http.Header
+	UrlParameter url.Values
+	Headers      http.Header
 }
 
 var myConnection = &Connection{}

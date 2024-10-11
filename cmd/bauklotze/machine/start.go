@@ -9,9 +9,11 @@ import (
 	"bauklotze/pkg/machine/env"
 	"bauklotze/pkg/machine/shim"
 	"bauklotze/pkg/machine/vmconfigs"
+	"bauklotze/pkg/network"
 	"bauklotze/pkg/system"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+	"net/url"
 	"time"
 )
 
@@ -50,6 +52,10 @@ func init() {
 
 	externalImage := "external-disk"
 	flags.StringVar(&startOpts.ExternImage, externalImage, "", "Use an external image as disk")
+
+	reportUrl := "report-url"
+	flags.StringVar(&startOpts.ReportUrl, reportUrl, "", "Report events to the url")
+
 }
 
 func start(cmd *cobra.Command, args []string) error {
@@ -71,6 +77,19 @@ func start(cmd *cobra.Command, args []string) error {
 
 	if err = shim.Start(mc, provider, dirs, startOpts); err != nil {
 		return err
+	}
+
+	if startOpts.ReportUrl != "" {
+		connCtx, err := network.NewConnection(startOpts.ReportUrl)
+		if err != nil {
+			return err
+		}
+		connCtx.UrlParameter = url.Values{
+			"event":   []string{"running"},
+			"message": []string{"ready"},
+		}
+		// ? Should I return error ?
+		_, _ = connCtx.DoRequest("POST", "/notify", nil)
 	}
 
 	logrus.Infof("Machine %q started successfully\n", vmName)
