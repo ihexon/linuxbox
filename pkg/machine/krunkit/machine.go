@@ -4,7 +4,6 @@ package krunkit
 
 import (
 	"bauklotze/pkg/config"
-	"bauklotze/pkg/fileutils"
 	"bauklotze/pkg/machine"
 	"bauklotze/pkg/machine/define"
 	"bauklotze/pkg/machine/sockets"
@@ -12,6 +11,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/containers/storage/pkg/fileutils"
 	vfConfig "github.com/crc-org/vfkit/pkg/config"
 	"github.com/crc-org/vfkit/pkg/rest"
 	"github.com/sirupsen/logrus"

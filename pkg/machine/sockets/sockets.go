@@ -1,11 +1,11 @@
 package sockets
 
 import (
-	"bauklotze/pkg/fileutils"
 	"bauklotze/pkg/machine/ignition"
 	"bauklotze/pkg/machine/vmconfigs"
 	"bufio"
 	"fmt"
+	"github.com/containers/storage/pkg/fileutils"
 	"github.com/sirupsen/logrus"
 	"net"
 	"time"
