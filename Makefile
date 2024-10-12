@@ -8,13 +8,13 @@ all: help
 ##@ Build commands
 ##@
 build: ##@ Build binaries for all architectures
-	@$(MAKE) out/ovm-arm64
+	@$(MAKE) out/bin/ovm-arm64
 
 
 build-arm64: ##@ Build arm64 binary
-	@$(MAKE) out/ovm-arm64
+	@$(MAKE) out/bin/ovm-arm64
 
-out/ovm-arm64: out/ovm-%:
+out/bin/ovm-arm64: out/bin/ovm-%:
 	@mkdir -p $(@D)
 	CGO_ENABLED=1 CGO_CFLAGS=$(CGO_CFLAGS) CGO_CFLAGS=$(CGO_CFLAGS) GOOS=darwin GOARCH=$* go build -o $@ bauklotze/cmd
 
