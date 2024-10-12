@@ -75,7 +75,10 @@ func start(cmd *cobra.Command, args []string) error {
 			"message": []string{"ready"},
 		}
 		// ? Should I return error ?
-		_, _ = connCtx.DoRequest("GET", "/notify", nil)
+		_, err = connCtx.DoRequest("GET", "/notify", nil)
+		if err != nil {
+			logrus.Warnf("Failed to notify %q: %v\n", startOpts.ReportUrl, err)
+		}
 	}
 
 	logrus.Infof("Machine %q started successfully\n", vmName)
@@ -107,7 +110,7 @@ func start(cmd *cobra.Command, args []string) error {
 	})
 
 	if err := g.Wait(); err != nil {
-		fmt.Println("Error:", err)
+		return stop(cmd, args)
 	}
 
 	//ctx, cancel := context.WithCancel(context.Background())

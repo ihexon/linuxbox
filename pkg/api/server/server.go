@@ -37,7 +37,7 @@ func RestService(apiurl *url.URL) error {
 		if err != nil {
 			return err
 		}
-		if err = os.Remove(path); err != nil {
+		if err = os.RemoveAll(path); err != nil {
 			return err
 		}
 		listener, err = net.Listen(apiurl.Scheme, path)

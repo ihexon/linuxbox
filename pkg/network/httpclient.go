@@ -86,7 +86,6 @@ func (c *Connection) DoRequest(httpMethod, endpoint string, httpBody io.Reader) 
 
 	uri := fmt.Sprintf(baseURL + "/" + endpoint)
 	logrus.Infof("DoRequest Method: %s URI: %v", httpMethod, uri)
-
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 

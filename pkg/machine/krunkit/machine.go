@@ -149,7 +149,7 @@ func StartGenericAppleVM(mc *vmconfigs.MachineConfig, cmdBinary string, bootload
 		return nil, nil, err
 	}
 
-	logrus.Info("krunkit binary path is: %s", cmdBinaryPath)
+	logrus.Infof("krunkit binary path is: %s", cmdBinaryPath)
 
 	cmd, err := vm.Cmd(cmdBinaryPath)
 	if err != nil {
@@ -196,7 +196,7 @@ func StartGenericAppleVM(mc *vmconfigs.MachineConfig, cmdBinary string, bootload
 		return nil, nil, err
 	}
 
-	logrus.Debugf("helper command-line: %v", cmd.Args)
+	logrus.Infof("helper command-line: %v", cmd.Args)
 
 	if err := cmd.Start(); err != nil {
 		return nil, nil, err
