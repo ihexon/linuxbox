@@ -17,6 +17,19 @@ func IsProcessAlive(pid int) bool {
 	return false
 }
 
+func IsProcessAliveV2(pid int) (bool, error) {
+	proc, err := process.NewProcess(int32(pid))
+	if err != nil {
+		return false, err
+	}
+	isRunning, err := proc.IsRunning()
+	if err != nil {
+		return false, err
+	}
+
+	return isRunning, err
+}
+
 // KillProcess force-stops a process.
 func KillProcess(pid int) {
 	_ = unix.Kill(pid, unix.SIGKILL)

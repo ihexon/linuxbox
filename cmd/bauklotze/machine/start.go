@@ -110,6 +110,7 @@ func start(cmd *cobra.Command, args []string) error {
 	})
 
 	if err := g.Wait(); err != nil {
+		logrus.Errorf("%s\n", err.Error())
 		return stop(cmd, args)
 	}
 	return err
@@ -146,8 +147,8 @@ func waiteAndStopMachine(ctx context.Context, startOpts define.StartOptions, arg
 		case <-ctx.Done():
 			return context.Cause(ctx)
 		default:
-			if !system.IsProcessAlive(int(startOpts.TwinPid)) {
-				cancel(fmt.Errorf("PPID:%s exited, stop the krunkit and gvproxy", startOpts.TwinPid))
+			if isRunning, _ := system.IsProcessAliveV2(int(startOpts.TwinPid)); !isRunning {
+				cancel(fmt.Errorf("PPID:[%d] exited, stop the krunkit and gvproxy", startOpts.TwinPid))
 			}
 
 			if err := system.CheckProcessRunning("KRunkit", krunkit); err != nil {
