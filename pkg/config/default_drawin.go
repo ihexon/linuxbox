@@ -3,6 +3,7 @@
 package config
 
 func getDefaultMachineVolumes() []string {
+	// Empty mount point
 	return []string{}
 }
 

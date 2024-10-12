@@ -1,6 +1,13 @@
 package machine
 
-import "sync"
+import (
+	"bauklotze/pkg/network"
+	"bauklotze/pkg/system"
+	"fmt"
+	"github.com/sirupsen/logrus"
+	"net/http"
+	"sync"
+)
 
 var GlobalPIDs = &AllPIDs{}
 
@@ -34,6 +41,38 @@ func (p *AllPIDs) GetGvproxyPID() int {
 	return *p.GvproxyPID
 }
 
-// TODO
-func WaitAPIAndPrintInfo(forwardState APIForwardingState, name, forwardSock string, noInfo, rootful bool) {
+// DO NOT BLOCK THIS FUNCTION
+func WaitAPIAndPrintInfo(forwardSock string, forwardState APIForwardingState, name string) {
+	if forwardState == NoForwarding {
+		system.KillProcess(GlobalPIDs.GetKrunkitPID())
+		system.KillProcess(GlobalPIDs.GetGvproxyPID())
+		logrus.Errorf("Podman Rest API No forwarding")
+		return
+	}
+
+	err := WaitAndPingAPI("unix:///" + forwardSock)
+	if err != nil {
+		// Why not stop krunkit and gvproxy, because I want get into machine when problem occurs, and I can debug it.
+		// DO NOT STOP the krunkit and gvproxy !
+		logrus.Error("failed to ping Podman API: ", err)
+	} else {
+		logrus.Info("Podman API ping success")
+		fmt.Printf("Podman API forwarding listening on: %s\n", forwardSock)
+	}
+
+}
+
+func WaitAndPingAPI(sock string) error {
+	connCtx, err := network.NewConnection(sock)
+	if err != nil {
+		return err
+	}
+	res, err := connCtx.DoRequest("GET", "/_ping", nil)
+	if err == nil {
+		defer res.Response.Body.Close()
+	}
+	if err != nil || res.Response.StatusCode != http.StatusOK {
+		logrus.Warn("API socket failed ping test")
+	}
+	return err
 }

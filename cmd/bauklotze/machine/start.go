@@ -112,40 +112,6 @@ func start(cmd *cobra.Command, args []string) error {
 	if err := g.Wait(); err != nil {
 		return stop(cmd, args)
 	}
-
-	//ctx, cancel := context.WithCancel(context.Background())
-	//defer cancel()
-	//g, ctx := errgroup.WithContext(ctx)
-	//
-	//g.Go(func() error {
-	//	return waiteAndStopMachine(
-	//		ctx,
-	//		startOpts,
-	//		args,
-	//		machine.GlobalPIDs.GetKrunkitPID(),
-	//		machine.GlobalPIDs.GetGvproxyPID(),
-	//	)
-	//})
-	//
-	//g.Go(func() error {
-	//	listenPath := "unix:///" + dirs.RuntimeDir.GetPath() + "/ovm_restapi.socks"
-	//	s, err := startRestApi(listenPath)
-	//	if err != nil {
-	//		return err
-	//	}
-	//
-	//	context.AfterFunc(ctx, func() {
-	//		s.Close()
-	//	})
-	//
-	//	return s.Run()
-	//})
-	//
-	//if err := g.Wait(); err != nil {
-	//	return stop(nil, args)
-	//}
-	//
-	//return err
 	return err
 }
 
@@ -173,22 +139,24 @@ func waiteAndStopMachine(ctx context.Context, startOpts define.StartOptions, arg
 			return err
 		}
 	}
-	logrus.Infof("Waiting PPID[%d] exited then stop the machine\n", startOpts.TwinPid)
 
+	logrus.Infof("Waiting PPID[%d] exited then stop the machine\n", startOpts.TwinPid)
 	for {
 		select {
 		case <-ctx.Done():
 			return context.Cause(ctx)
 		default:
 			if !system.IsProcessAlive(int(startOpts.TwinPid)) {
-				cancel(fmt.Errorf("%s exited, stop the krunkit and gvproxy", startOpts.TwinPid))
+				cancel(fmt.Errorf("PPID:%s exited, stop the krunkit and gvproxy", startOpts.TwinPid))
 			}
 
 			if err := system.CheckProcessRunning("KRunkit", krunkit); err != nil {
+				logrus.Errorf("KRunkit PID:[%d] exited, stop the virtualMachine", krunkit)
 				cancel(err)
 			}
 
 			if err := system.CheckProcessRunning("GVProxy", gvproxy); err != nil {
+				logrus.Errorf("GVProxy PID:[%d] exited, stop the virtualMachine", gvproxy)
 				cancel(err)
 			}
 			time.Sleep(400 * time.Millisecond)

@@ -259,7 +259,7 @@ func Start(mc *vmconfigs.MachineConfig, mp vmconfigs.VMProvider, dirs *define.Ma
 	callBackFuncs := machine.CleanupFuncs()
 	go callBackFuncs.CleanOnSignal()
 
-	_, _, err = startNetAndForwardNow(&callBackFuncs, mc, mp, dirs)
+	forwardSocketPath, forwardingState, err := startNetAndForwardNow(&callBackFuncs, mc, mp, dirs)
 
 	defer callBackFuncs.CleanIfErr(&err)
 	if err != nil {
@@ -326,6 +326,12 @@ func Start(mc *vmconfigs.MachineConfig, mp vmconfigs.VMProvider, dirs *define.Ma
 	if err := mp.MountVolumesToVM(mc, false); err != nil {
 		return err
 	}
+
+	machine.WaitAPIAndPrintInfo(
+		forwardSocketPath,
+		forwardingState,
+		mc.Name,
+	)
 
 	return nil
 }
