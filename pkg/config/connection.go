@@ -1,12 +1,12 @@
 package config
 
 import (
-	"bauklotze/pkg/ioutils"
-	"bauklotze/pkg/lockfile"
 	"bauklotze/pkg/machine/env"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/containers/storage/pkg/ioutils"
+	"github.com/containers/storage/pkg/lockfile"
 	"io/fs"
 	"os"
 	"path/filepath"

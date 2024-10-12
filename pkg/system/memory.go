@@ -6,22 +6,8 @@ import (
 	"github.com/shirou/gopsutil/v3/mem"
 )
 
-// MemInfo contains memory statistics of the host system.
-type MemInfo struct {
-	// Total usable RAM (i.e. physical RAM minus a few reserved bits and the
-	// kernel binary code).
-	MemTotal int64
-
-	// Amount of free memory.
-	MemFree int64
-
-	// Total amount of swap space available.
-	SwapTotal int64
-
-	// Amount of swap space that is currently unused.
-	SwapFree int64
-}
-
+// checkMaxMemory gets the total system memory and compares it to the variable.  if the variable
+// is larger than the total memory, it returns an error
 func CheckMaxMemory(newMem strongunits.MiB) error {
 	memStat, err := mem.VirtualMemory()
 	if err != nil {

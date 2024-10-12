@@ -1,7 +1,6 @@
 package vmconfigs
 
 import (
-	"bauklotze/pkg/lockfile"
 	"bauklotze/pkg/machine/define"
 	"bauklotze/pkg/machine/lock"
 	"bauklotze/pkg/machine/ports"
@@ -10,6 +9,7 @@ import (
 	"fmt"
 	strongunits "github.com/containers/common/pkg/strongunits"
 	gvproxy "github.com/containers/gvisor-tap-vsock/pkg/types"
+	"github.com/containers/storage/pkg/lockfile"
 	"github.com/sirupsen/logrus"
 	"io/fs"
 	"os"

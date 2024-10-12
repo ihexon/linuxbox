@@ -1,14 +1,11 @@
-//go:build linux || freebsd || solaris || darwin
-
 package system
 
 import (
 	"fmt"
 	"github.com/shirou/gopsutil/v3/process"
+	"golang.org/x/sys/unix"
 	"os"
 	"syscall"
-
-	"golang.org/x/sys/unix"
 )
 
 // IsProcessAlive returns true if process with a given pid is running.
@@ -24,7 +21,6 @@ func IsProcessAlive(pid int) bool {
 func KillProcess(pid int) {
 	_ = unix.Kill(pid, unix.SIGKILL)
 }
-
 func CheckProcessRunning(processName string, pid int) error {
 	var status syscall.WaitStatus
 	// wait(): on success, returns the process ID of the terminated

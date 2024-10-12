@@ -1,9 +1,9 @@
 package lock
 
 import (
-	"bauklotze/pkg/lockfile"
 	"bauklotze/pkg/machine/env"
 	"fmt"
+	"github.com/containers/storage/pkg/lockfile"
 	"path/filepath"
 )
 
