@@ -6,16 +6,15 @@ import (
 	"bauklotze/pkg/machine/define"
 	"bauklotze/pkg/machine/env"
 	"bauklotze/pkg/machine/shim"
+	system "bauklotze/pkg/machine/system"
 	"bauklotze/pkg/machine/vmconfigs"
 	"bauklotze/pkg/network"
-	"bauklotze/pkg/system"
 	"context"
-	"fmt"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"golang.org/x/sync/errgroup"
 	"net/url"
-	"time"
+	"os"
 )
 
 var (
@@ -82,85 +81,20 @@ func start(cmd *cobra.Command, args []string) error {
 	}
 
 	logrus.Infof("Machine %q started successfully\n", vmName)
+	// return waitefor()
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-
 	g, ctx := errgroup.WithContext(ctx)
-	g.Go(func() error {
-		if err := waiteAndStopMachine(
-			ctx,
-			startOpts,
-			args,
-			machine.GlobalPIDs.GetKrunkitPID(),
-			machine.GlobalPIDs.GetGvproxyPID(),
-		); err != nil {
-			return err
-		}
-		return nil
-	})
 
-	// Start func2 in a goroutine
-	g.Go(func() error {
-		listenPath := "unix:///" + dirs.RuntimeDir.GetPath() + "/ovm_restapi.socks"
-		if err := startRestApi(ctx, listenPath); err != nil {
-			return err
-		}
-		return nil
-	})
+	mypid := os.Getpid()
+	startOpts.TwinPid = int32(mypid)
+	system.WaitProcessAndStopMachine(g, ctx, startOpts.TwinPid, int32(machine.GlobalPIDs.GetKrunkitPID()), int32(machine.GlobalPIDs.GetGvproxyPID()))
+	system.WaitApiServerAndStopMachine(g, ctx, dirs)
 
 	if err := g.Wait(); err != nil {
 		logrus.Errorf("%s\n", err.Error())
 		return stop(cmd, args)
 	}
 	return err
-}
-
-func startRestApi(ctx context.Context, listenPath string) error {
-	ctx, cancel := context.WithCancelCause(ctx)
-	go func() {
-		if err := service(nil, []string{listenPath}); err != nil {
-			cancel(err)
-			//errChan <- err
-		}
-	}()
-
-	<-ctx.Done()
-	return context.Cause(ctx)
-}
-
-func waiteAndStopMachine(ctx context.Context, startOpts define.StartOptions, args []string, krunkit, gvproxy int) error {
-	ctx, cancel := context.WithCancelCause(ctx)
-
-	var err error
-	// If user do not --twinpid, get my PPID
-	if startOpts.TwinPid == -1 {
-		startOpts.TwinPid, err = system.GetMyPPID()
-		if err != nil {
-			return err
-		}
-	}
-
-	logrus.Infof("Waiting PPID[%d] exited then stop the machine\n", startOpts.TwinPid)
-	for {
-		select {
-		case <-ctx.Done():
-			return context.Cause(ctx)
-		default:
-			if isRunning, _ := system.IsProcessAliveV2(int(startOpts.TwinPid)); !isRunning {
-				cancel(fmt.Errorf("PPID:[%d] exited, stop the krunkit and gvproxy", startOpts.TwinPid))
-			}
-
-			if err := system.CheckProcessRunning("KRunkit", krunkit); err != nil {
-				logrus.Errorf("KRunkit PID:[%d] exited, stop the virtualMachine", krunkit)
-				cancel(err)
-			}
-
-			if err := system.CheckProcessRunning("GVProxy", gvproxy); err != nil {
-				logrus.Errorf("GVProxy PID:[%d] exited, stop the virtualMachine", gvproxy)
-				cancel(err)
-			}
-			time.Sleep(400 * time.Millisecond)
-		}
-	}
 }

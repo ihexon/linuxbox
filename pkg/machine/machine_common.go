@@ -2,8 +2,8 @@ package machine
 
 import (
 	"bauklotze/pkg/network"
-	"bauklotze/pkg/system"
 	"fmt"
+	"github.com/containers/storage/pkg/system"
 	"github.com/sirupsen/logrus"
 	"net/http"
 	"sync"

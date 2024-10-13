@@ -68,6 +68,8 @@ func (ign *DynamicIgnition) generateReadyEvent() error {
 		"\n",
 		"sync",
 		"\n",
+		"# -------- end --------",
+		"\n",
 	})
 	ign.Commands = append(ign.Commands, slice.Get()...)
 	return nil
