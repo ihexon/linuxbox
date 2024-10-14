@@ -6,6 +6,7 @@ import (
 	"bauklotze/pkg/config"
 	"bauklotze/pkg/machine"
 	"bauklotze/pkg/machine/define"
+	"bauklotze/pkg/machine/ignition"
 	"bauklotze/pkg/machine/sockets"
 	"bauklotze/pkg/machine/vmconfigs"
 	"context"
@@ -47,7 +48,7 @@ func GetDefaultDevices(mc *vmconfigs.MachineConfig) ([]vfConfig.VirtioDevice, *d
 		return nil, nil, err
 	}
 
-	// Note: the connection from guest to host
+	// Note: After Ignition, We send ready to `readySocket.GetPath()`
 	readyDevice, err := vfConfig.VirtioVsockNew(1025, readySocket.GetPath(), true)
 	if err != nil {
 		return nil, nil, err
@@ -58,7 +59,9 @@ func GetDefaultDevices(mc *vmconfigs.MachineConfig) ([]vfConfig.VirtioDevice, *d
 		return nil, nil, err
 	}
 
-	ignitionDevice, err := vfConfig.VirtioVsockNew(1026, ignitionSocket.GetPath(), true)
+	// DO NOT CHANGE THE 1024 VSOCK PORT
+	// See https://coreos.github.io/ignition/supported-platforms/
+	ignitionDevice, err := vfConfig.VirtioVsockNew(1024, ignitionSocket.GetPath(), true)
 	devices = append(devices, disk, rng, readyDevice, ignitionDevice)
 
 	if mc.AppleKrunkitHypervisor == nil || !logrus.IsLevelEnabled(logrus.DebugLevel) {
@@ -89,6 +92,13 @@ var (
 	gvProxyMaxBackoffAttempts = 6
 )
 
+// TODO, If there is an error,  it should return error
+func readFileContent(path string) string {
+	content, _ := os.ReadFile(path)
+
+	return string(content)
+}
+
 func StartGenericAppleVM(mc *vmconfigs.MachineConfig, cmdBinary string, bootloader vfConfig.Bootloader, endpoint string) (func() error, func() error, error) {
 	// Add networking
 	netDevice, err := vfConfig.VirtioNetNew(applehvMACAddress)
@@ -113,8 +123,9 @@ func StartGenericAppleVM(mc *vmconfigs.MachineConfig, cmdBinary string, bootload
 	vm := vfConfig.NewVirtualMachine(uint(mc.Resources.CPUs), uint64(mc.Resources.Memory), bootloader)
 	defaultDevices, readySocket, err := GetDefaultDevices(mc)
 	vm.Devices = append(vm.Devices, defaultDevices...)
+	vm.Devices = append(vm.Devices, netDevice)
 
-	// Make virIO devices for external_disk
+	// If the --external-disk flag is set, we need to create the disk **if it does not exist**
 	if mc.ExternalDisk.GetPath() != "" {
 		if err = fileutils.Exists(mc.ExternalDisk.GetPath()); err != nil {
 			logrus.Warnf("external disk does not exist: %s", mc.ExternalDisk.GetPath())
@@ -129,8 +140,6 @@ func StartGenericAppleVM(mc *vmconfigs.MachineConfig, cmdBinary string, bootload
 		}
 		vm.Devices = append(vm.Devices, external_disk)
 	}
-
-	vm.Devices = append(vm.Devices, netDevice)
 
 	mounts, err := VirtIOFsToVFKitVirtIODevice(mc.Mounts)
 	if err != nil {
@@ -148,7 +157,6 @@ func StartGenericAppleVM(mc *vmconfigs.MachineConfig, cmdBinary string, bootload
 	if err != nil {
 		return nil, nil, err
 	}
-
 	logrus.Infof("krunkit binary path is: %s", cmdBinaryPath)
 
 	cmd, err := vm.Cmd(cmdBinaryPath)
@@ -167,36 +175,65 @@ func StartGenericAppleVM(mc *vmconfigs.MachineConfig, cmdBinary string, bootload
 	}
 
 	cmd.Args = append(cmd.Args, endpointArgs...)
-
-	logrus.Infof("listening for ready on: %s", readySocket.GetPath())
+	// Listen ready socket
 	if err := readySocket.Delete(); err != nil {
 		logrus.Warnf("unable to delete previous ready socket: %q", err)
 	}
-
 	readyListen, err := net.Listen("unix", readySocket.GetPath())
 	if err != nil {
 		return nil, nil, err
+	} else {
+		logrus.Infof("listening ready event on: %s", readySocket.GetPath())
 	}
-
-	logrus.Debug("waiting for ready notification")
+	// Wait for ready event coming...
 	readyChan := make(chan error)
 	go sockets.ListenAndWaitOnSocket(readyChan, readyListen)
+	logrus.Debug("waiting for ready notification...")
 
-	ignitionSocket, err := mc.IgnitionSocket()
-	if err != nil {
-		return nil, nil, err
-	}
-	logrus.Infof("IgnitionSocket on: %s", ignitionSocket.GetPath())
-	if err = ignitionSocket.Delete(); err != nil {
-		logrus.Errorf("unable to delete previous ready socket: %q", err)
-		return nil, nil, err
-	}
-	ignListen, err := net.Listen("unix", ignitionSocket.GetPath())
+	ignFile, err := mc.IgnitionFile()
 	if err != nil {
 		return nil, nil, err
 	}
 
-	logrus.Infof("helper command-line: %v", cmd.Args)
+	ignBuilder := ignition.NewIgnitionBuilder(ignition.DynamicIgnitionV2{
+		Name:      define.DefaultUserInGuest,
+		Key:       readFileContent(mc.SSH.IdentityPath + ".pub"),
+		TimeZone:  "local", // Auto detect timezone from locales
+		VMType:    define.LibKrun,
+		VMName:    define.DefaultMachineName,
+		WritePath: ignFile.GetPath(),
+		Rootful:   true,
+	})
+
+	err = ignBuilder.GenerateIgnitionConfig()
+	if err != nil {
+		return nil, nil, err
+	}
+
+	err = ignBuilder.Build()
+	if err != nil {
+		return nil, nil, err
+	}
+
+	ignSocket, err := mc.IgnitionSocket()
+	if err != nil {
+		return nil, nil, err
+	}
+
+	if err := ignSocket.Delete(); err != nil {
+		logrus.Errorf("failed to delete the %s", ignSocket.GetPath())
+		return nil, nil, err
+	}
+
+	logrus.Infof("Serving the ignition file over the socket: %s", ignSocket.GetPath())
+	go func() {
+		if err := ignition.ServeIgnitionOverSockV2(ignSocket, mc); err != nil {
+			logrus.Errorf("failed to serve ignition file: %v", err)
+			readyChan <- err
+		}
+	}()
+
+	logrus.Infof("krunkit command-line: %v", cmd.Args)
 
 	if err := cmd.Start(); err != nil {
 		return nil, nil, err
@@ -217,26 +254,17 @@ func StartGenericAppleVM(mc *vmconfigs.MachineConfig, cmdBinary string, bootload
 					return
 				default:
 				}
-				if err := CheckProcessRunning(cmdBinary, machine.GlobalPIDs.GetKrunkitPID()); err != nil {
+				if err := CheckProcessRunning("Krunkit", machine.GlobalPIDs.GetKrunkitPID()); err != nil {
 					processErrChan <- err
 					return
 				}
 
-				if err := CheckProcessRunning(cmdBinary, machine.GlobalPIDs.GetGvproxyPID()); err != nil {
+				if err := CheckProcessRunning("Gvproxy", machine.GlobalPIDs.GetGvproxyPID()); err != nil {
 					processErrChan <- err
 					return
 				}
 				// lets poll status every half second
 				time.Sleep(500 * time.Millisecond)
-			}
-		}()
-
-		// Go routine to do Ignition to Machine thought vsock
-		go func() {
-			err = sockets.ListenAndExecCommandOnUnixSocketFile(ignListen, mc)
-			if err != nil {
-				processErrChan <- err
-				return
 			}
 		}()
 

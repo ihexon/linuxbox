@@ -86,6 +86,14 @@ func (mc *MachineConfig) IsFirstBoot() (bool, error) {
 	return mc.LastUp == never, nil
 }
 
+func (mc *MachineConfig) IgnitionFile() (*define.VMFile, error) {
+	configDir, err := mc.ConfigDir()
+	if err != nil {
+		return nil, err
+	}
+	return configDir.AppendToNewVMFile(mc.Name+".ign", nil)
+}
+
 type MachineConfig struct {
 	Created time.Time
 	LastUp  time.Time

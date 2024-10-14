@@ -1,8 +1,6 @@
 package sockets
 
 import (
-	"bauklotze/pkg/machine/ignition"
-	"bauklotze/pkg/machine/vmconfigs"
 	"bufio"
 	"fmt"
 	"github.com/containers/storage/pkg/fileutils"
@@ -45,39 +43,4 @@ func ListenAndWaitOnSocket(errChan chan<- error, listener net.Listener) {
 	}
 
 	errChan <- err
-}
-
-func ListenAndExecCommandOnUnixSocketFile(listener net.Listener, mc *vmconfigs.MachineConfig) error {
-	err := listener.(*net.UnixListener).SetDeadline(time.Now().Add(10 * time.Second))
-	if err != nil {
-		return err
-	}
-	conn, err := listener.Accept()
-	if err != nil {
-		logrus.Errorf("the virtual machine failed to connect to the ignition socket in 10 sceonds, gvie up")
-		return err
-	}
-
-	ignCfgs, err := ignition.ServeIgnitionOverSock(mc)
-	if err != nil {
-		return err
-	}
-
-	for _, c := range ignCfgs.Commands {
-		logrus.Infof("ExecCommands: %s", c)
-		_, err := conn.Write([]byte(c + "\n"))
-		if err != nil {
-			return err
-		}
-	}
-
-	if err := conn.(*net.UnixConn).CloseWrite(); err != nil {
-		return err
-	}
-
-	if closeErr := conn.Close(); closeErr != nil {
-		return nil
-	}
-
-	return nil
 }

@@ -41,7 +41,6 @@ func TestGetFiles(t *testing.T) {
 		t.Fatalf("Failed to marshal dirs: %v", err)
 	}
 	t.Log(string(jsonDirs))
-
 }
 
 func TestGetLinks(t *testing.T) {

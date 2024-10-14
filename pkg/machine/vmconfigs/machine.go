@@ -3,6 +3,7 @@ package vmconfigs
 import (
 	"bauklotze/pkg/machine/define"
 	"encoding/json"
+	"errors"
 	"os"
 )
 
@@ -38,4 +39,12 @@ func (mc *MachineConfig) Refresh() error {
 		return err
 	}
 	return json.Unmarshal(content, mc)
+}
+
+// ConfigDir is a simple helper to obtain the machine config dir
+func (mc *MachineConfig) ConfigDir() (*define.VMFile, error) {
+	if mc.Dirs == nil || mc.Dirs.ConfigDir == nil {
+		return nil, errors.New("no configuration directory set")
+	}
+	return mc.Dirs.ConfigDir, nil
 }

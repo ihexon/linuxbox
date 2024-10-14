@@ -10,8 +10,9 @@ import (
 
 // ServeIgnitionOverSock allows podman to open a small httpd instance on the vsock between the host
 // and guest to inject the ignitionfile into fcos
-func ServeIgnitionOverSockV2(ignitionSocket *define.VMFile, mc *vmconfigs.MachineConfig) error {
-	ignitionFile := define.VMFile{Path: "/tmp/generateConfig.json"}
+func ServeIgnitionOverSockV2(listenedFile *define.VMFile, mc *vmconfigs.MachineConfig) error {
+	ignitionFile, err := mc.IgnitionFile()
+	var listener net.Listener
 
 	logrus.Infof("reading ignition file: %s", ignitionFile.GetPath())
 	ignFile, err := ignitionFile.Read()
@@ -27,17 +28,26 @@ func ServeIgnitionOverSockV2(ignitionSocket *define.VMFile, mc *vmconfigs.Machin
 		}
 	})
 
-	listenedFile := define.VMFile{Path: "/tmp/ignition.sock"}
+	//mux.HandleFunc("/stop", func(w http.ResponseWriter, r *http.Request) {
+	//	logrus.Infof("stop the ignition server....")
+	//	if err := listener.Close(); err != nil {
+	//		logrus.Errorf("failed to stop the server: %v", err)
+	//	}
+	//})
+
+	//listenedFile := define.VMFile{Path: "/tmp/ignition1.sock"}
 	_ = listenedFile.Delete()
-	listener, err := net.Listen("unix", "/tmp/ignition.sock")
+	listener, err = net.Listen("unix", listenedFile.GetPath())
 	if err != nil {
 		return err
 	}
+
 	logrus.Infof("ignition socket device: %s", listenedFile.GetPath())
 	defer func() {
 		if err := listener.Close(); err != nil {
 			logrus.Error(err)
 		}
 	}()
+
 	return http.Serve(listener, mux)
 }

@@ -6,6 +6,9 @@
         <function importPath="bauklotze/pkg/machine/shim" name="startNetAndForwardNow" />
         <function importPath="bauklotze/pkg/network" name="NewConnection" />
       </functions>
+      <methods>
+        <method importPath="bauklotze/pkg/machine/vmconfigs" receiver="*MachineConfig" name="IgnitionFile" />
+      </methods>
     </inspection_tool>
   </profile>
 </component>
