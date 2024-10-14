@@ -3,6 +3,8 @@ package ignition
 import (
 	"bauklotze/pkg/machine/define"
 	"encoding/json"
+	"net/url"
+	"os"
 	"testing"
 )
 
@@ -78,8 +80,23 @@ func TestDynamicIgnitionV2_GenerateIgnitionConfig(t *testing.T) {
 }
 
 func TestIgnServer(t *testing.T) {
-	err := ServeIgnitionOverSockV2(nil, nil)
+	addr := "tcp://127.0.0.1:8899"
+	listener, err := url.Parse(addr)
 	if err != nil {
-		t.Fatalf("Failed to serve ignition over sock: %v", err)
+		t.Errorf(err.Error())
 	}
+	fileStr := "C:\\Users\\localuser\\Bauklotze\\README.md"
+
+	file, err := os.Open(fileStr)
+	if err != nil {
+		t.Error(err.Error())
+	}
+	errChan := make(chan error, 1)
+	err = ServeIgnitionOverSocketCommon(listener, file)
+	if err != nil {
+		errChan <- err
+	}
+
+	err = <-errChan
+	t.Logf(err.Error())
 }

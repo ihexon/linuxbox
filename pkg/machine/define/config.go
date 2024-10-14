@@ -10,6 +10,7 @@ const (
 	MachineConfigVersion = 1
 	MyName               = "Bauklotze"
 	WorkDir              = "." + MyName + "_dir"
+	TcpIgnitionAddr      = "tcp://127.0.0.1:65530"
 )
 
 type CreateVMOpts struct {

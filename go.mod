@@ -9,8 +9,8 @@ require (
 	github.com/containers/podman/v5 v5.2.3
 	github.com/containers/storage v1.55.0
 	github.com/containers/winquit v1.1.0
+	github.com/coreos/ignition/v2 v2.19.0
 	github.com/crc-org/vfkit v0.5.1
-	github.com/docker/go-units v0.5.0
 	github.com/google/uuid v1.6.0
 	github.com/gorilla/handlers v1.5.2
 	github.com/gorilla/mux v1.8.1
@@ -22,7 +22,6 @@ require (
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/cobra v1.8.1
 	github.com/spf13/pflag v1.0.6-0.20210604193023-d5e0c0615ace
-	github.com/stretchr/testify v1.9.0
 	github.com/therootcompany/xz v1.0.1
 	github.com/ulikunitz/xz v0.5.12
 	golang.org/x/crypto v0.26.0
@@ -43,9 +42,8 @@ require (
 	github.com/chenzhuoyu/iasm v0.9.1 // indirect
 	github.com/coreos/go-semver v0.3.1 // indirect
 	github.com/coreos/go-systemd/v22 v22.5.1-0.20231103132048-7d375ecc2b09 // indirect
-	github.com/coreos/ignition/v2 v2.19.0 // indirect
 	github.com/coreos/vcontext v0.0.0-20231102161604-685dc7299dc5 // indirect
-	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
+	github.com/docker/go-units v0.5.0 // indirect
 	github.com/dsnet/compress v0.0.2-0.20230904184137-39efe44ab707 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.3 // indirect
@@ -72,7 +70,6 @@ require (
 	github.com/nwaples/rardecode/v2 v2.0.0-beta.2 // indirect
 	github.com/pelletier/go-toml/v2 v2.2.2 // indirect
 	github.com/pierrec/lz4/v4 v4.1.21 // indirect
-	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/power-devops/perfstat v0.0.0-20210106213030-5aafc221ea8c // indirect
 	github.com/shoenig/go-m1cpu v0.1.6 // indirect
 	github.com/sorairolake/lzip-go v0.3.4 // indirect

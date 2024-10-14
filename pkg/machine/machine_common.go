@@ -1,9 +1,9 @@
 package machine
 
 import (
+	"bauklotze/pkg/machine/system"
 	"bauklotze/pkg/network"
 	"fmt"
-	"github.com/containers/storage/pkg/system"
 	"github.com/sirupsen/logrus"
 	"net/http"
 	"sync"
@@ -44,8 +44,9 @@ func (p *AllPIDs) GetGvproxyPID() int {
 // DO NOT BLOCK THIS FUNCTION
 func WaitAPIAndPrintInfo(forwardSock string, forwardState APIForwardingState, name string) {
 	if forwardState == NoForwarding {
-		system.KillProcess(GlobalPIDs.GetKrunkitPID())
-		system.KillProcess(GlobalPIDs.GetGvproxyPID())
+		_ = system.KillProcess(GlobalPIDs.GetKrunkitPID())
+		_ = system.KillProcess(GlobalPIDs.GetGvproxyPID())
+
 		logrus.Errorf("Podman Rest API No forwarding")
 		return
 	}

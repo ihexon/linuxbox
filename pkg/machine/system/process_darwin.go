@@ -23,3 +23,14 @@ func IsProcessAliveV3(pid int32) (bool, error) {
 	}
 	return false, err
 }
+
+func KillProcess(pid int) error {
+	proc, err := process.NewProcess(int32(pid))
+	if err != nil {
+		return fmt.Errorf("failed to find process: %v", err)
+	}
+
+	_ = proc.Kill()
+
+	return nil
+}

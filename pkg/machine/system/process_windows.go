@@ -2,7 +2,12 @@
 
 package system
 
-func IsProcessAliveV3(pid int) (bool, error) {
+import (
+	"fmt"
+	"github.com/shirou/gopsutil/v3/process"
+)
+
+func IsProcessAliveV3(pid int32) (bool, error) {
 	proc, err := process.NewProcess(int32(pid))
 	if err != nil {
 		return false, err
@@ -13,4 +18,17 @@ func IsProcessAliveV3(pid int) (bool, error) {
 	}
 
 	return isRunning, err
+}
+func KillProcess(pid int) error {
+	proc, err := process.NewProcess(int32(pid))
+	if err != nil {
+		return fmt.Errorf("failed to find process: %v", err)
+	}
+
+	err = proc.Terminate()
+	if err != nil {
+		return fmt.Errorf("failed to kill process: %v", err)
+	}
+
+	return nil
 }

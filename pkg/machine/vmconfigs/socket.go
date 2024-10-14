@@ -19,3 +19,7 @@ func (mc *MachineConfig) IgnitionSocket() (*define.VMFile, error) {
 	}
 	return ignitionSocket(mc.Name, rtDir)
 }
+
+func (mc *MachineConfig) IgnitionTcpListenAddr() string {
+	return define.TcpIgnitionAddr
+}
