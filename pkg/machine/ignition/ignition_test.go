@@ -75,4 +75,12 @@ func TestDynamicIgnitionV2_GenerateIgnitionConfig(t *testing.T) {
 		t.Fatalf("Failed to marshal dirs: %v", err)
 	}
 	t.Log(string(jsonDirs))
+	err = ignBuilder.Build()
+}
+
+func TestIgnServer(t *testing.T) {
+	err := ServeIgnitionOverSockV2(nil, nil)
+	if err != nil {
+		t.Fatalf("Failed to serve ignition over sock: %v", err)
+	}
 }

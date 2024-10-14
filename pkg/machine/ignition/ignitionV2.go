@@ -282,6 +282,6 @@ func (i *IgnitionBuilder) BuildWithIgnitionFile(ignPath string) error {
 }
 
 func (i *IgnitionBuilder) Build() error {
-	logrus.Debugf("writing ignition file to %q", i.dynamicIgnition.WritePath)
+	logrus.Infof("writing ignition file to %q", i.dynamicIgnition.WritePath)
 	return i.dynamicIgnition.Write()
 }
