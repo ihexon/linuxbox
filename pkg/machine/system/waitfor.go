@@ -34,12 +34,13 @@ func watchProcess(ctx context.Context, ovmPid, krunPid, gvPid int32) error {
 }
 
 func WaitApiServerAndStopMachine(g *errgroup.Group, ctx context.Context, dirs *define.MachineDirs) {
+	listenPath := "unix:///" + dirs.RuntimeDir.GetPath() + "/ovm_restapi.socks"
 
 	g.Go(func() error {
-		listenPath := "unix:///" + dirs.RuntimeDir.GetPath() + "/ovm_restapi.socks"
 		apiURL, _ := url.Parse(listenPath)
 		return startRestApi(ctx, apiURL)
 	})
+	logrus.Infof("Starting API Server in %s\n,", listenPath)
 }
 
 func startRestApi(ctx context.Context, apiURL *url.URL) error {

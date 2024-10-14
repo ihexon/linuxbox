@@ -6,7 +6,7 @@ import (
 	"bauklotze/pkg/machine/define"
 	"bauklotze/pkg/machine/env"
 	"bauklotze/pkg/machine/shim"
-	system "bauklotze/pkg/machine/system"
+	"bauklotze/pkg/machine/system"
 	"bauklotze/pkg/machine/vmconfigs"
 	"bauklotze/pkg/network"
 	"context"
@@ -81,7 +81,6 @@ func start(cmd *cobra.Command, args []string) error {
 	}
 
 	logrus.Infof("Machine %q started successfully\n", vmName)
-	// return waitefor()
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
