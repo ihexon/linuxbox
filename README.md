@@ -5,13 +5,10 @@
 ## 初始化虚拟机
 
 ```
-ovm-arm64 \
-    --workspace /Users/danhexon/myvm \
-    machine init \
-    --bootable-image bootable.img.xz \              # support xz / zstd format, bootable.img.xz support @version field
-    --external-disk \                               # map a raw disk into virtualMachine's /dev/vdX
-    --report-url [remote events listener] \
-    --volume /tmp:/mnt/HostDir/tmp                  # Mount macos /tmp/ into virtualMachine's /mnt/HostDir/tmp
+./ovm-arm64 --workspace=/Users/danhexon/myvm/  \
+    machine init --bootable-image \
+       /Users/danhexon/alpine_virt/alpine_krunkit.raw.xz@2.0 \
+       --external-disk=/Users/danhexon/alpine_virt/mydisk.raw@2.0
 ```
 
 - workspace 指定数据存储的地方，所有的文件将会被存储在这里，这个参数作为 root 参数对所有的子命令都可见

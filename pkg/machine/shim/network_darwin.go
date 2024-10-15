@@ -1,4 +1,4 @@
-//go:build darwin && arm64
+//go:build darwin && (arm64 || amd64)
 
 package shim
 
@@ -12,6 +12,10 @@ import (
 	"github.com/sirupsen/logrus"
 	"path/filepath"
 	"strings"
+)
+
+const (
+	defaultGuestSock = "/run/podman/podman.sock"
 )
 
 func setupMachineSockets(mc *vmconfigs.MachineConfig, dirs *define.MachineDirs) ([]string, string, machine.APIForwardingState, error) {
@@ -37,13 +41,7 @@ func setupForwardingLinks(hostSocket, dataDir *define.VMFile) (string, machine.A
 func startHostForwarder(mc *vmconfigs.MachineConfig, provider vmconfigs.VMProvider, dirs *define.MachineDirs, hostSocks []string) error {
 	forwardUser := mc.SSH.RemoteUsername
 
-	// TODO should this go up the stack higher or
-	// the guestSock is "inside" the guest machine
-	guestSock := fmt.Sprintf(defaultGuestSock, mc.HostUser.UID)
-	if mc.HostUser.Rootful {
-		guestSock = "/run/podman/podman.sock"
-		forwardUser = "root"
-	}
+	guestSock := defaultGuestSock
 
 	cfg, err := config.Default()
 	if err != nil {
@@ -54,10 +52,12 @@ func startHostForwarder(mc *vmconfigs.MachineConfig, provider vmconfigs.VMProvid
 	if err != nil {
 		return err
 	}
-	cmd := gvproxy.NewGvproxyCommand()
+	cmd := gvproxy.NewGvproxyCommand() // New a GvProxyCommands
 	runDir := dirs.RuntimeDir
+
 	cmd.PidFile = filepath.Join(runDir.GetPath(), "gvproxy.pid")
 	cmd.LogFile = filepath.Join(runDir.GetPath(), "gvproxy.log")
+
 	cmd.SSHPort = mc.SSH.Port
 
 	// For now we only have one hostSocks that is podman api
@@ -82,12 +82,15 @@ func startHostForwarder(mc *vmconfigs.MachineConfig, provider vmconfigs.VMProvid
 	if err := c.Start(); err != nil {
 		return fmt.Errorf("unable to execute: %q: %w", cmd.ToCmdline(), err)
 	}
+
 	machine.GlobalPIDs.SetGvproxyPID(c.Process.Pid)
+
 	mc.GvProxy.GvProxy.PidFile = cmd.PidFile
 	mc.GvProxy.GvProxy.LogFile = cmd.LogFile
 	mc.GvProxy.GvProxy.SSHPort = cmd.SSHPort
 	mc.GvProxy.GvProxy.MTU = cmd.MTU
 	mc.GvProxy.HostSocks = hostSocks
 	mc.GvProxy.RemoteSocks = guestSock
+
 	return nil
 }

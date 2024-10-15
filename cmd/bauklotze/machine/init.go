@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"github.com/containers/common/pkg/strongunits"
 	"github.com/containers/storage/pkg/regexp"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"os"
 )
@@ -100,6 +101,14 @@ func initMachine(cmd *cobra.Command, args []string) error {
 	oldMc, exists, err := shim.VMExists(initOpts.Name, []vmconfigs.VMProvider{provider})
 	if err != nil {
 		return err
+	}
+
+	if oldMc != nil || (initOpts.ImageVersion.ExternalDiskVersion != "" && initOpts.ImageVersion.ExternalDiskVersion != oldMc.ExternalDiskVersion) {
+		logrus.Infof("update external-disk %s", initOpts.Images.ExternalDisk)
+		err = system.CreateAndResizeDisk(initOpts.Images.ExternalDisk, strongunits.GiB(500))
+		if err != nil {
+			return err
+		}
 	}
 
 	switch {

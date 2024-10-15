@@ -174,7 +174,7 @@ func NewMachineConfig(opts define.InitOptions, dirs *define.MachineDirs, sshIden
 	sshConfig := SSHConfig{
 		IdentityPath:   sshIdentityPath,
 		Port:           sshPort,
-		RemoteUsername: opts.Username,
+		RemoteUsername: opts.Username, // always be root
 	}
 	mc.SSH = sshConfig
 	mc.Created = time.Now()

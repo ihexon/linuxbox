@@ -3,6 +3,7 @@ package ignition
 import (
 	"bauklotze/pkg/machine/define"
 	"bauklotze/pkg/machine/vmconfigs"
+	"bytes"
 	"encoding/json"
 	"fmt"
 	ignition "github.com/coreos/ignition/v2/config/v3_4/types"
@@ -11,6 +12,15 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"text/template"
+)
+
+const (
+	DefaultIgnitionUserName = "root"
+	DefaultIgnitionVersion  = "3.4.0"
+	GenerateScriptDir       = "/root/script_generated"
+	GenerateOpenRcDir       = GenerateScriptDir + "/etc/init.d"
+	PodmanMachine           = "/etc/containers/podman-machine"
 )
 
 type DynamicIgnitionV2 struct {
@@ -60,39 +70,31 @@ func StrToPtr(s string) *string {
 	return &s
 }
 
-const (
-	DefaultIgnitionUserName = "root"
-	DefaultIgnitionVersion  = "3.4.0"
-)
-
 func EncodeDataURLPtr(contents string) *string {
 	return StrToPtr(fmt.Sprintf("data:,%s", url.PathEscape(contents)))
 }
 
-func getDirs(usrName string) []ignition.Directory {
-	// Ignition has a bug/feature? where if you make a series of dirs
-	// in one swoop, then the leading dirs are creates as root.
+// First create directories
+func (ign *DynamicIgnitionV2) getDirs(usrName string) []ignition.Directory {
 	newDirs := []string{
-		"/" + usrName + "/.config",
+		GenerateScriptDir,
+		GenerateOpenRcDir,
 	}
-	var (
-		dirs = make([]ignition.Directory, len(newDirs))
-	)
+	dirs := make([]ignition.Directory, len(newDirs))
 	for i, d := range newDirs {
-		newDir := ignition.Directory{
+		dirs[i] = ignition.Directory{
 			Node: ignition.Node{
 				Group: GetNodeGrp(usrName),
-				Path:  d,
 				User:  GetNodeUsr(usrName),
+				Path:  d,
 			},
 			DirectoryEmbedded1: ignition.DirectoryEmbedded1{Mode: IntToPtr(0755)},
 		}
-		dirs[i] = newDir
 	}
-
 	return dirs
 }
 
+// Set sshkeys for root user
 func (ign *DynamicIgnitionV2) getUsers() []ignition.PasswdUser {
 	var (
 		// See https://coreos.github.io/ignition/configuration-v3_4/
@@ -101,7 +103,7 @@ func (ign *DynamicIgnitionV2) getUsers() []ignition.PasswdUser {
 
 	// set root SSH key
 	root := ignition.PasswdUser{
-		Name:              ign.Name,
+		Name:              DefaultIgnitionUserName,
 		SSHAuthorizedKeys: []ignition.SSHAuthorizedKey{ignition.SSHAuthorizedKey(ign.Key)},
 	}
 	// add them all in
@@ -109,25 +111,15 @@ func (ign *DynamicIgnitionV2) getUsers() []ignition.PasswdUser {
 	return users
 }
 
-func getFiles(usrName string, uid int, rootful bool, vmtype define.VMType, _ bool) []ignition.File {
+func (ign *DynamicIgnitionV2) getFiles(usrName string, uid int, vmtype define.VMType) []ignition.File {
 	files := make([]ignition.File, 0)
 
-	containers := `
-#netns="bridge"
-#pids_limit=0
-`
-	subUID := 100000
-	subUIDs := 1000000
-	if uid >= subUID && uid < (subUID+subUIDs) {
-		subUID = uid + 1
-	}
-	etcSubUID := fmt.Sprintf(`%s:%d:%d`, usrName, subUID, subUIDs)
-
+	containers := `# Test configures for root user`
 	// Set test.conf up for root user, just a test
 	files = append(files, ignition.File{
 		Node: ignition.Node{
 			Group: GetNodeGrp(usrName),
-			Path:  "/" + usrName + "/.config/test.conf",
+			Path:  filepath.Join(GenerateScriptDir, "test.conf"),
 			User:  GetNodeUsr(usrName),
 		},
 		FileEmbedded1: ignition.FileEmbedded1{
@@ -138,6 +130,11 @@ func getFiles(usrName string, uid int, rootful bool, vmtype define.VMType, _ boo
 			Mode: IntToPtr(0744),
 		},
 	})
+
+	subUID := 100000
+	subUIDs := 1000000
+
+	etcSubUID := fmt.Sprintf(`%s:%d:%d`, usrName, subUID, subUIDs)
 
 	// Set up /etc/subuid and /etc/subgid
 	for _, sub := range []string{"/etc/subuid", "/etc/subgid"} {
@@ -163,7 +160,7 @@ func getFiles(usrName string, uid int, rootful bool, vmtype define.VMType, _ boo
 	files = append(files, ignition.File{
 		Node: ignition.Node{
 			Group: GetNodeGrp(DefaultIgnitionUserName),
-			Path:  "/etc/containers/podman-machine",
+			Path:  PodmanMachine,
 			User:  GetNodeUsr(DefaultIgnitionUserName),
 		},
 		FileEmbedded1: ignition.FileEmbedded1{
@@ -175,14 +172,20 @@ func getFiles(usrName string, uid int, rootful bool, vmtype define.VMType, _ boo
 		},
 	})
 
+	virtioRCFiles := ign.generateMountRC()
+	virtioMountShell := ign.getVirtIOMountsInfo()
+
+	files = append(files, virtioRCFiles...)
+	files = append(files, virtioMountShell...)
+
 	return files
 }
 
 func (ign *DynamicIgnitionV2) getVirtIOMountsInfo() []ignition.File {
 	virtioFsCfg := make([]ignition.File, 0)
 
+	// all mount commands
 	mountCommands := []string{}
-
 	for _, vol := range ign.MachineConfigs.Mounts {
 		if vol.Type != "virtiofs" {
 			continue
@@ -191,13 +194,12 @@ func (ign *DynamicIgnitionV2) getVirtIOMountsInfo() []ignition.File {
 		c1 := fmt.Sprintf("mount -o rw -t virtiofs %s %s;\n", vol.Tag, vol.Target)
 		mountCommands = append(mountCommands, c0, c1)
 	}
-
 	mountCommandsStr := strings.Join(mountCommands, "\n")
 
 	virtioFsCfg = append(virtioFsCfg, ignition.File{
 		Node: ignition.Node{
 			Group: GetNodeGrp(DefaultIgnitionUserName),
-			Path:  "/" + DefaultIgnitionUserName + "/.config/mount.sh",
+			Path:  GenerateScriptDir + "/mount_virtiofs.sh", // When change this, change the /usr/ignition_bin/runner.sh as well remembered !
 			User:  GetNodeUsr(DefaultIgnitionUserName),
 		},
 
@@ -213,14 +215,17 @@ func (ign *DynamicIgnitionV2) getVirtIOMountsInfo() []ignition.File {
 	return virtioFsCfg
 }
 
-func getLinks(usrName string) []ignition.Link {
-	return []ignition.Link{
+func (ign *DynamicIgnitionV2) getLinks(usrName string) []ignition.Link {
+
+	links := make([]ignition.Link, 0)
+
+	links = []ignition.Link{
 		{
 			Node: ignition.Node{
-				Group:     GetNodeGrp("root"),
+				Group:     GetNodeGrp(DefaultIgnitionUserName),
 				Path:      "/usr/local/bin/docker",
 				Overwrite: BoolToPtr(true),
-				User:      GetNodeUsr("root"),
+				User:      GetNodeUsr(DefaultIgnitionUserName),
 			},
 			LinkEmbedded1: ignition.LinkEmbedded1{
 				Hard:   BoolToPtr(false),
@@ -228,8 +233,27 @@ func getLinks(usrName string) []ignition.Link {
 			},
 		},
 	}
+
+	for _, vol := range ign.MachineConfigs.Mounts {
+		source_file := filepath.Join(GenerateOpenRcDir, "init.d", vol.Tag)
+		target_file := filepath.Join(GenerateOpenRcDir, "runlevel", "default", vol.Tag)
+		links = append(links, ignition.Link{
+			Node: ignition.Node{
+				//Group: GetNodeGrp(DefaultIgnitionUserName),
+				//User:  GetNodeUsr(DefaultIgnitionUserName),
+				Path: (source_file),
+			},
+			LinkEmbedded1: ignition.LinkEmbedded1{
+				Hard:   BoolToPtr(false),
+				Target: StrToPtr(target_file),
+			},
+		})
+	}
+
+	return links
 }
 
+// :(
 func (ign *DynamicIgnitionV2) getAllMounts() []ignition.Filesystem {
 	fs := make([]ignition.Filesystem, 0)
 
@@ -259,16 +283,11 @@ func (ign *DynamicIgnitionV2) GenerateIgnitionConfig() error {
 		Users: ign.getUsers(),
 	}
 
-	virtioFsInfo := ign.getVirtIOMountsInfo()
-
 	ignStorage := ignition.Storage{
 		Filesystems: ign.getAllMounts(),
-		Directories: getDirs(ign.Name),
-		Files: append(
-			getFiles(ign.Name, ign.UID, ign.Rootful, ign.VMType, ign.NetRecover),
-			virtioFsInfo...,
-		),
-		Links: getLinks(ign.Name),
+		Directories: ign.getDirs(ign.Name),
+		Files:       ign.getFiles(ign.Name, ign.UID, ign.VMType),
+		Links:       ign.getLinks(ign.Name),
 	}
 
 	if len(ign.TimeZone) > 0 {
@@ -334,4 +353,53 @@ func (i *IgnitionBuilder) BuildWithIgnitionFile(ignPath string) error {
 func (i *IgnitionBuilder) Build() error {
 	logrus.Infof("writing ignition file to %q", i.dynamicIgnition.WritePath)
 	return i.dynamicIgnition.Write()
+}
+
+var (
+	virtioFsMountRc *bytes.Buffer
+)
+
+func (ign *DynamicIgnitionV2) generateMountRC() []ignition.File {
+
+	virtioFsCfg := make([]ignition.File, 0)
+
+	virtioFsMountRc = new(bytes.Buffer)
+	for _, vol := range ign.MachineConfigs.Mounts {
+		if vol.Type != "virtiofs" {
+			continue
+		}
+		sourceDev := vol.Tag
+		targetPath := vol.Target
+		fsType := vol.Type
+
+		data := struct {
+			FsType string
+			Source string
+			Target string
+		}{
+			FsType: fsType,
+			Source: sourceDev,
+			Target: targetPath,
+		}
+		t := template.Must(template.New("VirtioFsMountRcFile").Parse(MountOpenrcTemplate))
+		t.Execute(virtioFsMountRc, data)
+
+		virtioFsCfg = append(virtioFsCfg, ignition.File{
+			Node: ignition.Node{
+				Group: GetNodeGrp(DefaultIgnitionUserName),
+				User:  GetNodeUsr(DefaultIgnitionUserName),
+				Path:  filepath.Join(GenerateOpenRcDir, vol.Tag),
+			},
+
+			FileEmbedded1: ignition.FileEmbedded1{
+				Append: nil,
+				Contents: ignition.Resource{
+					Source: EncodeDataURLPtr(virtioFsMountRc.String()),
+				},
+				Mode: IntToPtr(0644),
+			},
+		})
+	}
+
+	return virtioFsCfg
 }

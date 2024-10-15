@@ -9,6 +9,7 @@ import (
 	"bauklotze/pkg/machine/ignition"
 	"bauklotze/pkg/machine/sockets"
 	"bauklotze/pkg/machine/vmconfigs"
+	"bauklotze/pkg/system"
 	"context"
 	"errors"
 	"fmt"
@@ -129,7 +130,7 @@ func StartGenericAppleVM(mc *vmconfigs.MachineConfig, cmdBinary string, bootload
 	if mc.ExternalDisk.GetPath() != "" {
 		if err = fileutils.Exists(mc.ExternalDisk.GetPath()); err != nil {
 			logrus.Warnf("external disk does not exist: %s", mc.ExternalDisk.GetPath())
-			if err = CreateAndResizeDisk(mc.ExternalDisk.GetPath(), 500); err != nil {
+			if err = system.CreateAndResizeDisk(mc.ExternalDisk.GetPath(), 500); err != nil {
 				return nil, nil, err
 			}
 		}
@@ -195,52 +196,23 @@ func StartGenericAppleVM(mc *vmconfigs.MachineConfig, cmdBinary string, bootload
 		return nil, nil, err
 	}
 
+	sshpub := mc.SSH.IdentityPath + ".pub"
 	ignBuilder := ignition.NewIgnitionBuilder(ignition.DynamicIgnitionV2{
 		Name:           define.DefaultUserInGuest,
-		Key:            readFileContent(mc.SSH.IdentityPath + ".pub"),
+		Key:            readFileContent(sshpub),
 		TimeZone:       "local", // Auto detect timezone from locales
 		VMType:         define.LibKrun,
 		VMName:         define.DefaultMachineName,
 		WritePath:      ignFile.GetPath(),
 		Rootful:        true,
 		MachineConfigs: mc,
+		UID:            0,
 	})
 
 	err = ignBuilder.GenerateIgnitionConfig()
 	if err != nil {
 		return nil, nil, err
 	}
-
-	//	const hyperVVsockNMConnection = `
-	//[connection]
-	//id=vsock0
-	//type=tun
-	//interface-name=vsock0
-	//
-	//[tun]
-	//mode=2
-	//
-	//[802-3-ethernet]
-	//cloned-mac-address=5A:94:EF:E4:0C:EE
-	//
-	//[ipv4]
-	//method=auto
-	//
-	//[proxy]
-	//`
-	//
-	//	ignBuilder.WithFile(types.File{
-	//		Node: types.Node{
-	//			Path: "/etc/NetworkManager/system-connections/vsock0.nmconnection",
-	//		},
-	//		FileEmbedded1: types.FileEmbedded1{
-	//			Append: nil,
-	//			Contents: types.Resource{
-	//				Source: ignition.EncodeDataURLPtr(hyperVVsockNMConnection),
-	//			},
-	//			Mode: ignition.IntToPtr(0600),
-	//		},
-	//	})
 
 	err = ignBuilder.Build()
 	if err != nil {
@@ -258,6 +230,7 @@ func StartGenericAppleVM(mc *vmconfigs.MachineConfig, cmdBinary string, bootload
 	}
 
 	logrus.Infof("Serving the ignition file over the socket: %s", ignSocket.GetPath())
+
 	go func() {
 		if err := ignition.ServeIgnitionOverSockV2(ignSocket, mc); err != nil {
 			logrus.Errorf("failed to serve ignition file: %v", err)

@@ -14,10 +14,6 @@ import (
 	"time"
 )
 
-const (
-	defaultGuestSock = "/run/user/%d/podman/podman.sock"
-)
-
 var (
 	ErrNotRunning      = errors.New("machine not in running state")
 	ErrSSHNotListening = errors.New("machine is not listening on ssh port")

@@ -11,11 +11,13 @@ type VMType int64
 const (
 	WSLVirt VMType = iota
 	LibKrun
+	AppleHvVirt
 	UnknownVirt
 )
 const (
 	wsl     = "wsl"
 	libkrun = "libkrun"
+	appleHV = "applehv"
 )
 
 func (v VMType) String() string {
@@ -24,47 +26,11 @@ func (v VMType) String() string {
 		return wsl
 	case LibKrun:
 		return libkrun
+	case AppleHvVirt:
+		return appleHV
 	default:
 	}
 	return wsl
-}
-
-type ImageFormat int64
-
-const (
-	Vhdx ImageFormat = iota
-	Tar
-	Raw
-)
-
-func (imf ImageFormat) Kind() string {
-	switch imf {
-	case Vhdx:
-		return "vhdx"
-	case Tar:
-		return "tar" //  wsl2_rootfs.tar
-	case Raw:
-		return "raw"
-	}
-	return "raw"
-}
-
-func (imf ImageFormat) KindWithCompression() string {
-	// Tar uses xz; all others use zstd
-	if imf == Tar {
-		return "tar.xz" // wsl2_rootfs.tar.xz
-	}
-	return fmt.Sprintf("%s.zst", imf.Kind()) // wsl2_rootfs.tar.zst
-}
-
-func (v VMType) ImageFormat() ImageFormat {
-	switch v {
-	case WSLVirt:
-		return Tar
-	case LibKrun:
-		return Raw
-	}
-	return Raw
 }
 
 func ParseVMType(input string, emptyFallback VMType) (VMType, error) {
@@ -73,6 +39,8 @@ func ParseVMType(input string, emptyFallback VMType) (VMType, error) {
 		return WSLVirt, nil
 	case libkrun:
 		return LibKrun, nil
+	case appleHV:
+		return AppleHvVirt, nil
 	case "":
 		return emptyFallback, nil
 	default:

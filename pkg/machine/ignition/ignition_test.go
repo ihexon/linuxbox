@@ -10,7 +10,32 @@ import (
 )
 
 func TestGetDirs(t *testing.T) {
-	dirs := getDirs("root")
+	ignBuilder := NewIgnitionBuilder(DynamicIgnitionV2{
+		Name:     DefaultIgnitionUserName,
+		Key:      "keykeykeykeykeykeykeykeykeykeykeykeykeykeykeykeykeykeykeykey",
+		TimeZone: "local", // Auto detect timezone from locales
+		VMType:   define.LibKrun,
+		VMName:   define.DefaultMachineName,
+		MachineConfigs: &vmconfigs.MachineConfig{
+			Mounts: []*vmconfigs.Mount{
+				{
+					Type:   "virtiofs",
+					Tag:    "virtio-zzh",
+					Source: "/zzh",
+					Target: "/mnt/zzh",
+				}, {
+					Type:   "virtiofs",
+					Tag:    "virtio-zzh1",
+					Source: "/zzh1",
+					Target: "/mnt/zzh1",
+				},
+			},
+		},
+		WritePath: "/tmp/generateConfig.json",
+		Rootful:   true,
+	})
+
+	dirs := ignBuilder.dynamicIgnition.getDirs("root")
 	jsonDirs, err := json.MarshalIndent(dirs, " ", "   ")
 	if err != nil {
 		t.Fatalf("Failed to marshal dirs: %v", err)
@@ -38,7 +63,32 @@ func TestGetUser(t *testing.T) {
 }
 
 func TestGetFiles(t *testing.T) {
-	files := getFiles("root", 0, true, define.LibKrun, true)
+	ignBuilder := NewIgnitionBuilder(DynamicIgnitionV2{
+		Name:     DefaultIgnitionUserName,
+		Key:      "keykeykeykeykeykeykeykeykeykeykeykeykeykeykeykeykeykeykeykey",
+		TimeZone: "local", // Auto detect timezone from locales
+		VMType:   define.LibKrun,
+		VMName:   define.DefaultMachineName,
+		MachineConfigs: &vmconfigs.MachineConfig{
+			Mounts: []*vmconfigs.Mount{
+				{
+					Type:   "virtiofs",
+					Tag:    "virtio-zzh",
+					Source: "/zzh",
+					Target: "/mnt/zzh",
+				}, {
+					Type:   "virtiofs",
+					Tag:    "virtio-zzh1",
+					Source: "/zzh1",
+					Target: "/mnt/zzh1",
+				},
+			},
+		},
+		WritePath: "/tmp/generateConfig.json",
+		Rootful:   true,
+	})
+
+	files := ignBuilder.dynamicIgnition.getFiles("root", 0, define.LibKrun)
 	jsonDirs, err := json.MarshalIndent(files, " ", "   ")
 	if err != nil {
 		t.Fatalf("Failed to marshal dirs: %v", err)
@@ -47,7 +97,32 @@ func TestGetFiles(t *testing.T) {
 }
 
 func TestGetLinks(t *testing.T) {
-	links := getLinks("root")
+	ignBuilder := NewIgnitionBuilder(DynamicIgnitionV2{
+		Name:     DefaultIgnitionUserName,
+		Key:      "keykeykeykeykeykeykeykeykeykeykeykeykeykeykeykeykeykeykeykey",
+		TimeZone: "local", // Auto detect timezone from locales
+		VMType:   define.LibKrun,
+		VMName:   define.DefaultMachineName,
+		MachineConfigs: &vmconfigs.MachineConfig{
+			Mounts: []*vmconfigs.Mount{
+				{
+					Type:   "virtiofs",
+					Tag:    "virtio-zzh",
+					Source: "/zzh",
+					Target: "/mnt/zzh",
+				}, {
+					Type:   "virtiofs",
+					Tag:    "virtio-zzh1",
+					Source: "/zzh1",
+					Target: "/mnt/zzh1",
+				},
+			},
+		},
+		WritePath: "/tmp/generateConfig.json",
+		Rootful:   true,
+	})
+
+	links := ignBuilder.dynamicIgnition.getLinks("root")
 	jsonDirs, err := json.MarshalIndent(links, " ", "   ")
 	if err != nil {
 		t.Fatalf("Failed to marshal dirs: %v", err)
