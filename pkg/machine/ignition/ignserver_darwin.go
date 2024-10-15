@@ -5,6 +5,7 @@ import (
 	"bauklotze/pkg/machine/vmconfigs"
 	"net/url"
 	"os"
+	"strings"
 )
 
 // ServeIgnitionOverSockV2 is a block function, design to be running in go routine
@@ -31,4 +32,12 @@ func ServeIgnitionOverSockV2(cfg *define.VMFile, mc *vmconfigs.MachineConfig) er
 	}
 
 	return ServeIgnitionOverSocketCommon(listenAddr, file)
+}
+
+func getLocalTimeZone() (string, error) {
+	tzPath, err := os.Readlink("/etc/localtime")
+	if err != nil {
+		return "", err
+	}
+	return strings.TrimPrefix(tzPath, "/var/db/timezone/zoneinfo"), nil
 }

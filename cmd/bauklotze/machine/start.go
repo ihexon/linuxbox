@@ -6,8 +6,8 @@ import (
 	"bauklotze/pkg/machine/define"
 	"bauklotze/pkg/machine/env"
 	"bauklotze/pkg/machine/shim"
-	"bauklotze/pkg/machine/system"
 	"bauklotze/pkg/machine/vmconfigs"
+	"bauklotze/pkg/machine/watcher"
 	"bauklotze/pkg/network"
 	"context"
 	"github.com/sirupsen/logrus"
@@ -35,10 +35,14 @@ func init() {
 		Command: startCmd,
 		Parent:  machineCmd,
 	})
+
 	flags := startCmd.Flags()
 
 	twinPid := ppid
 	flags.Int32Var(&startOpts.TwinPid, twinPid, -1, "the pid of PPID")
+
+	VolumeFlagName := volume
+	flags.StringArrayVarP(&startOpts.Volumes, VolumeFlagName, "v", nil, "Volumes to mount, source:target")
 
 	reportUrl := reportUrl
 	flags.StringVar(&startOpts.ReportUrl, reportUrl, "", "Report events to the url")
@@ -88,8 +92,8 @@ func start(cmd *cobra.Command, args []string) error {
 
 	mypid := os.Getpid()
 	startOpts.TwinPid = int32(mypid)
-	system.WaitProcessAndStopMachine(g, ctx, startOpts.TwinPid, int32(machine.GlobalPIDs.GetKrunkitPID()), int32(machine.GlobalPIDs.GetGvproxyPID()))
-	system.WaitApiServerAndStopMachine(g, ctx, dirs)
+	watcher.WaitProcessAndStopMachine(g, ctx, startOpts.TwinPid, int32(machine.GlobalPIDs.GetKrunkitPID()), int32(machine.GlobalPIDs.GetGvproxyPID()))
+	watcher.WaitApiServerAndStopMachine(g, ctx, dirs)
 
 	if err := g.Wait(); err != nil {
 		logrus.Errorf("%s\n", err.Error())

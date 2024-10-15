@@ -1,10 +1,11 @@
 //go:build darwin && (arm64 || amd64)
 
-package system
+package watcher
 
 import (
 	"bauklotze/pkg/api/server"
 	"bauklotze/pkg/machine/define"
+	"bauklotze/pkg/machine/system"
 	"context"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/sync/errgroup"
@@ -27,7 +28,7 @@ func watchProcess(ctx context.Context, ovmPid, krunPid, gvPid int32) error {
 			return context.Cause(ctx)
 		default:
 		}
-		if isRunning, err := IsProcesSAlive(pids); !isRunning {
+		if isRunning, err := system.IsProcesSAlive(pids); !isRunning {
 			return err
 		}
 		time.Sleep(400 * time.Millisecond)
@@ -42,7 +43,7 @@ func WaitApiServerAndStopMachine(g *errgroup.Group, ctx context.Context, dirs *d
 		apiURL, _ := url.Parse(listenPath)
 		return startRestApi(ctx, apiURL)
 	})
-	logrus.Infof("Starting API Server in %s\n,", listenPath)
+	logrus.Infof("Starting API Server in %s\n", listenPath)
 }
 
 func startRestApi(ctx context.Context, apiURL *url.URL) error {

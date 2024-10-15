@@ -2,6 +2,7 @@ package ignition
 
 import (
 	"bauklotze/pkg/machine/define"
+	"bauklotze/pkg/machine/vmconfigs"
 	"encoding/json"
 	"fmt"
 	ignition "github.com/coreos/ignition/v2/config/v3_4/types"
@@ -9,20 +10,22 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 type DynamicIgnitionV2 struct {
-	Name       string // vm user, default is root
-	Key        string // sshkey
-	TimeZone   string
-	UID        int
-	VMName     string
-	VMType     define.VMType
-	WritePath  string
-	Cfg        ignition.Config
-	Rootful    bool
-	NetRecover bool
-	Rosetta    bool
+	Name           string // vm user, default is root
+	Key            string // sshkey
+	TimeZone       string
+	UID            int
+	VMName         string
+	VMType         define.VMType
+	MachineConfigs *vmconfigs.MachineConfig
+	WritePath      string
+	Cfg            ignition.Config
+	Rootful        bool
+	NetRecover     bool
+	Rosetta        bool
 }
 
 func (ign *DynamicIgnitionV2) Write() error {
@@ -175,6 +178,41 @@ func getFiles(usrName string, uid int, rootful bool, vmtype define.VMType, _ boo
 	return files
 }
 
+func (ign *DynamicIgnitionV2) getVirtIOMountsInfo() []ignition.File {
+	virtioFsCfg := make([]ignition.File, 0)
+
+	mountCommands := []string{}
+
+	for _, vol := range ign.MachineConfigs.Mounts {
+		if vol.Type != "virtiofs" {
+			continue
+		}
+		c0 := fmt.Sprintf("mkdir -p %s;\n", vol.Target)
+		c1 := fmt.Sprintf("mount -o rw -t virtiofs %s %s;\n", vol.Tag, vol.Target)
+		mountCommands = append(mountCommands, c0, c1)
+	}
+
+	mountCommandsStr := strings.Join(mountCommands, "\n")
+
+	virtioFsCfg = append(virtioFsCfg, ignition.File{
+		Node: ignition.Node{
+			Group: GetNodeGrp(DefaultIgnitionUserName),
+			Path:  "/" + DefaultIgnitionUserName + "/.config/mount.sh",
+			User:  GetNodeUsr(DefaultIgnitionUserName),
+		},
+
+		FileEmbedded1: ignition.FileEmbedded1{
+			Append: nil,
+			Contents: ignition.Resource{
+				Source: EncodeDataURLPtr(fmt.Sprintf("%s \n", mountCommandsStr)),
+			},
+			Mode: IntToPtr(0644),
+		},
+	})
+
+	return virtioFsCfg
+}
+
 func getLinks(usrName string) []ignition.Link {
 	return []ignition.Link{
 		{
@@ -190,6 +228,12 @@ func getLinks(usrName string) []ignition.Link {
 			},
 		},
 	}
+}
+
+func (ign *DynamicIgnitionV2) getAllMounts() []ignition.Filesystem {
+	fs := make([]ignition.Filesystem, 0)
+
+	return fs
 }
 
 type IgnitionBuilder struct {
@@ -215,10 +259,16 @@ func (ign *DynamicIgnitionV2) GenerateIgnitionConfig() error {
 		Users: ign.getUsers(),
 	}
 
+	virtioFsInfo := ign.getVirtIOMountsInfo()
+
 	ignStorage := ignition.Storage{
+		Filesystems: ign.getAllMounts(),
 		Directories: getDirs(ign.Name),
-		Files:       getFiles(ign.Name, ign.UID, ign.Rootful, ign.VMType, ign.NetRecover),
-		Links:       getLinks(ign.Name),
+		Files: append(
+			getFiles(ign.Name, ign.UID, ign.Rootful, ign.VMType, ign.NetRecover),
+			virtioFsInfo...,
+		),
+		Links: getLinks(ign.Name),
 	}
 
 	if len(ign.TimeZone) > 0 {

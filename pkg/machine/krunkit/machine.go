@@ -196,19 +196,51 @@ func StartGenericAppleVM(mc *vmconfigs.MachineConfig, cmdBinary string, bootload
 	}
 
 	ignBuilder := ignition.NewIgnitionBuilder(ignition.DynamicIgnitionV2{
-		Name:      define.DefaultUserInGuest,
-		Key:       readFileContent(mc.SSH.IdentityPath + ".pub"),
-		TimeZone:  "local", // Auto detect timezone from locales
-		VMType:    define.LibKrun,
-		VMName:    define.DefaultMachineName,
-		WritePath: ignFile.GetPath(),
-		Rootful:   true,
+		Name:           define.DefaultUserInGuest,
+		Key:            readFileContent(mc.SSH.IdentityPath + ".pub"),
+		TimeZone:       "local", // Auto detect timezone from locales
+		VMType:         define.LibKrun,
+		VMName:         define.DefaultMachineName,
+		WritePath:      ignFile.GetPath(),
+		Rootful:        true,
+		MachineConfigs: mc,
 	})
 
 	err = ignBuilder.GenerateIgnitionConfig()
 	if err != nil {
 		return nil, nil, err
 	}
+
+	//	const hyperVVsockNMConnection = `
+	//[connection]
+	//id=vsock0
+	//type=tun
+	//interface-name=vsock0
+	//
+	//[tun]
+	//mode=2
+	//
+	//[802-3-ethernet]
+	//cloned-mac-address=5A:94:EF:E4:0C:EE
+	//
+	//[ipv4]
+	//method=auto
+	//
+	//[proxy]
+	//`
+	//
+	//	ignBuilder.WithFile(types.File{
+	//		Node: types.Node{
+	//			Path: "/etc/NetworkManager/system-connections/vsock0.nmconnection",
+	//		},
+	//		FileEmbedded1: types.FileEmbedded1{
+	//			Append: nil,
+	//			Contents: types.Resource{
+	//				Source: ignition.EncodeDataURLPtr(hyperVVsockNMConnection),
+	//			},
+	//			Mode: ignition.IntToPtr(0600),
+	//		},
+	//	})
 
 	err = ignBuilder.Build()
 	if err != nil {

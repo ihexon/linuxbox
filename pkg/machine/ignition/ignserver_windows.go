@@ -26,3 +26,7 @@ func ServeIgnitionOverSockV2(cfg *define.VMFile, mc *vmconfigs.MachineConfig) er
 
 	return ServeIgnitionOverSocketCommon(addr, file)
 }
+
+func getLocalTimeZone() (string, error) {
+	return "", nil
+}

@@ -16,7 +16,7 @@ import (
 
 // ServeIgnitionOverSocketCommon Is A block function, design to be running in go routine
 func ServeIgnitionOverSocketCommon(url *url.URL, file fs.File) error {
-	listener, err := net.Listen(url.Scheme, url.Host)
+	listener, err := net.Listen(url.Scheme, url.Path)
 	if err != nil {
 		return err
 	}
@@ -52,7 +52,7 @@ func ServeIgnitionOverSocketCommon(url *url.URL, file fs.File) error {
 		errChan <- fmt.Errorf("fetch %s and stop", cfgAbsPath)
 	})
 
-	logrus.Infof("Ignition listening on: %s", url.Host)
+	logrus.Infof("Ignition listening on: %s://%s/%s", url.Scheme, url.Host, url.Path)
 
 	server := &http.Server{
 		Handler: mux,

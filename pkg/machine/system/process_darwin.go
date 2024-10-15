@@ -2,7 +2,10 @@
 
 package system
 
-import "github.com/shirou/gopsutil/v3/process"
+import (
+	"fmt"
+	"github.com/shirou/gopsutil/v3/process"
+)
 
 // IsProcessAliveV3 returns true if process with a given pid is running.
 

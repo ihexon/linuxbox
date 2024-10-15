@@ -2,6 +2,7 @@ package ignition
 
 import (
 	"bauklotze/pkg/machine/define"
+	"bauklotze/pkg/machine/vmconfigs"
 	"encoding/json"
 	"net/url"
 	"os"
@@ -56,11 +57,26 @@ func TestGetLinks(t *testing.T) {
 
 func TestDynamicIgnitionV2_GenerateIgnitionConfig(t *testing.T) {
 	ignBuilder := NewIgnitionBuilder(DynamicIgnitionV2{
-		Name:      DefaultIgnitionUserName,
-		Key:       "keykeykeykeykeykeykeykeykeykeykeykeykeykeykeykeykeykeykeykey",
-		TimeZone:  "local", // Auto detect timezone from locales
-		VMType:    define.LibKrun,
-		VMName:    define.DefaultMachineName,
+		Name:     DefaultIgnitionUserName,
+		Key:      "keykeykeykeykeykeykeykeykeykeykeykeykeykeykeykeykeykeykeykey",
+		TimeZone: "local", // Auto detect timezone from locales
+		VMType:   define.LibKrun,
+		VMName:   define.DefaultMachineName,
+		MachineConfigs: &vmconfigs.MachineConfig{
+			Mounts: []*vmconfigs.Mount{
+				{
+					Type:   "virtiofs",
+					Tag:    "virtio-zzh",
+					Source: "/zzh",
+					Target: "/mnt/zzh",
+				}, {
+					Type:   "virtiofs",
+					Tag:    "virtio-zzh1",
+					Source: "/zzh1",
+					Target: "/mnt/zzh1",
+				},
+			},
+		},
 		WritePath: "/tmp/generateConfig.json",
 		Rootful:   true,
 	})
