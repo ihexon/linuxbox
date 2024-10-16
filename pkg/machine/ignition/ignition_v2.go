@@ -11,7 +11,6 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
-	"strings"
 	"text/template"
 )
 
@@ -21,6 +20,9 @@ const (
 	GenerateScriptDir       = "/root/script_generated"
 	GenerateOpenRcDir       = GenerateScriptDir + "/etc/init.d"
 	PodmanMachine           = "/etc/containers/podman-machine"
+	SystemEtcDir            = "/etc"
+	SystemOpenRcDir         = "/etc/init.d/"
+	SystemDefaultRunlevels  = "/etc/runlevels/default"
 )
 
 type DynamicIgnitionV2 struct {
@@ -173,46 +175,9 @@ func (ign *DynamicIgnitionV2) getFiles(usrName string, uid int, vmtype define.VM
 	})
 
 	virtioRCFiles := ign.generateMountRC()
-	virtioMountShell := ign.getVirtIOMountsInfo()
-
 	files = append(files, virtioRCFiles...)
-	files = append(files, virtioMountShell...)
 
 	return files
-}
-
-func (ign *DynamicIgnitionV2) getVirtIOMountsInfo() []ignition.File {
-	virtioFsCfg := make([]ignition.File, 0)
-
-	// all mount commands
-	mountCommands := []string{}
-	for _, vol := range ign.MachineConfigs.Mounts {
-		if vol.Type != "virtiofs" {
-			continue
-		}
-		c0 := fmt.Sprintf("mkdir -p %s;\n", vol.Target)
-		c1 := fmt.Sprintf("mount -o rw -t virtiofs %s %s;\n", vol.Tag, vol.Target)
-		mountCommands = append(mountCommands, c0, c1)
-	}
-	mountCommandsStr := strings.Join(mountCommands, "\n")
-
-	virtioFsCfg = append(virtioFsCfg, ignition.File{
-		Node: ignition.Node{
-			Group: GetNodeGrp(DefaultIgnitionUserName),
-			Path:  GenerateScriptDir + "/mount_virtiofs.sh", // When change this, change the /usr/ignition_bin/runner.sh as well remembered !
-			User:  GetNodeUsr(DefaultIgnitionUserName),
-		},
-
-		FileEmbedded1: ignition.FileEmbedded1{
-			Append: nil,
-			Contents: ignition.Resource{
-				Source: EncodeDataURLPtr(fmt.Sprintf("%s \n", mountCommandsStr)),
-			},
-			Mode: IntToPtr(0644),
-		},
-	})
-
-	return virtioFsCfg
 }
 
 func (ign *DynamicIgnitionV2) getLinks(usrName string) []ignition.Link {
@@ -234,9 +199,11 @@ func (ign *DynamicIgnitionV2) getLinks(usrName string) []ignition.Link {
 		},
 	}
 
+	openRCDefaultRunlevel := filepath.Join(GenerateScriptDir, "etc", "runlevels", "default")
+
 	for _, vol := range ign.MachineConfigs.Mounts {
-		source_file := filepath.Join(GenerateOpenRcDir, "init.d", vol.Tag)
-		target_file := filepath.Join(GenerateOpenRcDir, "runlevel", "default", vol.Tag)
+		source_file := filepath.Join(openRCDefaultRunlevel, vol.Tag)
+		target_file := filepath.Join(GenerateOpenRcDir, vol.Tag)
 		links = append(links, ignition.Link{
 			Node: ignition.Node{
 				//Group: GetNodeGrp(DefaultIgnitionUserName),
@@ -309,7 +276,7 @@ func (ign *DynamicIgnitionV2) GenerateIgnitionConfig() error {
 			Node: ignition.Node{
 				Group:     GetNodeGrp("root"),
 				Path:      "/etc/localtime",
-				Overwrite: BoolToPtr(false),
+				Overwrite: BoolToPtr(true),
 				User:      GetNodeUsr("root"),
 			},
 			LinkEmbedded1: ignition.LinkEmbedded1{
@@ -363,8 +330,8 @@ func (ign *DynamicIgnitionV2) generateMountRC() []ignition.File {
 
 	virtioFsCfg := make([]ignition.File, 0)
 
-	virtioFsMountRc = new(bytes.Buffer)
 	for _, vol := range ign.MachineConfigs.Mounts {
+		virtioFsMountRc = new(bytes.Buffer)
 		if vol.Type != "virtiofs" {
 			continue
 		}

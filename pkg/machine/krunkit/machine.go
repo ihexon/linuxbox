@@ -244,6 +244,8 @@ func StartGenericAppleVM(mc *vmconfigs.MachineConfig, cmdBinary string, bootload
 		return nil, nil, err
 	}
 
+	mc.KRunkitPid = int32(cmd.Process.Pid)
+
 	returnFunc := func() error {
 		processErrChan := make(chan error)
 		machine.GlobalPIDs.SetKrunkitPID(cmd.Process.Pid)

@@ -4,6 +4,7 @@ package hvhelper
 
 import (
 	"bauklotze/pkg/machine/define"
+	"bauklotze/pkg/machine/system"
 	"bytes"
 	"encoding/json"
 	"errors"
@@ -115,10 +116,18 @@ func ToMachineStatus(val string) (define.Status, error) {
 	return "", fmt.Errorf("unknown machine state: %s", val)
 }
 
-func (vf *Helper) Stop(force, wait bool) error {
+func (vf *Helper) Stop(gvproxypid, krunkitpid int32, force, wait bool) error {
 	state := rest.Stop
 	if force {
 		state = rest.HardStop
+
+		if gvproxypid != 0 && krunkitpid != 0 {
+			_ = system.KillProcess(int(gvproxypid))
+			_ = system.KillProcess(int(krunkitpid))
+		} else {
+			logrus.Error("Can not get gvproxy and krunkit pid")
+		}
+		return nil
 	}
 	if err := vf.stateChange(state); err != nil {
 		return err

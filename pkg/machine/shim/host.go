@@ -29,25 +29,6 @@ func VMExists(name string, vmstubbers []vmconfigs.VMProvider) (*vmconfigs.Machin
 	return nil, false, err
 }
 
-// VMExistsUsingProvider looks across given providers for a machine's existence. returns the actual config and found bool
-func VMExistsUsingProvider(name string, vmstubbers []vmconfigs.VMProvider) (*vmconfigs.MachineConfig, bool, error) {
-	// Check with the provider hypervisor
-	for _, vmstubber := range vmstubbers {
-		exists, err := vmstubber.Exists(name)
-		if err != nil {
-			return nil, false, err
-		}
-		if exists {
-			return nil, true, fmt.Errorf("vm %q already exists on hypervisor", name)
-		}
-	}
-	return nil, false, nil
-}
-
-func writeSSHPublicKeyToRootfs(p string) {
-	// print ssh keys
-}
-
 func Init(opts define.InitOptions, mp vmconfigs.VMProvider) error {
 	var (
 		imageExtension string

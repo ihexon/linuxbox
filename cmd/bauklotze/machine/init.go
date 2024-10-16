@@ -98,31 +98,44 @@ func initMachine(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	oldMc, exists, err := shim.VMExists(initOpts.Name, []vmconfigs.VMProvider{provider})
+	oldMc, _, err := shim.VMExists(initOpts.Name, []vmconfigs.VMProvider{provider})
 	if err != nil {
 		return err
 	}
 
-	if oldMc != nil || (initOpts.ImageVersion.ExternalDiskVersion != "" && initOpts.ImageVersion.ExternalDiskVersion != oldMc.ExternalDiskVersion) {
-		logrus.Infof("update external-disk %s", initOpts.Images.ExternalDisk)
-		err = system.CreateAndResizeDisk(initOpts.Images.ExternalDisk, strongunits.GiB(500))
-		if err != nil {
-			return err
-		}
+	var (
+		updateBootableImage bool = true
+		updateExternalDisk  bool = true
+	)
+
+	switch {
+	case oldMc == nil:
+		updateBootableImage = true
+		updateExternalDisk = true
+	case oldMc.ImageVersion != initOpts.ImageVersion.BootableImageVersion: // If old version != given version
+		updateBootableImage = true
+	default:
+		updateBootableImage = false
 	}
 
 	switch {
-	case initOpts.ImageVersion.BootableImageVersion == "always-update":
-		break
-	case oldMc == nil:
-		break
-	case oldMc.ImageVersion != initOpts.ImageVersion.BootableImageVersion:
-		break
-	case exists == true && oldMc.ImageVersion == initOpts.ImageVersion.BootableImageVersion:
-		return fmt.Errorf("machine %s already exists, new image-version %s == old image-version %s skip initialize... ", define.ErrVMAlreadyExists, initOpts.ImageVersion.BootableImageVersion, oldMc.ImageVersion)
-	case exists == true && oldMc.ImageVersion != initOpts.ImageVersion.BootableImageVersion:
-		break
-	default:
+	case oldMc != nil && oldMc.ExternalDiskVersion != initOpts.ImageVersion.ExternalDiskVersion: // If old version != given version
+		updateExternalDisk = true
+		if initOpts.Images.ExternalDisk != "" {
+			logrus.Infof("Recreate external disk: %s", initOpts.Images.ExternalDisk)
+			err = system.CreateAndResizeDisk(initOpts.Images.ExternalDisk, strongunits.GiB(100))
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	if !updateBootableImage {
+		return fmt.Errorf("Skip initialize virtualMachine.")
+	}
+
+	if !updateExternalDisk {
+		logrus.Infof("Skip initialize external disk.")
 	}
 
 	for idx, vol := range initOpts.Volumes {

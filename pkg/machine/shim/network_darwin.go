@@ -85,6 +85,7 @@ func startHostForwarder(mc *vmconfigs.MachineConfig, provider vmconfigs.VMProvid
 
 	machine.GlobalPIDs.SetGvproxyPID(c.Process.Pid)
 
+	mc.GVProxyPid = int32(c.Process.Pid)
 	mc.GvProxy.GvProxy.PidFile = cmd.PidFile
 	mc.GvProxy.GvProxy.LogFile = cmd.LogFile
 	mc.GvProxy.GvProxy.SSHPort = cmd.SSHPort

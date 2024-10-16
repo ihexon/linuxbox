@@ -78,5 +78,8 @@ func GetVMStat(w http.ResponseWriter, r *http.Request) {
 	s.VMName = name
 	s.CurrentStat = stat.String()
 
-	utils.WriteResponse(w, http.StatusOK, s.CurrentStat)
+	utils.WriteResponse(w, http.StatusOK, &vmStat{
+		VMName:      s.VMName,
+		CurrentStat: s.CurrentStat,
+	})
 }

@@ -49,7 +49,7 @@ func stop(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	if err := shim.Stop(mc, provider, dirs, false); err != nil {
+	if err := shim.Stop(mc, provider, dirs, true); err != nil {
 		return err
 	}
 

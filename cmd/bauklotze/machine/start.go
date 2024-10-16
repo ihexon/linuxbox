@@ -6,6 +6,7 @@ import (
 	"bauklotze/pkg/machine/define"
 	"bauklotze/pkg/machine/env"
 	"bauklotze/pkg/machine/shim"
+	"bauklotze/pkg/machine/system"
 	"bauklotze/pkg/machine/vmconfigs"
 	"bauklotze/pkg/machine/watcher"
 	"bauklotze/pkg/network"
@@ -90,14 +91,19 @@ func start(cmd *cobra.Command, args []string) error {
 	defer cancel()
 	g, ctx := errgroup.WithContext(ctx)
 
-	mypid := os.Getpid()
-	startOpts.TwinPid = int32(mypid)
+	if startOpts.TwinPid == -1 {
+		mypid := os.Getpid()
+		startOpts.TwinPid = int32(mypid)
+	}
+
 	watcher.WaitProcessAndStopMachine(g, ctx, startOpts.TwinPid, int32(machine.GlobalPIDs.GetKrunkitPID()), int32(machine.GlobalPIDs.GetGvproxyPID()))
 	watcher.WaitApiServerAndStopMachine(g, ctx, dirs)
 
 	if err := g.Wait(); err != nil {
 		logrus.Errorf("%s\n", err.Error())
-		return stop(cmd, args)
+		_ = system.KillProcess(machine.GlobalPIDs.GetGvproxyPID())
+		_ = system.KillProcess(machine.GlobalPIDs.GetKrunkitPID())
+		return err
 	}
 	return err
 }

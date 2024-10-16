@@ -120,6 +120,8 @@ type MachineConfig struct {
 	lock       *lockfile.LockFile
 	// Oomol Studio
 	EvtSockPath *define.VMFile `json:",omitempty"`
+	GVProxyPid  int32          `json:",omitempty"`
+	KRunkitPid  int32          `json:",omitempty"`
 }
 
 type GvproxyCommand struct {

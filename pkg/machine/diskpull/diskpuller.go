@@ -20,7 +20,7 @@ func GetDisk(userInputPath string, dirs *define.MachineDirs, imagePath *define.V
 	switch {
 	case userInputPath == "":
 
-		return fmt.Errorf("Please --image [IMAGE_PATH]")
+		return fmt.Errorf("Please --bootable-image [IMAGE_PATH]")
 	case strings.HasPrefix(userInputPath, "http"):
 		return fmt.Errorf("Do not support download image from http(s)://")
 	case strings.HasPrefix(userInputPath, "docker://"):
