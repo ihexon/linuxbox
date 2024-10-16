@@ -68,7 +68,7 @@ func WaitAndPingAPI(sock string) error {
 	if err != nil {
 		return err
 	}
-	res, err := connCtx.DoRequest("GET", "/_ping", nil)
+	res, err := connCtx.DoRequest("GET", "/_ping")
 	if err == nil {
 		defer res.Response.Body.Close()
 	}

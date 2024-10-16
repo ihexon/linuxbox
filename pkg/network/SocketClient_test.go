@@ -9,16 +9,16 @@ import (
 )
 
 func TestHttpClient(t *testing.T) {
-
-	connCtx, err := NewConnection("tcp://127.0.0.1:8080")
+	connCtx, err := NewConnection("tcp://192.168.1.210:8081")
 	connCtx.Headers = http.Header{
 		"Content-Type": []string{"application/json"},
 	}
 	connCtx.UrlParameter = url.Values{
 		"key": []string{"value"},
 	}
-	dataReader := strings.NewReader("Hello, World!")
-	response, err := connCtx.DoRequest("POST", "/1/2/4/5/name", dataReader)
+
+	connCtx.Body = strings.NewReader("Hello, World!")
+	response, err := connCtx.DoRequest("POST", "/1/2/4/5/name")
 	if err != nil {
 		t.Errorf(err.Error())
 	}

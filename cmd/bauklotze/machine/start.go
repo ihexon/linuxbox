@@ -79,7 +79,7 @@ func start(cmd *cobra.Command, args []string) error {
 			"message": []string{"ready"},
 		}
 		// ? Should I return error ?
-		_, err = connCtx.DoRequest("GET", "/notify", nil)
+		_, err = connCtx.DoRequest("GET", "/notify")
 		if err != nil {
 			logrus.Warnf("Failed to notify %q: %v\n", startOpts.ReportUrl, err)
 		}

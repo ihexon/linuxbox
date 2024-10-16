@@ -18,6 +18,7 @@ type Connection struct {
 	UnixClient   *http.Client
 	UrlParameter url.Values
 	Headers      http.Header
+	Body         io.Reader
 }
 
 var myConnection = &Connection{}
@@ -64,7 +65,7 @@ func NewConnection(uri string) (*Connection, error) {
 	return myConnection, nil
 }
 
-func (c *Connection) DoRequest(httpMethod, endpoint string, httpBody io.Reader) (*APIResponse, error) {
+func (c *Connection) DoRequest(httpMethod, endpoint string) (*APIResponse, error) {
 	var (
 		err      error
 		response *http.Response
@@ -89,7 +90,7 @@ func (c *Connection) DoRequest(httpMethod, endpoint string, httpBody io.Reader) 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	req, err := http.NewRequestWithContext(ctx, httpMethod, uri, httpBody)
+	req, err := http.NewRequestWithContext(ctx, httpMethod, uri, c.Body)
 	if err != nil {
 		return nil, err
 	}
