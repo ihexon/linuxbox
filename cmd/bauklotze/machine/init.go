@@ -3,6 +3,7 @@ package machine
 import (
 	"bauklotze/cmd/registry"
 	"bauklotze/pkg/machine/define"
+	"bauklotze/pkg/machine/env"
 	"bauklotze/pkg/machine/shim"
 	"bauklotze/pkg/machine/vmconfigs"
 	"bauklotze/pkg/system"
@@ -13,6 +14,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"os"
+	"path/filepath"
 )
 
 var (
@@ -93,6 +95,13 @@ func initMachine(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
+
+	d, err := env.DataDirPrefix() // ${BauklotzeHomePath}/data
+	if err != nil {
+		return fmt.Errorf("can not get Data dir %v", err)
+	}
+	d = filepath.Join(d, "external_disk", initOpts.Name, "data.raw") // ${BauklotzeHomePath}/data
+	initOpts.Images.ExternalDisk = d
 
 	var (
 		updateBootableImage bool = true
