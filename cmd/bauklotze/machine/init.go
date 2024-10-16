@@ -24,8 +24,8 @@ var (
 var (
 	initCmd = &cobra.Command{
 		Use:               "init [options] [NAME]",
-		Short:             "Reset and initialize a virtual machine",
-		Long:              "Reset and initialize a virtual machine",
+		Short:             "initialize a virtual machine",
+		Long:              "initialize a virtual machine",
 		PersistentPreRunE: machinePreRunE,
 		RunE:              initMachine,
 		Args:              cobra.MaximumNArgs(1), // max positional arguments
@@ -67,32 +67,23 @@ func init() {
 	VolumeFlagName := volume
 	flags.StringArrayVarP(&initOpts.Volumes, VolumeFlagName, "v", cfg.ContainersConfDefaultsRO.Machine.Volumes.Get(), "Volumes to mount, source:target")
 
-	ImageFlagName := bootImage
-	flags.StringVar(&initOpts.Images.BootableImage, ImageFlagName, cfg.ContainersConfDefaultsRO.Machine.Image, "Bootable image for machine")
+	BootImageName := bootImage
+	flags.StringVar(&initOpts.Images.BootableImage, BootImageName, cfg.ContainersConfDefaultsRO.Machine.Image, "Bootable image for machine")
 
-	ExternalDisk := externalDisk
-	flags.StringVar(&initOpts.Images.ExternalDisk, ExternalDisk, "", "External disk for machine")
+	BootImageVersion := bootVersion
+	flags.StringVar(&initOpts.ImageVersion.BootableImageVersion, BootImageVersion, cfg.ContainersConfDefaultsRO.Machine.Image, "Bootable image for machine")
 
 	sendEventToEndpoint := reportUrl
 	flags.StringVar(&initOpts.SendEvt, sendEventToEndpoint, "", "send events to somewhere")
 }
 
 func initMachine(cmd *cobra.Command, args []string) error {
-	file, version := SplitField(initOpts.Images.BootableImage)
-	initOpts.Images.BootableImage = file
-	initOpts.ImageVersion.BootableImageVersion = version
-
-	file, version = SplitField(initOpts.Images.ExternalDisk)
-	initOpts.Images.ExternalDisk = file
-	initOpts.ImageVersion.ExternalDiskVersion = version
-
 	initOpts.Name = defaultMachineName
 	if len(args) > 0 {
 		if len(args[0]) > maxMachineNameSize {
 			return fmt.Errorf("machine name %q must be %d characters or less", args[0], maxMachineNameSize)
 		}
 		initOpts.Name = args[0]
-
 		if !NameRegex.MatchString(initOpts.Name) {
 			return fmt.Errorf("invalid name %q: %w", initOpts.Name, RegexError)
 		}
@@ -109,18 +100,24 @@ func initMachine(cmd *cobra.Command, args []string) error {
 	)
 
 	switch {
-	case oldMc == nil:
+	case oldMc == nil: // If machine not initialize before
 		updateBootableImage = true
-		updateExternalDisk = true
-	case oldMc.ImageVersion != initOpts.ImageVersion.BootableImageVersion: // If old version != given version
-		updateBootableImage = true
-	default:
+	case oldMc.ImageVersion == initOpts.ImageVersion.BootableImageVersion: // If old version != given version
 		updateBootableImage = false
+	default:
+		updateBootableImage = true
 	}
 
 	switch {
-	case oldMc != nil && oldMc.ExternalDiskVersion != initOpts.ImageVersion.ExternalDiskVersion: // If old version != given version
+	case oldMc == nil: // If machine not initialize before
 		updateExternalDisk = true
+	case oldMc.ExternalDiskVersion == initOpts.ImageVersion.ExternalDiskVersion: // If old version != given version
+		updateExternalDisk = false
+	default:
+		updateExternalDisk = true
+	}
+
+	if updateExternalDisk {
 		if initOpts.Images.ExternalDisk != "" {
 			logrus.Infof("Recreate external disk: %s", initOpts.Images.ExternalDisk)
 			err = system.CreateAndResizeDisk(initOpts.Images.ExternalDisk, strongunits.GiB(100))
@@ -128,22 +125,22 @@ func initMachine(cmd *cobra.Command, args []string) error {
 				return err
 			}
 		}
+	} else {
+		logrus.Infof("Skip initialize external disk.")
 	}
 
 	if !updateBootableImage {
-		return fmt.Errorf("Skip initialize virtualMachine.")
-	}
-
-	if !updateExternalDisk {
-		logrus.Infof("Skip initialize external disk.")
+		return fmt.Errorf("skip initialize virtualMachine")
 	}
 
 	for idx, vol := range initOpts.Volumes {
 		initOpts.Volumes[idx] = os.ExpandEnv(vol)
 	}
 
+	// The allocate virtual memory can not bigger than physic virtual memory
 	if cmd.Flags().Changed("memory") {
 		if err := system.CheckMaxMemory(strongunits.MiB(initOpts.Memory)); err != nil {
+			logrus.Infof("Can not allocate the memory size %s", initOpts.Memory)
 			return err
 		}
 	}

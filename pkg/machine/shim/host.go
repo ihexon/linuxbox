@@ -81,7 +81,7 @@ func Init(opts define.InitOptions, mp vmconfigs.VMProvider) error {
 	}
 
 	imagePath, err = dirs.DataDir.AppendToNewVMFile(fmt.Sprintf("%s-%s%s", opts.Name, runtime.GOARCH, imageExtension), nil)
-	mc.ImagePath = imagePath
+	mc.ImagePath = imagePath // mc.ImagePath is the bootable copied from user provided image --boot <bootable.img.xz>
 
 	// Generate the mc.Mounts structs from the opts.Volumes
 	mc.Mounts = CmdLineVolumesToMounts(opts.Volumes, mp.MountType())
@@ -92,29 +92,36 @@ func Init(opts define.InitOptions, mp vmconfigs.VMProvider) error {
 	//	}
 	// for simplify code, but for now keep using Provider's GetDisk implementation
 	initCmdOpts := opts
-	logrus.Infof("a bootable Images provided: %s", initCmdOpts.Images.BootableImage)
+	logrus.Infof("A bootable Image provided: %s", initCmdOpts.Images.BootableImage)
+
+	// Extract the bootable image
 	if err = mp.GetDisk(initCmdOpts.Images.BootableImage, dirs, mc.ImagePath, mp.VMType(), mc.Name); err != nil {
 		return err
 	}
+	// If any error do clean
 	callbackFuncs.Add(mc.ImagePath.Delete)
 
 	if err = connection.AddSSHConnectionsToPodmanSocket(mc.SSH.Port, mc.SSH.IdentityPath, mc.Name, mc.SSH.RemoteUsername, opts); err != nil {
 		return err
 	}
-	// Clean config/connectionCfg/bugbox-connections.json
+	// if any error clean config/connectionCfg/bugbox-connections.json
 	cleanup := func() error {
-		// TODO, remove -root endstr
 		return connection.RemoveConnections(mc.Name + "-root")
 	}
 	callbackFuncs.Add(cleanup)
 
 	err = mp.CreateVM(createOpts, mc)
+
 	if err != nil {
 		return err
 	}
 
 	mc.EvtSockPath = &define.VMFile{Path: opts.SendEvt}
+
+	// Fill all the configure field and write into disk
+	mc.ImagePath = imagePath
 	mc.ImageVersion = opts.ImageVersion.BootableImageVersion
+
 	mc.ExternalDisk = &define.VMFile{Path: opts.Images.ExternalDisk}
 	mc.ExternalDiskVersion = opts.ImageVersion.ExternalDiskVersion
 
@@ -322,10 +329,8 @@ func Start(mc *vmconfigs.MachineConfig, mp vmconfigs.VMProvider, dirs *define.Ma
 	return nil
 }
 
-// Stop stops the machine as well as supporting binaries/processes
+// Stop stops the machine
 func Stop(mc *vmconfigs.MachineConfig, mp vmconfigs.VMProvider, dirs *define.MachineDirs, hardStop bool) error {
-	// state is checked here instead of earlier because stopping a stopped vm is not considered
-	// an error.  so putting in one place instead of sprinkling all over.
 	mc.Lock()
 	defer mc.Unlock()
 	if err := mc.Refresh(); err != nil {

@@ -23,7 +23,7 @@ type Destination struct {
 	Identity string `json:",omitempty" toml:"identity,omitempty"`
 }
 
-// TODO: We do not need this struct, we can use the vmconfig directly
+// TODO: We do not need this old struct, we can use the vmconfig directly
 type MachineConfig struct {
 	// Number of CPU's a machine is created with.
 	CPUs uint64 `toml:"cpus,omitempty,omitzero"`

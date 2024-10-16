@@ -116,12 +116,12 @@ func ToMachineStatus(val string) (define.Status, error) {
 	return "", fmt.Errorf("unknown machine state: %s", val)
 }
 
-func (vf *Helper) Stop(gvproxypid, krunkitpid int32, force, wait bool) error {
+func (vf *Helper) Stop(gvproxypid, krunkitpid int32, force bool) error {
 	state := rest.Stop
 	if force {
 		state = rest.HardStop
-
 		if gvproxypid != 0 && krunkitpid != 0 {
+
 			_ = system.KillProcess(int(gvproxypid))
 			_ = system.KillProcess(int(krunkitpid))
 		} else {
@@ -129,24 +129,23 @@ func (vf *Helper) Stop(gvproxypid, krunkitpid int32, force, wait bool) error {
 		}
 		return nil
 	}
+
 	if err := vf.stateChange(state); err != nil {
 		return err
 	}
-	if !wait {
-		return nil
-	}
+
 	waitDuration := time.Millisecond * 500
-	// Wait up to 90s then hard force off
-	for i := 0; i < 180; i++ {
+	for i := 0; i < 10; i++ {
 		_, err := vf.getRawState()
 		if err != nil || errors.Is(err, unix.ECONNREFUSED) {
 			return nil
 		}
 		time.Sleep(waitDuration)
 	}
-	logrus.Warn("Failed to gracefully stop machine, performing hard stop")
+	msg := "Failed to gracefully stop machine, performing hard stop, you must kill -9 krunkit for now"
+	logrus.Warn(msg)
 	// we waited long enough do a hard stop
-	return vf.stateChange(rest.HardStop)
+	return fmt.Errorf(msg)
 }
 
 func (vf *Helper) stateChange(newState rest.StateChange) error {

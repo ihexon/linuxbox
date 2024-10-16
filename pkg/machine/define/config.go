@@ -16,8 +16,8 @@ const (
 type CreateVMOpts struct {
 	Name          string
 	Dirs          *MachineDirs
-	ReExec        bool // re-exec as administrator
-	UserImageFile string
+	ReExec        bool   // re-exec as administrator
+	UserImageFile string // Only used in wsl2
 }
 
 type WSLConfig struct {

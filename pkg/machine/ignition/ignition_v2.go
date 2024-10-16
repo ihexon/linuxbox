@@ -25,6 +25,12 @@ const (
 	SystemDefaultRunlevels  = "/etc/runlevels/default"
 )
 
+// 无法理解的是为什么我 TM 不能自己写一个 golang listen vsock:1024，废的了多少时间。然后直接拉取一个 shell 脚本逐行执行那里报错通过 vsock 返回给 ovm 不好吗？
+// 完全无法理解为什么要通过 ignition 来做这个事情，ignition 也返回不了日志给 ovm，也没法做高级操作，比如 overlay 到 /
+// 我 TM 还废了一天时间去根据 v3_4/types 写了一个 配置生成器，还得写配套的 test case，并且生成错了也没法提前知道，因为我害的使用另外一个 cli 来
+// 验证 ignition.json 是不是合法的，这也就算了，就算通过验证器验证是合法的 json 配置，某些错误还得等到运行时才能返回错误。
+// 并且 golang 的模板的意义完全丧失了。
+
 type DynamicIgnitionV2 struct {
 	Name           string // vm user, default is root
 	Key            string // sshkey
@@ -174,8 +180,8 @@ func (ign *DynamicIgnitionV2) getFiles(usrName string, uid int, vmtype define.VM
 		},
 	})
 
-	virtioRCFiles := ign.generateMountRC()
-	files = append(files, virtioRCFiles...)
+	virtioMountRCFiles := ign.generateVirtioMountRC()
+	files = append(files, virtioMountRCFiles...)
 
 	return files
 }
@@ -326,8 +332,7 @@ var (
 	virtioFsMountRc *bytes.Buffer
 )
 
-func (ign *DynamicIgnitionV2) generateMountRC() []ignition.File {
-
+func (ign *DynamicIgnitionV2) generateVirtioMountRC() []ignition.File {
 	virtioFsCfg := make([]ignition.File, 0)
 
 	for _, vol := range ign.MachineConfigs.Mounts {

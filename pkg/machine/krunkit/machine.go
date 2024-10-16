@@ -95,8 +95,11 @@ var (
 
 // TODO, If there is an error,  it should return error
 func readFileContent(path string) string {
-	content, _ := os.ReadFile(path)
-
+	content, err := os.ReadFile(path)
+	if err != nil {
+		logrus.Errorf("failed to read sshkey.pub content: %s", path)
+		return ""
+	}
 	return string(content)
 }
 
@@ -112,7 +115,8 @@ func StartGenericAppleVM(mc *vmconfigs.MachineConfig, cmdBinary string, bootload
 		return nil, nil, err
 	}
 
-	// Wait on gvproxy to be running and aware
+	// Before `netDevice.SetUnixSocketPath(gvproxySocket.GetPath())`, we need to wait on gvproxy to be running and aware,
+	// There is a little chance that the gvproxy is not ready yet, so we need to wait for it.
 	if err := sockets.WaitForSocketWithBackoffs(gvProxyMaxBackoffAttempts, gvProxyWaitBackoff, gvproxySocket.GetPath(), "gvproxy"); err != nil {
 		return nil, nil, err
 	}
@@ -271,7 +275,7 @@ func StartGenericAppleVM(mc *vmconfigs.MachineConfig, cmdBinary string, bootload
 					return
 				}
 				// lets poll status every half second
-				time.Sleep(500 * time.Millisecond)
+				time.Sleep(300 * time.Millisecond)
 			}
 		}()
 
@@ -312,6 +316,6 @@ func SetProviderAttrs(mc *vmconfigs.MachineConfig, opts define.SetOptions, state
 	if state != define.Stopped {
 		return errors.New("unable to change settings unless vm is stopped")
 	}
-	// VFKit does not require saving memory, disk, or cpu
+	// We can do some disk operation here
 	return nil
 }

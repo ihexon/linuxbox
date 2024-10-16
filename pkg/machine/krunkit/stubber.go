@@ -24,12 +24,14 @@ func (l LibKrunStubber) State(mc *vmconfigs.MachineConfig) (define.Status, error
 }
 
 func (l LibKrunStubber) StopVM(mc *vmconfigs.MachineConfig, ifHardStop bool) error {
-
-	return mc.AppleKrunkitHypervisor.Krunkit.Stop(mc.KRunkitPid, mc.GVProxyPid, ifHardStop, true)
+	return mc.AppleKrunkitHypervisor.Krunkit.Stop(mc.KRunkitPid, mc.GVProxyPid, ifHardStop)
 }
 
 func (l LibKrunStubber) GetDisk(userInputPath string, dirs *define.MachineDirs, imagePath *define.VMFile, vmType define.VMType, name string) error {
-	return diskpull.GetDisk(userInputPath, dirs, imagePath, l.VMType(), name)
+	// mc.ImagePath is the bootable copied from user provided image --boot <bootable.img.xz>
+	// userInputPath is the bootable image user provided
+	// Extract  userInputPath --> imagePath
+	return diskpull.GetDisk(userInputPath, imagePath)
 }
 
 func (l LibKrunStubber) Exists(name string) (bool, error) {
@@ -37,7 +39,6 @@ func (l LibKrunStubber) Exists(name string) (bool, error) {
 	return false, nil
 }
 
-// TODO MountVolumesToVM do nothing cause we write guest:/etc/fstab
 func (l LibKrunStubber) MountVolumesToVM(mc *vmconfigs.MachineConfig, quiet bool) error {
 	return nil
 }
@@ -117,6 +118,7 @@ func (l LibKrunStubber) StartVM(mc *vmconfigs.MachineConfig) (func() error, func
 	return StartGenericAppleVM(mc, krunkitBinary, bl, mc.AppleKrunkitHypervisor.Krunkit.Endpoint)
 }
 
+// SetProviderAttrs sets the provider attributes for the machine, mostly used for set machine configure
 func (l LibKrunStubber) SetProviderAttrs(mc *vmconfigs.MachineConfig, opts define.SetOptions) error {
 	state, err := l.State(mc)
 	if err != nil {

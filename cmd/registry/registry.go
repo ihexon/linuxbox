@@ -32,7 +32,7 @@ func newPodmanConfig() {
 		os.Exit(1)
 	}
 
-	podmanOptions = defconfig.OvmConfig{ContainersConfRW: &defconfig.Config{}, ContainersConfDefaultsRO: defaultConfig}
+	podmanOptions = defconfig.OvmConfig{ContainersConfDefaultsRO: defaultConfig}
 }
 
 func OvmInitConfig() *defconfig.OvmConfig {

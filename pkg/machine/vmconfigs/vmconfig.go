@@ -101,7 +101,7 @@ type MachineConfig struct {
 	Dirs         *define.MachineDirs
 	HostUser     HostUser
 	Name         string
-	ImagePath    *define.VMFile // Bootable Image file
+	ImagePath    *define.VMFile // mc.ImagePath is the bootable copied from user provided image --boot <bootable.img.xz>
 	ImageVersion string         `json:",omitempty"` // Bootable Image for now
 
 	ExternalDisk        *define.VMFile // External Disk file
@@ -120,8 +120,14 @@ type MachineConfig struct {
 	lock       *lockfile.LockFile
 	// Oomol Studio
 	EvtSockPath *define.VMFile `json:",omitempty"`
+	PidManaged  ManagedPids    `json:",omitempty"`
 	GVProxyPid  int32          `json:",omitempty"`
 	KRunkitPid  int32          `json:",omitempty"`
+}
+
+type ManagedPids struct {
+	gvproxy int32
+	krunkit int32
 }
 
 type GvproxyCommand struct {

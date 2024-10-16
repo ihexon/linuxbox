@@ -6,25 +6,17 @@ import (
 	"bauklotze/pkg/machine/diskpull/internal/provider"
 	"bauklotze/pkg/machine/diskpull/stdpull"
 	"fmt"
-	"strings"
 )
 
 // GetDisk For now we don't need dirs *define.MachineDirs,vmType define.VMType, name string
-// But I prefer the function signature same as podman original, so the VMProvider same as podman.
-// We can just import any libraries from containers/* because we have the same function signature
-func GetDisk(userInputPath string, dirs *define.MachineDirs, imagePath *define.VMFile, vmType define.VMType, name string) error {
+func GetDisk(userInputPath string, imagePath *define.VMFile) error {
 	var (
 		err    error
 		mydisk provider.Disker
 	)
 	switch {
 	case userInputPath == "":
-
-		return fmt.Errorf("Please --bootable-image [IMAGE_PATH]")
-	case strings.HasPrefix(userInputPath, "http"):
-		return fmt.Errorf("Do not support download image from http(s)://")
-	case strings.HasPrefix(userInputPath, "docker://"):
-		return fmt.Errorf("Do not support download image from docker://")
+		return fmt.Errorf("please provide a bootable image using --boot [IMAGE_PATH]")
 	default:
 		mydisk, err = stdpull.NewStdDiskPull(userInputPath, imagePath)
 	}

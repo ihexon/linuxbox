@@ -6,7 +6,10 @@ import (
 )
 
 func CreateAndResizeDisk(diskPath string, newSize strongunits.GiB) error {
-	_ = os.RemoveAll(diskPath)
+	err := os.RemoveAll(diskPath)
+	if err != nil {
+		return err
+	}
 	file, err := os.Create(diskPath)
 	if err != nil {
 		return err

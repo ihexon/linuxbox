@@ -9,8 +9,7 @@ type VolumeMountType int
 
 const (
 	// 9pfs
-	NineP VolumeMountType = iota
-	VirtIOFS
+	VirtIOFS VolumeMountType = iota
 	RawDisk
 	Unknown
 )

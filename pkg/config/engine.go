@@ -6,6 +6,5 @@ import (
 
 type OvmConfig struct {
 	*pflag.FlagSet
-	ContainersConfRW         *Config
 	ContainersConfDefaultsRO *Config // The read-only! defaults configure
 }

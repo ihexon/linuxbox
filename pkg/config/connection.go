@@ -24,7 +24,6 @@ func connectionsConfigFile() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	// file is stored next to containers.conf
 	p := filepath.Join(path, "connectionCfg", connectionsFile)
 	return p, nil // ${BauklotzeHomePath}/config/connectionCfg/bugbox-connections.json
 }
