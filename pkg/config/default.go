@@ -16,7 +16,7 @@ var (
 	cachedConfig      *Config
 )
 
-func New(options *Options) (*Config, error) {
+func New(options *Options) *Config {
 	if options == nil {
 		options = &Options{}
 	} else if options.SetDefault {
@@ -26,29 +26,25 @@ func New(options *Options) (*Config, error) {
 	return newLocked(options)
 }
 
-func newLocked(options *Options) (*Config, error) {
+func newLocked(options *Options) *Config {
 	// Start with the built-in defaults
-	config, err := defaultConfig()
-	if err != nil {
-		return nil, err
-	}
+	config := defaultConfig()
 
 	if options.SetDefault {
 		cachedConfig = config
 		cachedConfigError = nil
 	}
-
-	return config, nil
+	return config
 }
 
-func Default() (*Config, error) {
+func Default() *Config {
 	cachedConfigMutex.Lock()
 	defer cachedConfigMutex.Unlock()
 	if cachedConfig != nil || cachedConfigError != nil {
-		return cachedConfig, cachedConfigError
+		return cachedConfig
 	}
-	cachedConfig, cachedConfigError = newLocked(&Options{SetDefault: true})
-	return cachedConfig, cachedConfigError
+	cachedConfig = newLocked(&Options{SetDefault: true})
+	return cachedConfig
 }
 
 const vmuser = "root"

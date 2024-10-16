@@ -43,10 +43,10 @@ type MachineConfig struct {
 	HelperBinariesDir Slice `toml:"helper_path,omitempty"`
 }
 
-func defaultConfig() (*Config, error) {
+func defaultConfig() *Config {
 	c := &Config{Machine: defaultMachineConfig()}
 	c.Machine.HelperBinariesDir.Set(defaultHelperBinariesDir)
-	return c, nil
+	return c
 }
 
 type Config struct {

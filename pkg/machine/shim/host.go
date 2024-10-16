@@ -8,6 +8,7 @@ import (
 	"bauklotze/pkg/machine/gvproxy"
 	"bauklotze/pkg/machine/lock"
 	"bauklotze/pkg/machine/vmconfigs"
+	"bauklotze/pkg/network"
 	"errors"
 	"fmt"
 	"github.com/containers/common/pkg/strongunits"
@@ -95,9 +96,16 @@ func Init(opts define.InitOptions, mp vmconfigs.VMProvider) error {
 	logrus.Infof("A bootable Image provided: %s", initCmdOpts.Images.BootableImage)
 
 	// Extract the bootable image
+	network.Reporter.SendEventToOvmJs("decompress", "running")
 	if err = mp.GetDisk(initCmdOpts.Images.BootableImage, dirs, mc.ImagePath, mp.VMType(), mc.Name); err != nil {
+		//network.SendEventToOvmJs(opts.SendEvt, "error", err.Error())
+		network.Reporter.SendEventToOvmJs("error", err.Error())
 		return err
+	} else {
+		network.Reporter.SendEventToOvmJs("decompress", "success")
+
 	}
+
 	// If any error do clean
 	callbackFuncs.Add(mc.ImagePath.Delete)
 
@@ -122,10 +130,18 @@ func Init(opts define.InitOptions, mp vmconfigs.VMProvider) error {
 	mc.ImagePath = imagePath
 	mc.ImageVersion = opts.ImageVersion.BootableImageVersion
 
-	mc.ExternalDisk = &define.VMFile{Path: opts.Images.ExternalDisk}
-	mc.ExternalDiskVersion = opts.ImageVersion.ExternalDiskVersion
+	mc.DataDisk = &define.VMFile{Path: opts.Images.DataDisk}
+	mc.DataDiskVersion = opts.ImageVersion.DataDiskVersion
 
-	return mc.Write()
+	network.Reporter.SendEventToOvmJs("writeConfig", "running")
+	err = mc.Write()
+	if err != nil {
+		network.Reporter.SendEventToOvmJs("error", err.Error())
+		return err
+	}
+	network.Reporter.SendEventToOvmJs("writeConfig", "success")
+
+	return nil
 }
 
 // getMCsOverProviders loads machineconfigs from a config dir derived from the "provider".  it returns only what is known on
@@ -321,6 +337,7 @@ func Start(mc *vmconfigs.MachineConfig, mp vmconfigs.VMProvider, dirs *define.Ma
 	}
 
 	machine.WaitAPIAndPrintInfo(
+		opts.ReportUrl,
 		forwardSocketPath,
 		forwardingState,
 		mc.Name,

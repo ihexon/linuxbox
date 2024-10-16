@@ -52,7 +52,6 @@ var (
 
 type StartOptions struct {
 	TwinPid   int32
-	SendEvt   string
 	Volumes   []string
 	ReportUrl string
 }
@@ -76,12 +75,12 @@ type InitOptions struct {
 
 type ImageVerStruct struct {
 	BootableImageVersion string
-	ExternalDiskVersion  string
+	DataDiskVersion      string
 }
 
 type ImagesStruct struct {
 	BootableImage string
-	ExternalDisk  string
+	DataDisk      string
 }
 
 type SetOptions struct {

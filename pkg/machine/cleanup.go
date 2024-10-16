@@ -1,6 +1,7 @@
 package machine
 
 import (
+	"bauklotze/pkg/notifyexit"
 	"github.com/sirupsen/logrus"
 	"os"
 	"os/signal"
@@ -50,7 +51,7 @@ func (c *CleanupCallback) CleanOnSignal() {
 		return
 	}
 	c.clean()
-	os.Exit(1)
+	notifyexit.NotifyExit(1)
 }
 
 func CleanupFuncs() CleanupCallback {

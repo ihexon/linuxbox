@@ -6,6 +6,7 @@ import (
 	"bauklotze/pkg/machine/env"
 	"bauklotze/pkg/machine/shim"
 	"bauklotze/pkg/machine/vmconfigs"
+	"bauklotze/pkg/network"
 	"bauklotze/pkg/system"
 	"errors"
 	"fmt"
@@ -30,8 +31,11 @@ var (
 		Long:              "initialize a virtual machine",
 		PersistentPreRunE: machinePreRunE,
 		RunE:              initMachine,
-		Args:              cobra.MaximumNArgs(1), // max positional arguments
-		Example:           `machine init`,
+		PersistentPostRunE: func(cmd *cobra.Command, args []string) error {
+			return nil
+		},
+		Args:    cobra.MaximumNArgs(1), // max positional arguments
+		Example: `machine init`,
 	}
 	initOpts = define.InitOptions{
 		Username: define.DefaultUserInGuest,
@@ -75,11 +79,15 @@ func init() {
 	BootImageVersion := bootVersion
 	flags.StringVar(&initOpts.ImageVersion.BootableImageVersion, BootImageVersion, cfg.ContainersConfDefaultsRO.Machine.Image, "Bootable image for machine")
 
-	sendEventToEndpoint := reportUrl
+	DataImageVersion := dataVersion
+	flags.StringVar(&initOpts.ImageVersion.DataDiskVersion, DataImageVersion, "", "Bootable image for machine")
+
+	sendEventToEndpoint := reportUrlFlag
 	flags.StringVar(&initOpts.SendEvt, sendEventToEndpoint, "", "send events to somewhere")
 }
 
 func initMachine(cmd *cobra.Command, args []string) error {
+	network.NewReporter(initOpts.SendEvt)
 	initOpts.Name = defaultMachineName
 	if len(args) > 0 {
 		if len(args[0]) > maxMachineNameSize {
@@ -101,7 +109,7 @@ func initMachine(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("can not get Data dir %v", err)
 	}
 	d = filepath.Join(d, "external_disk", initOpts.Name, "data.raw") // ${BauklotzeHomePath}/data
-	initOpts.Images.ExternalDisk = d
+	initOpts.Images.DataDisk = d
 
 	var (
 		updateBootableImage bool = true
@@ -120,16 +128,16 @@ func initMachine(cmd *cobra.Command, args []string) error {
 	switch {
 	case oldMc == nil: // If machine not initialize before
 		updateExternalDisk = true
-	case oldMc.ExternalDiskVersion == initOpts.ImageVersion.ExternalDiskVersion: // If old version != given version
+	case oldMc.DataDiskVersion == initOpts.ImageVersion.DataDiskVersion: // If old version != given version
 		updateExternalDisk = false
 	default:
 		updateExternalDisk = true
 	}
 
 	if updateExternalDisk {
-		if initOpts.Images.ExternalDisk != "" {
-			logrus.Infof("Recreate external disk: %s", initOpts.Images.ExternalDisk)
-			err = system.CreateAndResizeDisk(initOpts.Images.ExternalDisk, strongunits.GiB(100))
+		if initOpts.Images.DataDisk != "" {
+			logrus.Infof("Recreate external disk: %s", initOpts.Images.DataDisk)
+			err = system.CreateAndResizeDisk(initOpts.Images.DataDisk, strongunits.GiB(100))
 			if err != nil {
 				return err
 			}
@@ -139,7 +147,7 @@ func initMachine(cmd *cobra.Command, args []string) error {
 	}
 
 	if !updateBootableImage {
-		return fmt.Errorf("skip initialize virtualMachine")
+		return fmt.Errorf("skip initialize virtual machine")
 	}
 
 	for idx, vol := range initOpts.Volumes {
@@ -156,8 +164,8 @@ func initMachine(cmd *cobra.Command, args []string) error {
 
 	err = shim.Init(initOpts, provider)
 	if err != nil {
+		network.Reporter.SendEventToOvmJs("error", err.Error())
 		return err
 	}
-
 	return nil
 }

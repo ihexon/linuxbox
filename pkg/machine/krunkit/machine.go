@@ -131,15 +131,15 @@ func StartGenericAppleVM(mc *vmconfigs.MachineConfig, cmdBinary string, bootload
 	vm.Devices = append(vm.Devices, netDevice)
 
 	// If the --external-disk flag is set, we need to create the disk **if it does not exist**
-	if mc.ExternalDisk.GetPath() != "" {
-		if err = fileutils.Exists(mc.ExternalDisk.GetPath()); err != nil {
-			logrus.Warnf("external disk does not exist: %s", mc.ExternalDisk.GetPath())
-			if err = system.CreateAndResizeDisk(mc.ExternalDisk.GetPath(), 500); err != nil {
+	if mc.DataDisk.GetPath() != "" {
+		if err = fileutils.Exists(mc.DataDisk.GetPath()); err != nil {
+			logrus.Warnf("external disk does not exist: %s", mc.DataDisk.GetPath())
+			if err = system.CreateAndResizeDisk(mc.DataDisk.GetPath(), 500); err != nil {
 				return nil, nil, err
 			}
 		}
 
-		external_disk, err := vfConfig.VirtioBlkNew(mc.ExternalDisk.GetPath())
+		external_disk, err := vfConfig.VirtioBlkNew(mc.DataDisk.GetPath())
 		if err != nil {
 			return nil, nil, err
 		}
@@ -153,10 +153,7 @@ func StartGenericAppleVM(mc *vmconfigs.MachineConfig, cmdBinary string, bootload
 	vm.Devices = append(vm.Devices, mounts...)
 
 	// To start the VM, we need to call krunkit
-	cfg, err := config.Default()
-	if err != nil {
-		return nil, nil, err
-	}
+	cfg := config.Default()
 
 	cmdBinaryPath, err := cfg.FindHelperBinary(cmdBinary, true)
 	if err != nil {

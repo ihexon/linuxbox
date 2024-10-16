@@ -14,7 +14,6 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"golang.org/x/sync/errgroup"
-	"net/url"
 	"os"
 )
 
@@ -24,9 +23,13 @@ var (
 		Short:             "Start an existing machine",
 		Long:              "Start a managed virtual machine ",
 		PersistentPreRunE: machinePreRunE, // Get Provider and set workdir if needed
-		RunE:              start,
-		Args:              cobra.MaximumNArgs(1),
-		Example:           `bauklotze machine start`,
+		PersistentPostRunE: func(cmd *cobra.Command, args []string) error {
+			network.Reporter.SendEventToOvmJs("exit", "")
+			return nil
+		},
+		RunE:    start,
+		Args:    cobra.MaximumNArgs(1),
+		Example: `bauklotze machine start`,
 	}
 	startOpts = define.StartOptions{}
 )
@@ -45,11 +48,12 @@ func init() {
 	VolumeFlagName := volume
 	flags.StringArrayVarP(&startOpts.Volumes, VolumeFlagName, "v", nil, "Volumes to mount, source:target")
 
-	reportUrl := reportUrl
-	flags.StringVar(&startOpts.ReportUrl, reportUrl, "", "Report events to the url")
+	ReportUrlFlag := reportUrlFlag
+	flags.StringVar(&startOpts.ReportUrl, ReportUrlFlag, "", "Report events to the url")
 }
 
 func start(cmd *cobra.Command, args []string) error {
+	network.NewReporter(startOpts.ReportUrl)
 	var err error
 	vmName := defaultMachineName
 	if len(args) > 0 && len(args[0]) > 0 {
@@ -65,24 +69,9 @@ func start(cmd *cobra.Command, args []string) error {
 	}
 
 	logrus.Infof("starting machine %q\n", vmName)
+
 	if err = shim.Start(mc, provider, dirs, startOpts); err != nil {
 		return err
-	}
-
-	if startOpts.ReportUrl != "" {
-		connCtx, err := network.NewConnection(startOpts.ReportUrl)
-		if err != nil {
-			logrus.Errorf("Failed to connect to %q: %v\n", startOpts.ReportUrl, err)
-		}
-		connCtx.UrlParameter = url.Values{
-			"event":   []string{"running"},
-			"message": []string{"ready"},
-		}
-		// ? Should I return error ?
-		_, err = connCtx.DoRequest("GET", "/notify")
-		if err != nil {
-			logrus.Warnf("Failed to notify %q: %v\n", startOpts.ReportUrl, err)
-		}
 	}
 
 	logrus.Infof("Machine %q started successfully\n", vmName)
@@ -105,5 +94,6 @@ func start(cmd *cobra.Command, args []string) error {
 		_ = system.KillProcess(machine.GlobalPIDs.GetKrunkitPID())
 		return err
 	}
+
 	return err
 }

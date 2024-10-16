@@ -4,12 +4,11 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-	"strings"
 	"testing"
 )
 
 func TestHttpClient(t *testing.T) {
-	connCtx, err := NewConnection("tcp://192.168.1.210:8081")
+	connCtx, err := NewConnection("unix:///tmp/report_url.socks")
 	connCtx.Headers = http.Header{
 		"Content-Type": []string{"application/json"},
 	}
@@ -17,7 +16,7 @@ func TestHttpClient(t *testing.T) {
 		"key": []string{"value"},
 	}
 
-	connCtx.Body = strings.NewReader("Hello, World!")
+	//connCtx.Body = strings.NewReader("Hello, World!")
 	response, err := connCtx.DoRequest("POST", "/1/2/4/5/name")
 	if err != nil {
 		t.Errorf(err.Error())

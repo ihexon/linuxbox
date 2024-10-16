@@ -104,8 +104,8 @@ type MachineConfig struct {
 	ImagePath    *define.VMFile // mc.ImagePath is the bootable copied from user provided image --boot <bootable.img.xz>
 	ImageVersion string         `json:",omitempty"` // Bootable Image for now
 
-	ExternalDisk        *define.VMFile // External Disk file
-	ExternalDiskVersion string         `json:",omitempty"` // External Disk for now
+	DataDisk        *define.VMFile // External Disk file
+	DataDiskVersion string         `json:",omitempty"` // External Disk for now
 
 	AppleKrunkitHypervisor *AppleKrunkitConfig `json:",omitempty"`
 	WSLHypervisor          *WSLConfig          `json:",omitempty"`

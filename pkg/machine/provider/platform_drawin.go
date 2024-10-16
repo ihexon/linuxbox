@@ -13,16 +13,18 @@ import (
 
 // Get current hypervisor provider with default configure
 func Get() (vmconfigs.VMProvider, error) {
-	cfg, err := config.Default()
-	if err != nil {
-		return nil, err
-	}
+	cfg := config.Default()
+
 	provider := cfg.Machine.Provider
 	// OVM_PROVIDER overwrite the provider
 	if providerOverride, found := os.LookupEnv("OVM_PROVIDER"); found {
 		provider = providerOverride
 	}
 	resolvedVMType, err := define.ParseVMType(provider, define.LibKrun)
+	if err != nil {
+		return nil, err
+	}
+
 	switch resolvedVMType {
 	case define.LibKrun:
 		return new(krunkit.LibKrunStubber), nil

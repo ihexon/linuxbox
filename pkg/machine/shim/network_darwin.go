@@ -43,10 +43,7 @@ func startHostForwarder(mc *vmconfigs.MachineConfig, provider vmconfigs.VMProvid
 
 	guestSock := defaultGuestSock
 
-	cfg, err := config.Default()
-	if err != nil {
-		return err
-	}
+	cfg := config.Default()
 
 	binary, err := cfg.FindHelperBinary(machine.ForwarderBinaryName, false)
 	if err != nil {

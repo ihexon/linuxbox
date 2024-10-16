@@ -20,6 +20,7 @@ func reboot() error {
 
 	if MessageBox(message, "OVMachine", false) != 1 {
 		fmt.Println("Reboot is required to continue installation, please reboot at your convenience")
+
 		os.Exit(ErrorSuccessRebootRequired)
 		return nil
 	}

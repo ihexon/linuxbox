@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -106,4 +107,37 @@ func (c *Connection) DoRequest(httpMethod, endpoint string) (*APIResponse, error
 
 	response, err = client.Do(req)
 	return &APIResponse{response, req}, err
+}
+
+func (o *OvmJSListener) SendEventToOvmJs(event, message string) {
+	if o.ReportUrl == "" {
+		logrus.Warnf("No report url provided by user")
+		return
+	}
+	connCtx, err := NewConnection(o.ReportUrl)
+	connCtx.Headers = http.Header{
+		"Content-Type": []string{PlainTextContentType},
+	}
+	connCtx.UrlParameter = url.Values{
+		"event":   []string{event},
+		"message": []string{message},
+	}
+	_, err = connCtx.DoRequest("GET", "/ovmjs")
+	if err != nil {
+		logrus.Warnf("Failed to notify %q: %v\n", o.ReportUrl, err)
+	}
+}
+
+var (
+	Reporter OvmJSListener
+	once     sync.Once
+)
+
+func NewReporter(url string) *OvmJSListener {
+	once.Do(func() {
+		Reporter = OvmJSListener{
+			ReportUrl: url,
+		}
+	})
+	return &Reporter
 }

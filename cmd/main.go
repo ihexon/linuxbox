@@ -6,6 +6,7 @@ import (
 	"bauklotze/cmd/bauklotze/validata"
 	"bauklotze/cmd/registry"
 	"bauklotze/pkg/completion"
+	"bauklotze/pkg/notifyexit"
 	"bauklotze/pkg/terminal"
 	"fmt"
 	"github.com/sirupsen/logrus"
@@ -82,7 +83,7 @@ func init() {
 func main() {
 	rootCmd = parseCommands()
 	RootCmdExecute()
-	os.Exit(0)
+	notifyexit.NotifyExit(0)
 }
 
 func parseCommands() *cobra.Command {
@@ -92,7 +93,7 @@ func parseCommands() *cobra.Command {
 
 	if err := terminal.SetConsole(); err != nil {
 		logrus.Error(err)
-		os.Exit(1)
+		notifyexit.NotifyExit(1)
 	}
 
 	rootCmd.SetFlagErrorFunc(flagErrorFunc)
@@ -116,7 +117,7 @@ func RootCmdExecute() {
 	if err != nil {
 		fmt.Fprintln(os.Stderr, formatError(err))
 	}
-	os.Exit(registry.GetExitCode())
+	notifyexit.NotifyExit(registry.GetExitCode())
 }
 
 func loggingHook() {
@@ -129,14 +130,12 @@ func loggingHook() {
 	}
 	if !found {
 		fmt.Fprintf(os.Stderr, "Log Level %q is not supported, choose from: %s\n", logLevel, strings.Join(completion.LogLevels, ", "))
-		os.Exit(1)
+		level, _ := logrus.ParseLevel("info")
+		logrus.SetLevel(level)
+		return
 	}
 
-	level, err := logrus.ParseLevel(logLevel)
-	if err != nil {
-		fmt.Fprint(os.Stderr, err.Error())
-		os.Exit(1)
-	}
+	level, _ := logrus.ParseLevel(logLevel)
 	logrus.SetLevel(level)
 
 	if logrus.IsLevelEnabled(logrus.InfoLevel) {

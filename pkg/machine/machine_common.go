@@ -42,7 +42,7 @@ func (p *AllPIDs) GetGvproxyPID() int {
 }
 
 // DO NOT BLOCK THIS FUNCTION
-func WaitAPIAndPrintInfo(forwardSock string, forwardState APIForwardingState, name string) {
+func WaitAPIAndPrintInfo(reortUrl string, forwardSock string, forwardState APIForwardingState, name string) {
 	if forwardState == NoForwarding {
 		_ = system.KillProcess(GlobalPIDs.GetKrunkitPID())
 		_ = system.KillProcess(GlobalPIDs.GetGvproxyPID())
@@ -58,9 +58,10 @@ func WaitAPIAndPrintInfo(forwardSock string, forwardState APIForwardingState, na
 		logrus.Error("failed to ping Podman API: ", err)
 	} else {
 		logrus.Info("Podman API ping success")
+		network.Reporter.SendEventToOvmJs("ready", "")
+		//network.SendEventToOvmJs(reortUrl, "ready", "")
 		fmt.Printf("Podman API forwarding listening on: %s\n", forwardSock)
 	}
-
 }
 
 func WaitAndPingAPI(sock string) error {
