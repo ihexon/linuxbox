@@ -17,19 +17,12 @@ import (
 const (
 	DefaultIgnitionUserName = "root"
 	DefaultIgnitionVersion  = "3.4.0"
-	GenerateScriptDir       = "/root/script_generated"
-	GenerateOpenRcDir       = GenerateScriptDir + "/etc/init.d"
+	GenerateScriptDir       = "/.ignfiles"
 	PodmanMachine           = "/etc/containers/podman-machine"
 	SystemEtcDir            = "/etc"
 	SystemOpenRcDir         = "/etc/init.d/"
 	SystemDefaultRunlevels  = "/etc/runlevels/default"
 )
-
-// 无法理解的是为什么我 TM 不能自己写一个 golang listen vsock:1024，废的了多少时间。然后直接拉取一个 shell 脚本逐行执行那里报错通过 vsock 返回给 ovm 不好吗？
-// 完全无法理解为什么要通过 ignition 来做这个事情，ignition 也返回不了日志给 ovm，也没法做高级操作，比如 overlay 到 /
-// 我 TM 还废了一天时间去根据 v3_4/types 写了一个 配置生成器，还得写配套的 test case，并且生成错了也没法提前知道，因为我害的使用另外一个 cli 来
-// 验证 ignition.json 是不是合法的，这也就算了，就算通过验证器验证是合法的 json 配置，某些错误还得等到运行时才能返回错误。
-// 并且 golang 的模板的意义完全丧失了。
 
 type DynamicIgnitionV2 struct {
 	Name           string // vm user, default is root
@@ -82,19 +75,21 @@ func EncodeDataURLPtr(contents string) *string {
 	return StrToPtr(fmt.Sprintf("data:,%s", url.PathEscape(contents)))
 }
 
-// First create directories
+// getDirs: create directories
 func (ign *DynamicIgnitionV2) getDirs(usrName string) []ignition.Directory {
 	newDirs := []string{
 		GenerateScriptDir,
-		GenerateOpenRcDir,
 	}
+
 	dirs := make([]ignition.Directory, len(newDirs))
+
 	for i, d := range newDirs {
 		dirs[i] = ignition.Directory{
 			Node: ignition.Node{
-				Group: GetNodeGrp(usrName),
-				User:  GetNodeUsr(usrName),
-				Path:  d,
+				Overwrite: BoolToPtr(true),
+				Group:     GetNodeGrp(usrName),
+				User:      GetNodeUsr(usrName),
+				Path:      d,
 			},
 			DirectoryEmbedded1: ignition.DirectoryEmbedded1{Mode: IntToPtr(0755)},
 		}
@@ -102,7 +97,7 @@ func (ign *DynamicIgnitionV2) getDirs(usrName string) []ignition.Directory {
 	return dirs
 }
 
-// Set sshkeys for root user
+// getUsers: Set sshkeys for root user
 func (ign *DynamicIgnitionV2) getUsers() []ignition.PasswdUser {
 	var (
 		// See https://coreos.github.io/ignition/configuration-v3_4/
@@ -122,7 +117,7 @@ func (ign *DynamicIgnitionV2) getUsers() []ignition.PasswdUser {
 func (ign *DynamicIgnitionV2) getFiles(usrName string, uid int, vmtype define.VMType) []ignition.File {
 	files := make([]ignition.File, 0)
 
-	containers := `# Test configures for root user`
+	testConfigure := `# Test configures for root user`
 	// Set test.conf up for root user, just a test
 	files = append(files, ignition.File{
 		Node: ignition.Node{
@@ -133,7 +128,7 @@ func (ign *DynamicIgnitionV2) getFiles(usrName string, uid int, vmtype define.VM
 		FileEmbedded1: ignition.FileEmbedded1{
 			Append: nil,
 			Contents: ignition.Resource{
-				Source: EncodeDataURLPtr(containers),
+				Source: EncodeDataURLPtr(testConfigure),
 			},
 			Mode: IntToPtr(0744),
 		},
@@ -141,10 +136,10 @@ func (ign *DynamicIgnitionV2) getFiles(usrName string, uid int, vmtype define.VM
 
 	subUID := 100000
 	subUIDs := 1000000
-
 	etcSubUID := fmt.Sprintf(`%s:%d:%d`, usrName, subUID, subUIDs)
 
-	// Set up /etc/subuid and /etc/subgid
+	// Set up /etc/subuid and /etc/subgid,
+	// Podman need this see https://wiki.alpinelinux.org/wiki/Podman
 	for _, sub := range []string{"/etc/subuid", "/etc/subgid"} {
 		files = append(files, ignition.File{
 			Node: ignition.Node{
@@ -163,8 +158,7 @@ func (ign *DynamicIgnitionV2) getFiles(usrName string, uid int, vmtype define.VM
 		})
 	}
 
-	// Set machine marker file to indicate podman what vmtype we are
-	// operating under
+	// write libkrun to /etc/containers/podman-machine
 	files = append(files, ignition.File{
 		Node: ignition.Node{
 			Group: GetNodeGrp(DefaultIgnitionUserName),
@@ -205,20 +199,17 @@ func (ign *DynamicIgnitionV2) getLinks(usrName string) []ignition.Link {
 		},
 	}
 
-	openRCDefaultRunlevel := filepath.Join(GenerateScriptDir, "etc", "runlevels", "default")
-
 	for _, vol := range ign.MachineConfigs.Mounts {
-		source_file := filepath.Join(openRCDefaultRunlevel, vol.Tag)
-		target_file := filepath.Join(GenerateOpenRcDir, vol.Tag)
 		links = append(links, ignition.Link{
 			Node: ignition.Node{
-				//Group: GetNodeGrp(DefaultIgnitionUserName),
-				//User:  GetNodeUsr(DefaultIgnitionUserName),
-				Path: (source_file),
+				Path:      filepath.Join(SystemDefaultRunlevels, rcPrefix+vol.Tag),
+				Overwrite: BoolToPtr(true),
+				User:      GetNodeUsr(DefaultIgnitionUserName),
+				Group:     GetNodeGrp(DefaultIgnitionUserName),
 			},
 			LinkEmbedded1: ignition.LinkEmbedded1{
 				Hard:   BoolToPtr(false),
-				Target: StrToPtr(target_file),
+				Target: StrToPtr(filepath.Join(SystemOpenRcDir, rcPrefix+vol.Tag)),
 			},
 		})
 	}
@@ -333,16 +324,18 @@ var (
 )
 
 func (ign *DynamicIgnitionV2) generateVirtioMountRC() []ignition.File {
-	virtioFsCfg := make([]ignition.File, 0)
+	virtioFsOpenRcCfg := make([]ignition.File, 0)
 
 	for _, vol := range ign.MachineConfigs.Mounts {
 		virtioFsMountRc = new(bytes.Buffer)
-		if vol.Type != "virtiofs" {
-			continue
-		}
+
 		sourceDev := vol.Tag
 		targetPath := vol.Target
 		fsType := vol.Type
+
+		if fsType != virtiofs {
+			continue
+		}
 
 		data := struct {
 			FsType string
@@ -354,13 +347,13 @@ func (ign *DynamicIgnitionV2) generateVirtioMountRC() []ignition.File {
 			Target: targetPath,
 		}
 		t := template.Must(template.New("VirtioFsMountRcFile").Parse(MountOpenrcTemplate))
-		t.Execute(virtioFsMountRc, data)
+		_ = t.Execute(virtioFsMountRc, data)
 
-		virtioFsCfg = append(virtioFsCfg, ignition.File{
+		virtioFsOpenRcCfg = append(virtioFsOpenRcCfg, ignition.File{
 			Node: ignition.Node{
 				Group: GetNodeGrp(DefaultIgnitionUserName),
 				User:  GetNodeUsr(DefaultIgnitionUserName),
-				Path:  filepath.Join(GenerateOpenRcDir, vol.Tag),
+				Path:  filepath.Join(SystemOpenRcDir, rcPrefix+vol.Tag),
 			},
 
 			FileEmbedded1: ignition.FileEmbedded1{
@@ -373,5 +366,5 @@ func (ign *DynamicIgnitionV2) generateVirtioMountRC() []ignition.File {
 		})
 	}
 
-	return virtioFsCfg
+	return virtioFsOpenRcCfg
 }

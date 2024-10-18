@@ -15,3 +15,8 @@ stop() {
     eend $?
 }
 `
+
+const (
+	virtiofs = "virtiofs"
+	rcPrefix = "ovm_"
+)

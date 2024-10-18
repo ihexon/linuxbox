@@ -17,7 +17,9 @@ func GetDisk(userInputPath string, imagePath *define.VMFile) error {
 	case userInputPath == "":
 		return fmt.Errorf("please provide a bootable image using --boot [IMAGE_PATH]")
 	default:
-		mydisk, err = stdpull.NewStdDiskPull(userInputPath, imagePath)
+		zstdFile := &userInputPath
+		extractFile := &imagePath
+		mydisk, err = stdpull.NewStdDiskPull(*zstdFile, *extractFile)
 	}
 	if err != nil {
 		return err

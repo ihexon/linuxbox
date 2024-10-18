@@ -22,7 +22,7 @@ var (
 		PersistentPreRunE: machinePreRunE,
 		RunE:              setMachine,
 		Args:              cobra.MaximumNArgs(1),
-		Example:           `machine set --rootful=false`,
+		Example:           `machine set`,
 	}
 )
 
@@ -43,7 +43,6 @@ func init() {
 		cpusFlagName, 0,
 		"Number of CPUs",
 	)
-	//_ = setCmd.RegisterFlagCompletionFunc(cpusFlagName, completion.AutocompleteNone)
 
 	memoryFlagName := memory
 	flags.Uint64VarP(
@@ -51,7 +50,6 @@ func init() {
 		memoryFlagName, "m", 0,
 		"Memory in MiB",
 	)
-	//_ = setCmd.RegisterFlagCompletionFunc(memoryFlagName, completion.AutocompleteNone)
 
 	slice := config.NewSlice([]string{})
 	volumeFlagName := volume
@@ -60,7 +58,6 @@ func init() {
 		volumeFlagName, "v", slice.Get(),
 		"Volume to be mounted in the VM",
 	)
-	//_ = setCmd.RegisterFlagCompletionFunc(volumeFlagName, completion.AutocompleteNone)
 }
 
 func setMachine(cmd *cobra.Command, args []string) error {

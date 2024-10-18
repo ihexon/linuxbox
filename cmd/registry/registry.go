@@ -13,8 +13,8 @@ type CliCommand struct {
 }
 
 var (
-	podmanSync sync.Once
-	exitCode   = 0
+	ovmSync  sync.Once
+	exitCode = 0
 	// Commands All commands will be registin here
 	Commands   []CliCommand
 	ovmOptions defconfig.OvmConfig
@@ -29,7 +29,7 @@ func newOvmConfig() {
 }
 
 func OvmInitConfig() *defconfig.OvmConfig {
-	podmanSync.Do(newOvmConfig)
+	ovmSync.Do(newOvmConfig)
 	return &ovmOptions
 }
 
