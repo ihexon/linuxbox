@@ -79,8 +79,9 @@ type ImageVerStruct struct {
 }
 
 type ImagesStruct struct {
-	BootableImage string
-	DataDisk      string
+	BootableImage string // Bootable image
+	DataDisk      string // Mounted in /var
+	OverlayImage  string // Overlay image mounted /
 }
 
 type SetOptions struct {

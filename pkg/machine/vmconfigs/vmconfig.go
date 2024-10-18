@@ -98,14 +98,16 @@ type MachineConfig struct {
 	Created time.Time
 	LastUp  time.Time
 
-	Dirs         *define.MachineDirs
-	HostUser     HostUser
-	Name         string
-	ImagePath    *define.VMFile // mc.ImagePath is the bootable copied from user provided image --boot <bootable.img.xz>
-	ImageVersion string         `json:",omitempty"` // Bootable Image for now
+	Dirs     *define.MachineDirs
+	HostUser HostUser
+	Name     string
+	// TODO Using Image struct and ImageVersion struct
+	ImagePath   *define.VMFile // mc.ImagePath is the bootable copied from user provided image --boot <bootable.img.xz>
+	DataDisk    *define.VMFile // External Disk file
+	OverlayDisk *define.VMFile // Overlay Disk file
 
-	DataDisk        *define.VMFile // External Disk file
-	DataDiskVersion string         `json:",omitempty"` // External Disk for now
+	ImageVersion    string `json:",omitempty"` // Bootable Image for now
+	DataDiskVersion string `json:",omitempty"` // External Disk for now
 
 	AppleKrunkitHypervisor *AppleKrunkitConfig `json:",omitempty"`
 	WSLHypervisor          *WSLConfig          `json:",omitempty"`
@@ -121,8 +123,10 @@ type MachineConfig struct {
 	// Oomol Studio
 	EvtSockPath *define.VMFile `json:",omitempty"`
 	PidManaged  ManagedPids    `json:",omitempty"`
-	GVProxyPid  int32          `json:",omitempty"`
-	KRunkitPid  int32          `json:",omitempty"`
+
+	// TODO Remove this field
+	GVProxyPid int32 `json:",omitempty"`
+	KRunkitPid int32 `json:",omitempty"`
 }
 
 type ManagedPids struct {

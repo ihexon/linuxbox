@@ -130,7 +130,6 @@ func StartGenericAppleVM(mc *vmconfigs.MachineConfig, cmdBinary string, bootload
 	vm.Devices = append(vm.Devices, defaultDevices...)
 	vm.Devices = append(vm.Devices, netDevice)
 
-	// If the --external-disk flag is set, we need to create the disk **if it does not exist**
 	if mc.DataDisk.GetPath() != "" {
 		if err = fileutils.Exists(mc.DataDisk.GetPath()); err != nil {
 			logrus.Warnf("external disk does not exist: %s", mc.DataDisk.GetPath())
@@ -139,12 +138,27 @@ func StartGenericAppleVM(mc *vmconfigs.MachineConfig, cmdBinary string, bootload
 			}
 		}
 
-		external_disk, err := vfConfig.VirtioBlkNew(mc.DataDisk.GetPath())
+		externalDisk, err := vfConfig.VirtioBlkNew(mc.DataDisk.GetPath())
 		if err != nil {
 			return nil, nil, err
 		}
-		vm.Devices = append(vm.Devices, external_disk)
+		vm.Devices = append(vm.Devices, externalDisk)
 	}
+
+	//if mc.OverlayDisk.GetPath() != "" {
+	//	if err = fileutils.Exists(mc.OverlayDisk.GetPath()); err != nil {
+	//		logrus.Warnf("overlay disk does not exist: %s", mc.OverlayDisk.GetPath())
+	//		if err = system.CreateAndResizeDisk(mc.OverlayDisk.GetPath(), 500); err != nil {
+	//			return nil, nil, err
+	//		}
+	//	}
+	//
+	//	overlayDisk, err := vfConfig.VirtioBlkNew(mc.OverlayDisk.GetPath())
+	//	if err != nil {
+	//		return nil, nil, err
+	//	}
+	//	vm.Devices = append(vm.Devices, overlayDisk)
+	//}
 
 	mounts, err := VirtIOFsToVFKitVirtIODevice(mc.Mounts)
 	if err != nil {

@@ -131,6 +131,8 @@ func Init(opts define.InitOptions, mp vmconfigs.VMProvider) error {
 	mc.ImageVersion = opts.ImageVersion.BootableImageVersion
 
 	mc.DataDisk = &define.VMFile{Path: opts.Images.DataDisk}
+	mc.OverlayDisk = &define.VMFile{Path: opts.Images.OverlayImage}
+
 	mc.DataDiskVersion = opts.ImageVersion.DataDiskVersion
 
 	network.Reporter.SendEventToOvmJs("writeConfig", "running")

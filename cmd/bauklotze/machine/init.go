@@ -87,8 +87,11 @@ func init() {
 }
 
 func initMachine(cmd *cobra.Command, args []string) error {
+	// Initialize the network reporter
 	network.NewReporter(initOpts.SendEvt)
+
 	initOpts.Name = defaultMachineName
+
 	if len(args) > 0 {
 		if len(args[0]) > maxMachineNameSize {
 			return fmt.Errorf("machine name %q must be %d characters or less", args[0], maxMachineNameSize)
@@ -104,16 +107,21 @@ func initMachine(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	d, err := env.DataDirPrefix() // ${BauklotzeHomePath}/data
+	dataDir, err := env.DataDirPrefix() // ${BauklotzeHomePath}/data
 	if err != nil {
 		return fmt.Errorf("can not get Data dir %v", err)
 	}
-	d = filepath.Join(d, "external_disk", initOpts.Name, "data.raw") // ${BauklotzeHomePath}/data
-	initOpts.Images.DataDisk = d
+
+	dataDisk := filepath.Join(dataDir, "external_disk", initOpts.Name, "data.raw") // ${BauklotzeHomePath}/data/{MachineName}/data.raw
+	initOpts.Images.DataDisk = dataDisk
+
+	overlayDisk := filepath.Join(dataDir, "external_disk", initOpts.Name, "overlay.raw") // ${BauklotzeHomePath}/data/{MachineName}/overlay.raw
+	initOpts.Images.OverlayImage = overlayDisk
 
 	var (
 		updateBootableImage bool = true
 		updateExternalDisk  bool = true
+		updateOverlayDisk   bool = true
 	)
 
 	switch {
@@ -144,6 +152,15 @@ func initMachine(cmd *cobra.Command, args []string) error {
 		}
 	} else {
 		logrus.Infof("Skip initialize external disk.")
+	}
+
+	// Notice the  updateOverlayDisk always be true for now !
+	if updateOverlayDisk {
+		logrus.Infof("Recreate overlay disk: %s", initOpts.Images.OverlayImage)
+		err = system.CreateAndResizeDisk(initOpts.Images.OverlayImage, strongunits.GiB(100))
+		if err != nil {
+			return err
+		}
 	}
 
 	if !updateBootableImage {
