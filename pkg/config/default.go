@@ -1,6 +1,7 @@
 package config
 
 import (
+	"bauklotze/pkg/machine/define"
 	"runtime"
 	"sync"
 )
@@ -47,10 +48,8 @@ func Default() *Config {
 	return cachedConfig
 }
 
-const vmuser = "root"
-
 func getDefaultMachineUser() string {
-	return vmuser
+	return define.DefaultUserInGuest
 }
 
 // defaultMachineConfig returns the default machine configuration.

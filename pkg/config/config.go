@@ -23,24 +23,22 @@ type Destination struct {
 	Identity string `json:",omitempty" toml:"identity,omitempty"`
 }
 
-// TODO: We do not need this old struct, we can use the vmconfig directly
 type MachineConfig struct {
 	// Number of CPU's a machine is created with.
-	CPUs uint64 `toml:"cpus,omitempty,omitzero"`
+	CPUs uint64
 	// DiskSize is the size of the disk in GB created when init-ing a podman-machine VM
-	DiskSize uint64 `toml:"disk_size,omitempty,omitzero"`
+	DiskSize uint64
 	// Image is the image used when init-ing a podman-machine VM
-	Image string `toml:"image,omitempty"`
+	Image string
 	// Memory in MB a machine is created with.
-	Memory uint64 `toml:"memory,omitempty,omitzero"`
+	Memory uint64
 	// User to use for rootless podman when init-ing a podman machine VM
-	User string `toml:"user,omitempty"`
+	User string
 	// Volumes are host directories mounted into the VM by default.
-	Volumes Slice `toml:"volumes,omitempty"`
+	Volumes Slice
 	// Provider is the virtualization provider used to run podman-machine VM
-	Provider string `toml:"provider,omitempty"`
-	// HelperPath is the
-	HelperBinariesDir Slice `toml:"helper_path,omitempty"`
+	Provider          string
+	HelperBinariesDir Slice
 }
 
 func defaultConfig() *Config {

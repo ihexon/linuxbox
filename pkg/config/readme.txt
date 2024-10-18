@@ -1,2 +1,1 @@
-虚拟机默认配置在这里被计算出来。
-
+Notice the virtual machine default configuration is calculated here.

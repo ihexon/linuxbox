@@ -43,6 +43,7 @@ func WaitApiServerAndStopMachine(g *errgroup.Group, ctx context.Context, dirs *d
 		apiURL, _ := url.Parse(listenPath)
 		return startRestApi(ctx, apiURL)
 	})
+
 	logrus.Infof("Starting API Server in %s\n", listenPath)
 }
 

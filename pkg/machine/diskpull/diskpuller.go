@@ -1,7 +1,6 @@
 package diskpull
 
 import (
-	"bauklotze/cmd/registry"
 	"bauklotze/pkg/machine/define"
 	"bauklotze/pkg/machine/diskpull/internal/provider"
 	"bauklotze/pkg/machine/diskpull/stdpull"
@@ -21,7 +20,6 @@ func GetDisk(userInputPath string, imagePath *define.VMFile) error {
 		mydisk, err = stdpull.NewStdDiskPull(userInputPath, imagePath)
 	}
 	if err != nil {
-		registry.SetExitCode(1)
 		return err
 	}
 	return mydisk.Get()

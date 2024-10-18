@@ -5,7 +5,7 @@ import (
 	_ "bauklotze/cmd/bauklotze/machine"
 	"bauklotze/cmd/bauklotze/validata"
 	"bauklotze/cmd/registry"
-	"bauklotze/pkg/completion"
+	"bauklotze/pkg/network"
 	"bauklotze/pkg/notifyexit"
 	"bauklotze/pkg/terminal"
 	"fmt"
@@ -41,6 +41,10 @@ Options:
 {{end}}
 `
 
+var (
+	LogLevels = []string{"trace", "debug", "info", "warn", "warning", "error", "fatal", "panic"}
+)
+
 func flagErrorFunc(c *cobra.Command, e error) error {
 	e = fmt.Errorf("%w\nSee '%s --help'", e, c.CommandPath())
 	return e
@@ -73,8 +77,7 @@ func init() {
 	pFlags := rootCmd.PersistentFlags()
 
 	logLevelFlagName := "log-level"
-	pFlags.StringVar(&logLevel, logLevelFlagName, logLevel, fmt.Sprintf("Log messages above specified level (%s)", strings.Join(completion.LogLevels, ", ")))
-	//_ = rootCmd.RegisterFlagCompletionFunc(logLevelFlagName, completion.AutocompleteLogLevel)
+	pFlags.StringVar(&logLevel, logLevelFlagName, logLevel, fmt.Sprintf("Log messages above specified level"))
 
 	ovmHomedir := machine.Workspace
 	pFlags.StringVar(&ovmHomedir, ovmHomedir, "", "Bauklotze's HOME dif, default get by $HOME")
@@ -83,7 +86,6 @@ func init() {
 func main() {
 	rootCmd = parseCommands()
 	RootCmdExecute()
-	notifyexit.NotifyExit(0)
 }
 
 func parseCommands() *cobra.Command {
@@ -115,21 +117,27 @@ func addCommand(c registry.CliCommand) {
 func RootCmdExecute() {
 	err := rootCmd.Execute()
 	if err != nil {
+		network.Reporter.SendEventToOvmJs("error", fmt.Sprintf("Error: %v", err))
 		fmt.Fprintln(os.Stderr, formatError(err))
+		registry.SetExitCode(1)
+		notifyexit.NotifyExit(registry.GetExitCode())
+	} else {
+		registry.SetExitCode(0)
+		notifyexit.NotifyExit(registry.GetExitCode())
 	}
-	notifyexit.NotifyExit(registry.GetExitCode())
 }
 
 func loggingHook() {
 	var found bool
-	for _, l := range completion.LogLevels {
+	for _, l := range LogLevels {
 		if l == strings.ToLower(logLevel) {
 			found = true
 			break
 		}
 	}
+
 	if !found {
-		fmt.Fprintf(os.Stderr, "Log Level %q is not supported, choose from: %s\n", logLevel, strings.Join(completion.LogLevels, ", "))
+		fmt.Fprintf(os.Stderr, "Log Level %q is not supported, choose from: %s\n", logLevel, strings.Join(LogLevels, ", "))
 		level, _ := logrus.ParseLevel("info")
 		logrus.SetLevel(level)
 		return

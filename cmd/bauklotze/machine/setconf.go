@@ -4,7 +4,6 @@ package machine
 
 import (
 	"bauklotze/cmd/registry"
-	"bauklotze/pkg/completion"
 	"bauklotze/pkg/config"
 	"bauklotze/pkg/machine/define"
 	"bauklotze/pkg/machine/env"
@@ -44,7 +43,7 @@ func init() {
 		cpusFlagName, 0,
 		"Number of CPUs",
 	)
-	_ = setCmd.RegisterFlagCompletionFunc(cpusFlagName, completion.AutocompleteNone)
+	//_ = setCmd.RegisterFlagCompletionFunc(cpusFlagName, completion.AutocompleteNone)
 
 	memoryFlagName := memory
 	flags.Uint64VarP(
@@ -52,7 +51,7 @@ func init() {
 		memoryFlagName, "m", 0,
 		"Memory in MiB",
 	)
-	_ = setCmd.RegisterFlagCompletionFunc(memoryFlagName, completion.AutocompleteNone)
+	//_ = setCmd.RegisterFlagCompletionFunc(memoryFlagName, completion.AutocompleteNone)
 
 	slice := config.NewSlice([]string{})
 	volumeFlagName := volume
@@ -61,7 +60,7 @@ func init() {
 		volumeFlagName, "v", slice.Get(),
 		"Volume to be mounted in the VM",
 	)
-	_ = setCmd.RegisterFlagCompletionFunc(volumeFlagName, completion.AutocompleteNone)
+	//_ = setCmd.RegisterFlagCompletionFunc(volumeFlagName, completion.AutocompleteNone)
 }
 
 func setMachine(cmd *cobra.Command, args []string) error {
