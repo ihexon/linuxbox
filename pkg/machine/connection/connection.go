@@ -11,9 +11,8 @@ import (
 )
 
 const (
-	LocalhostIP      = "127.0.0.1"
-	guestPodmanAPI   = "/run/podman/podman.sock"
-	defaultGuestUser = "root"
+	LocalhostIP    = "127.0.0.1"
+	guestPodmanAPI = "/run/podman/podman.sock"
 )
 
 type connection struct {

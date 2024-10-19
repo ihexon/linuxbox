@@ -8,6 +8,7 @@ import (
 	"bauklotze/pkg/machine/env"
 	provider2 "bauklotze/pkg/machine/provider"
 	"bauklotze/pkg/machine/vmconfigs"
+	"bauklotze/pkg/network"
 	"github.com/spf13/cobra"
 )
 
@@ -48,6 +49,8 @@ func machinePreRunE(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
+	network.NewReporter(initOpts.SendEvt)
+
 	return nil
 }
 

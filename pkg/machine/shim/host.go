@@ -250,9 +250,9 @@ func Start(mc *vmconfigs.MachineConfig, mp vmconfigs.VMProvider, dirs *define.Ma
 	}
 
 	// add machine start --volume back
-	if opts.Volumes != nil {
-		mc.Mounts = CmdLineVolumesToMounts(opts.Volumes, mp.MountType()) // mp.MountType() always be vmconfigs.VirtIOFS
-	}
+	//if opts.Volumes != nil {
+	//	mc.Mounts = CmdLineVolumesToMounts(opts.Volumes, mp.MountType()) // mp.MountType() always be vmconfigs.VirtIOFS
+	//}
 
 	// Set starting to true
 	mc.Starting = true

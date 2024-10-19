@@ -13,6 +13,7 @@ import (
 	"time"
 )
 
+// WaitProcessAndStopMachine is Non block function
 func WaitProcessAndStopMachine(g *errgroup.Group, ctx context.Context, ovmPid, krunPid, gvPid int32) {
 	g.Go(func() error {
 		return watchProcess(ctx, ovmPid, krunPid, gvPid)
@@ -36,6 +37,7 @@ func watchProcess(ctx context.Context, ovmPid, krunPid, gvPid int32) error {
 	return nil
 }
 
+// WaitApiServerAndStopMachine is Non block function
 func WaitApiServerAndStopMachine(g *errgroup.Group, ctx context.Context, dirs *define.MachineDirs) {
 	listenPath := "unix:///" + dirs.RuntimeDir.GetPath() + "/ovm_restapi.socks"
 

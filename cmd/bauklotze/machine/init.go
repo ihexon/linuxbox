@@ -5,22 +5,27 @@ import (
 	"bauklotze/pkg/machine/define"
 	"bauklotze/pkg/machine/env"
 	"bauklotze/pkg/machine/shim"
+	"bauklotze/pkg/machine/system"
 	"bauklotze/pkg/machine/vmconfigs"
 	"bauklotze/pkg/network"
-	"bauklotze/pkg/system"
+	"bauklotze/pkg/notifyexit"
+	system2 "bauklotze/pkg/system"
+	"context"
 	"errors"
 	"fmt"
 	"github.com/containers/common/pkg/strongunits"
 	"github.com/containers/storage/pkg/regexp"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+	"golang.org/x/sync/errgroup"
 	"os"
 	"path/filepath"
+	"time"
 )
 
 var (
 	NameRegex     = regexp.Delayed("^[a-zA-Z0-9][a-zA-Z0-9_.-]*$")
-	RegexError    = fmt.Errorf("names must match [a-zA-Z0-9][a-zA-Z0-9_.-]*: %w", ErrInvalidArg) // nolint:revive // This lint is new and we do not want to break the API.
+	RegexError    = fmt.Errorf("names must match [a-zA-Z0-9][a-zA-Z0-9_.-]*: %w", ErrInvalidArg)
 	ErrInvalidArg = errors.New("invalid argument")
 )
 
@@ -84,11 +89,44 @@ func init() {
 
 	sendEventToEndpoint := reportUrlFlag
 	flags.StringVar(&initOpts.SendEvt, sendEventToEndpoint, "", "send events to somewhere")
+
+	ppidFlagName := ppid
+	flags.Int32Var(&initOpts.PPID, ppidFlagName, -1, "Parent process id")
 }
 
 func initMachine(cmd *cobra.Command, args []string) error {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	g, ctx := errgroup.WithContext(ctx)
+	// If not specified PPID, use the current process id as the parent process id
+	if initOpts.PPID == -1 {
+		mypid := os.Getpid()
+		initOpts.PPID = int32(mypid)
+	}
+
+	g.Go(func() error {
+		for {
+			select {
+			case <-ctx.Done():
+				return context.Cause(ctx)
+			default:
+			}
+			if isRunning, err := system.IsProcesSAlive([]int32{initOpts.PPID}); !isRunning {
+				return err
+			}
+			time.Sleep(300 * time.Millisecond)
+		}
+	})
+
+	go func() {
+		if err := g.Wait(); err != nil {
+			logrus.Errorf("%s\n", err.Error())
+			registry.SetExitCode(1)
+			notifyexit.NotifyExit(registry.GetExitCode())
+		}
+	}()
+
 	// Initialize the network reporter
-	network.NewReporter(initOpts.SendEvt)
 
 	initOpts.Name = defaultMachineName
 
@@ -144,20 +182,20 @@ func initMachine(cmd *cobra.Command, args []string) error {
 
 	if updateExternalDisk {
 		if initOpts.Images.DataDisk != "" {
-			logrus.Infof("Recreate external disk: %s", initOpts.Images.DataDisk)
-			err = system.CreateAndResizeDisk(initOpts.Images.DataDisk, strongunits.GiB(100))
+			logrus.Infof("Recreate data disk: %s", initOpts.Images.DataDisk)
+			err = system2.CreateAndResizeDisk(initOpts.Images.DataDisk, strongunits.GiB(100))
 			if err != nil {
 				return err
 			}
 		}
 	} else {
-		logrus.Infof("Skip initialize external disk.")
+		logrus.Infof("Skip initialize data disk.")
 	}
 
 	// Notice the  updateOverlayDisk always be true for now !
 	if updateOverlayDisk {
 		logrus.Infof("Recreate overlay disk: %s", initOpts.Images.OverlayImage)
-		err = system.CreateAndResizeDisk(initOpts.Images.OverlayImage, strongunits.GiB(100))
+		err = system2.CreateAndResizeDisk(initOpts.Images.OverlayImage, strongunits.GiB(100))
 		if err != nil {
 			return err
 		}
@@ -175,7 +213,7 @@ func initMachine(cmd *cobra.Command, args []string) error {
 
 	// The allocate virtual memory can not bigger than physic virtual memory
 	if cmd.Flags().Changed("memory") {
-		if err := system.CheckMaxMemory(strongunits.MiB(initOpts.Memory)); err != nil {
+		if err := system2.CheckMaxMemory(strongunits.MiB(initOpts.Memory)); err != nil {
 			logrus.Infof("Can not allocate the memory size %s", initOpts.Memory)
 			return err
 		}

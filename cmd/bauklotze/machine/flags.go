@@ -1,7 +1,6 @@
 package machine
 
 const (
-	MarkUpdate         = "always-update"
 	Workspace          = "workspace"
 	reportUrlFlag      = "report-url"
 	bootImage          = "boot"

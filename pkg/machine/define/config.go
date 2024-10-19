@@ -1,7 +1,7 @@
 package define
 
 import (
-	strongunits "github.com/containers/common/pkg/strongunits"
+	"github.com/containers/common/pkg/strongunits"
 	"os"
 )
 
@@ -52,7 +52,6 @@ var (
 
 type StartOptions struct {
 	TwinPid   int32
-	Volumes   []string
 	ReportUrl string
 }
 
@@ -61,6 +60,7 @@ type StopOptions struct {
 }
 
 type InitOptions struct {
+	PPID         int32
 	IsDefault    bool
 	CPUS         uint64
 	Volumes      []string

@@ -45,9 +45,6 @@ func init() {
 	twinPid := ppid
 	flags.Int32Var(&startOpts.TwinPid, twinPid, -1, "the pid of PPID")
 
-	// VolumeFlagName := volume
-	// flags.StringArrayVarP(&startOpts.Volumes, VolumeFlagName, "v", nil, "Volumes to mount, source:target")
-
 	ReportUrlFlag := reportUrlFlag
 	flags.StringVar(&startOpts.ReportUrl, ReportUrlFlag, "", "Report events to the url")
 }
