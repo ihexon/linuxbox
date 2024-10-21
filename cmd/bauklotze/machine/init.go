@@ -95,6 +95,7 @@ func init() {
 }
 
 func initMachine(cmd *cobra.Command, args []string) error {
+	network.NewReporter(initOpts.SendEvt)
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	g, ctx := errgroup.WithContext(ctx)
@@ -119,8 +120,9 @@ func initMachine(cmd *cobra.Command, args []string) error {
 	})
 
 	go func() {
-		if err := g.Wait(); err != nil {
+		if err := g.Wait(); err != nil && !(errors.Is(err, context.Canceled)) {
 			logrus.Errorf("%s\n", err.Error())
+			network.Reporter.SendEventToOvmJs("error", err.Error())
 			registry.SetExitCode(1)
 			notifyexit.NotifyExit(registry.GetExitCode())
 		}

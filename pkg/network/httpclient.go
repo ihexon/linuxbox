@@ -115,6 +115,11 @@ func (o *OvmJSListener) SendEventToOvmJs(event, message string) {
 		return
 	}
 	connCtx, err := NewConnection(o.ReportUrl)
+	if err != nil {
+		logrus.Warnf("report url not valid: %v\n", err)
+		return
+	}
+
 	connCtx.Headers = http.Header{
 		"Content-Type": []string{PlainTextContentType},
 	}

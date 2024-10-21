@@ -51,6 +51,7 @@ func init() {
 
 func start(cmd *cobra.Command, args []string) error {
 	network.NewReporter(startOpts.ReportUrl)
+
 	var err error
 	vmName := defaultMachineName
 	if len(args) > 0 && len(args[0]) > 0 {
@@ -66,6 +67,7 @@ func start(cmd *cobra.Command, args []string) error {
 	}
 
 	logrus.Infof("starting machine %q\n", vmName)
+	network.Reporter.SendEventToOvmJs("start", "vm  staring")
 
 	if err = shim.Start(mc, provider, dirs, startOpts); err != nil {
 		return err
