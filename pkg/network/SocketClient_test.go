@@ -17,7 +17,7 @@ func TestHttpClient(t *testing.T) {
 	}
 
 	//connCtx.Body = strings.NewReader("Hello, World!")
-	response, err := connCtx.DoRequest("POST", "/1/2/4/5/name")
+	response, err := connCtx.DoRequest("GET", "notify")
 	if err != nil {
 		t.Errorf(err.Error())
 	}

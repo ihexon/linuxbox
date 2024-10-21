@@ -3,6 +3,7 @@ module bauklotze
 go 1.22
 
 require (
+	github.com/Code-Hex/go-infinity-channel v1.0.0
 	github.com/Microsoft/go-winio v0.6.2
 	github.com/containers/common v0.60.3
 	github.com/containers/gvisor-tap-vsock v0.7.5

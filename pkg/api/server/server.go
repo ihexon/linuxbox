@@ -21,7 +21,7 @@ type APIServer struct {
 	net.Listener
 	context.Context
 	context.CancelFunc
-	CorsHeaders string // Inject Cross-Origin Resource Sharing (CORS) headers
+	//CorsHeaders string // Inject Cross-Origin Resource Sharing (CORS) headers
 	idleTracker *idleTracker
 }
 
@@ -118,13 +118,13 @@ func makeNewServer(listener net.Listener) *APIServer {
 		},
 	)
 
-	router.MethodNotAllowedHandler = http.HandlerFunc(
-		func(w http.ResponseWriter, r *http.Request) {
-			// We can track user errors...
-			logrus.Infof("Failed Request: (%d:%s) for %s:'%s'", http.StatusMethodNotAllowed, http.StatusText(http.StatusMethodNotAllowed), r.Method, r.URL.String())
-			http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
-		},
-	)
+	//router.MethodNotAllowedHandler = http.HandlerFunc(
+	//	func(w http.ResponseWriter, r *http.Request) {
+	//		// We can track user errors...
+	//		logrus.Infof("Failed Request: (%d:%s) for %s:'%s'", http.StatusMethodNotAllowed, http.StatusText(http.StatusMethodNotAllowed), r.Method, r.URL.String())
+	//		http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
+	//	},
+	//)
 	server.setupRouter(router)
 	return &server
 }
@@ -141,6 +141,7 @@ func (s *APIServer) setupRouter(r *mux.Router) *mux.Router {
 	r.Handle(("/{name}/info"), s.APIHandler(backend.GetInfos)).Methods(http.MethodGet)
 	r.Handle(("/{name}/vmstat"), s.APIHandler(backend.GetVMStat)).Methods(http.MethodGet)
 	r.Handle(("/{name}/synctime"), s.APIHandler(backend.TimeSync)).Methods(http.MethodGet)
+	r.Handle(("/{name}/exec"), s.APIHandler(backend.DoExec)).Methods(http.MethodPost)
 
 	return r
 }

@@ -82,7 +82,7 @@ func (c *Connection) DoRequest(httpMethod, endpoint string) (*APIResponse, error
 
 	if c.URI.Scheme == "unix" {
 		// Allow path prefixes for tcp connections to match Docker behavior
-		baseURL = "http://local/"
+		baseURL = "http://local"
 		client = c.UnixClient
 	}
 
@@ -127,7 +127,7 @@ func (o *OvmJSListener) SendEventToOvmJs(event, message string) {
 		"event":   []string{event},
 		"message": []string{message},
 	}
-	_, err = connCtx.DoRequest("GET", "/ovmjs")
+	_, err = connCtx.DoRequest("GET", "notify")
 	if err != nil {
 		logrus.Warnf("Failed to notify %q: %v\n", o.ReportUrl, err)
 	}
