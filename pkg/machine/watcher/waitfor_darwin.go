@@ -21,7 +21,7 @@ func WaitProcessAndStopMachine(g *errgroup.Group, ctx context.Context, ovmPid, k
 }
 
 func watchProcess(ctx context.Context, ovmPid, krunPid, gvPid int32) error {
-	logrus.Infof("Waiting PPID[%d], krunkit[%d],gvproxy[%d] exited then stop the machine\n", ovmPid, krunPid, gvPid)
+	logrus.Infof("Waiting PPID[%d], krunkit[%d], gvproxy[%d] exited then stop the machine\n", ovmPid, krunPid, gvPid)
 	pids := []int32{(ovmPid), (krunPid), (gvPid)}
 	for {
 		select {

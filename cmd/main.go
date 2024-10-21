@@ -63,7 +63,8 @@ var (
 		DisableFlagsInUseLine: true,
 	}
 
-	logLevel = "info"
+	logLevel  = "info"
+	useStdout = ""
 )
 
 func init() {
@@ -72,12 +73,17 @@ func init() {
 	rootCmd.SetUsageTemplate(usageTemplate)
 	cobra.OnInitialize(
 		loggingHook,
+		stdOutHook,
 	)
 
+	lFlags := rootCmd.Flags()
 	pFlags := rootCmd.PersistentFlags()
 
 	logLevelFlagName := "log-level"
 	pFlags.StringVar(&logLevel, logLevelFlagName, logLevel, fmt.Sprintf("Log messages above specified level"))
+
+	outFlagName := "log-out"
+	lFlags.StringVar(&useStdout, outFlagName, "", "Send output (stdout) from podman to a file")
 
 	ovmHomedir := machine.Workspace
 	pFlags.StringVar(&ovmHomedir, ovmHomedir, "", "Bauklotze's HOME dif, default get by $HOME")
@@ -86,6 +92,16 @@ func init() {
 func main() {
 	rootCmd = parseCommands()
 	RootCmdExecute()
+}
+
+func stdOutHook() {
+	if useStdout != "" {
+		if fd, err := os.OpenFile(useStdout, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, os.ModePerm); err == nil {
+			logrus.SetOutput(fd)
+		} else {
+			fmt.Fprintf(os.Stderr, "Warring: unable to open file for standard output: %s\n", err.Error())
+		}
+	}
 }
 
 func parseCommands() *cobra.Command {

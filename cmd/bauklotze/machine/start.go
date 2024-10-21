@@ -67,7 +67,7 @@ func start(cmd *cobra.Command, args []string) error {
 	}
 
 	logrus.Infof("starting machine %q\n", vmName)
-	network.Reporter.SendEventToOvmJs("start", "vm  staring")
+	network.Reporter.SendEventToOvmJs("start", "vm is staring")
 
 	if err = shim.Start(mc, provider, dirs, startOpts); err != nil {
 		return err

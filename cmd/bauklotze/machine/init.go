@@ -82,16 +82,16 @@ func init() {
 	flags.StringVar(&initOpts.Images.BootableImage, BootImageName, cfg.ContainersConfDefaultsRO.Machine.Image, "Bootable image for machine")
 
 	BootImageVersion := bootVersion
-	flags.StringVar(&initOpts.ImageVersion.BootableImageVersion, BootImageVersion, cfg.ContainersConfDefaultsRO.Machine.Image, "Bootable image for machine")
+	flags.StringVar(&initOpts.ImageVersion.BootableImageVersion, BootImageVersion, cfg.ContainersConfDefaultsRO.Machine.Image, "Boot version field")
 
 	DataImageVersion := dataVersion
-	flags.StringVar(&initOpts.ImageVersion.DataDiskVersion, DataImageVersion, "", "Bootable image for machine")
+	flags.StringVar(&initOpts.ImageVersion.DataDiskVersion, DataImageVersion, "", "Data version field")
 
 	sendEventToEndpoint := reportUrlFlag
-	flags.StringVar(&initOpts.SendEvt, sendEventToEndpoint, "", "send events to somewhere")
+	flags.StringVar(&initOpts.SendEvt, sendEventToEndpoint, "", "send events to somewhere, only support unix:///....")
 
 	ppidFlagName := ppid
-	flags.Int32Var(&initOpts.PPID, ppidFlagName, -1, "Parent process id")
+	flags.Int32Var(&initOpts.PPID, ppidFlagName, -1, "Parent process id, if not given, the ppid is the current process's ppid")
 }
 
 func initMachine(cmd *cobra.Command, args []string) error {

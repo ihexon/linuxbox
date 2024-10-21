@@ -330,6 +330,8 @@ func Start(mc *vmconfigs.MachineConfig, mp vmconfigs.VMProvider, dirs *define.Ma
 				return fmt.Errorf("%s: ssh error: %v", msg, sshError)
 			}
 			return errors.New(msg)
+		} else {
+			logrus.Infof("Machine %s SSH is ready,Using sshkey %s with %s, listen in %d", mc.Name, mc.SSH.IdentityPath, mc.SSH.RemoteUsername, mc.SSH.Port)
 		}
 	}
 
