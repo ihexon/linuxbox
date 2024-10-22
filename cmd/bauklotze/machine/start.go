@@ -49,13 +49,13 @@ func init() {
 }
 
 func start(cmd *cobra.Command, args []string) error {
+	logrus.Infof("============MachineStart============")
 	network.NewReporter(startOpts.ReportUrl)
 
 	if startOpts.TwinPid == -1 {
 		mypid := os.Getpid()
 		startOpts.TwinPid = int32(mypid)
 	}
-
 	if isRunning, err := system.IsProcesSAlive([]int32{startOpts.TwinPid}); !isRunning {
 		return err
 	}

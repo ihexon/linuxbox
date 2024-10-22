@@ -96,7 +96,7 @@ func main() {
 
 func stdOutHook() {
 	if useStdout != "" {
-		if fd, err := os.OpenFile(useStdout, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, os.ModePerm); err == nil {
+		if fd, err := os.OpenFile(useStdout, os.O_CREATE|os.O_WRONLY|os.O_APPEND, os.ModePerm); err == nil {
 			logrus.SetOutput(fd)
 		} else {
 			fmt.Fprintf(os.Stderr, "Warring: unable to open file for standard output: %s\n", err.Error())
@@ -143,7 +143,6 @@ func RootCmdExecute() {
 }
 
 func loggingHook() {
-
 	var found bool
 	for _, l := range LogLevels {
 		if l == strings.ToLower(logLevel) {

@@ -92,6 +92,7 @@ func init() {
 }
 
 func initMachine(cmd *cobra.Command, args []string) error {
+	logrus.Infof("============MachineInit============")
 	network.NewReporter(initOpts.SendEvt)
 	// If not specified PPID, use the current process id as the parent process id
 	if initOpts.PPID == -1 {
