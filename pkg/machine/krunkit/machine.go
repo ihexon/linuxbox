@@ -202,7 +202,7 @@ func StartGenericAppleVM(mc *vmconfigs.MachineConfig, cmdBinary string, bootload
 		Key:            readFileContent(sshpub),
 		TimeZone:       "local", // Auto detect timezone from locales
 		VMType:         define.LibKrun,
-		VMName:         define.DefaultMachineName,
+		VMName:         mc.Name,
 		WritePath:      ignFile.GetPath(),
 		Rootful:        true,
 		MachineConfigs: mc,

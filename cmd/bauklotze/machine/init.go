@@ -9,6 +9,7 @@ import (
 	"bauklotze/pkg/machine/vmconfigs"
 	"bauklotze/pkg/network"
 	system2 "bauklotze/pkg/system"
+	"context"
 	"errors"
 	"fmt"
 	"github.com/containers/common/pkg/strongunits"
@@ -103,7 +104,6 @@ func initMachine(cmd *cobra.Command, args []string) error {
 	}
 
 	// Initialize the network reporter
-
 	initOpts.Name = defaultMachineName
 
 	if len(args) > 0 {
@@ -128,9 +128,6 @@ func initMachine(cmd *cobra.Command, args []string) error {
 
 	dataDisk := filepath.Join(dataDir, "external_disk", initOpts.Name, "data.raw") // ${BauklotzeHomePath}/data/{MachineName}/data.raw
 	initOpts.Images.DataDisk = dataDisk
-
-	overlayDisk := filepath.Join(dataDir, "external_disk", initOpts.Name, "overlay.raw") // ${BauklotzeHomePath}/data/{MachineName}/overlay.raw
-	initOpts.Images.OverlayImage = overlayDisk
 
 	var (
 		updateBootableImage bool = true
@@ -185,7 +182,7 @@ func initMachine(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	err = shim.Init(initOpts, provider)
+	err = shim.Init(context.Background(), initOpts, provider)
 	if err != nil {
 		network.Reporter.SendEventToOvmJs("error", err.Error())
 		return err

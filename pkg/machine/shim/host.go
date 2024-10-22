@@ -9,6 +9,7 @@ import (
 	"bauklotze/pkg/machine/lock"
 	"bauklotze/pkg/machine/vmconfigs"
 	"bauklotze/pkg/network"
+	"context"
 	"errors"
 	"fmt"
 	"github.com/containers/common/pkg/strongunits"
@@ -30,7 +31,7 @@ func VMExists(name string, vmstubbers []vmconfigs.VMProvider) (*vmconfigs.Machin
 	return nil, false, err
 }
 
-func Init(opts define.InitOptions, mp vmconfigs.VMProvider) error {
+func Init(ctx context.Context, opts define.InitOptions, mp vmconfigs.VMProvider) error {
 	var (
 		imageExtension string
 		err            error

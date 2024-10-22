@@ -91,9 +91,7 @@ func WaitAPIAndPrintInfo(reortUrl string, forwardSock string, forwardState APIFo
 		// DO NOT STOP the krunkit and gvproxy !
 		logrus.Error("failed to ping Podman API: ", err)
 	} else {
-		logrus.Info("Podman API ping success")
 		network.Reporter.SendEventToOvmJs("ready", "")
-		//network.SendEventToOvmJs(reortUrl, "ready", "")
 		fmt.Printf("Podman API forwarding listening on: %s\n", forwardSock)
 	}
 }

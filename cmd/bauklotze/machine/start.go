@@ -108,6 +108,7 @@ func start(cmd *cobra.Command, args []string) error {
 
 	if err := g.Wait(); err != nil {
 		logrus.Errorf("%s\n", err.Error())
+		network.Reporter.SendEventToOvmJs("error", err.Error())
 		// TODO: We dont need machine.GlobalPIDs for now
 		logrus.Infof("kill krunkit [%d]  and gvproxy [ %d]", machine.GlobalPIDs.GetKrunkitPID(), machine.GlobalPIDs.GetGvproxyPID())
 		_ = system.KillProcess(machine.GlobalPIDs.GetGvproxyPID())
