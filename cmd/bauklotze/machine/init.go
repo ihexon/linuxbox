@@ -205,8 +205,8 @@ func initMachine(cmd *cobra.Command, args []string) error {
 
 	if !updateBootableImage {
 		msg := "skip initialize virtual machine"
-		logrus.Errorf(msg)
-		return fmt.Errorf(msg)
+		logrus.Infof(msg)
+		return nil
 	}
 
 	for idx, vol := range initOpts.Volumes {

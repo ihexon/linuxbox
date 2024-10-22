@@ -54,7 +54,7 @@ func TimeSync(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if sshError := machine.CommonSSHSilent(mc.SSH.RemoteUsername, mc.SSH.IdentityPath, mc.Name, mc.SSH.Port, []string{"sudo date -s " + "'" + timeSt.Time + "'"}); sshError != nil {
+	if sshError := machine.CommonSSHSilent(mc.SSH.RemoteUsername, mc.SSH.IdentityPath, mc.Name, mc.SSH.Port, []string{"date -s " + "'" + timeSt.Time + "'"}); sshError != nil {
 		utils.Error(w, http.StatusInternalServerError, sshError)
 		return
 	}

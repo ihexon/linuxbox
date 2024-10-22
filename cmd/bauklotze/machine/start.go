@@ -10,11 +10,14 @@ import (
 	"bauklotze/pkg/machine/vmconfigs"
 	"bauklotze/pkg/machine/watcher"
 	"bauklotze/pkg/network"
+	"bauklotze/pkg/notifyexit"
 	"context"
+	"errors"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"golang.org/x/sync/errgroup"
 	"os"
+	"time"
 )
 
 var (
@@ -51,6 +54,37 @@ func init() {
 
 func start(cmd *cobra.Command, args []string) error {
 	network.NewReporter(startOpts.ReportUrl)
+	ctxA, cancelA := context.WithCancel(context.Background())
+	defer cancelA()
+	g, ctxA := errgroup.WithContext(ctxA)
+	// If not specified PPID, use the current process id as the parent process id
+	if startOpts.TwinPid == -1 {
+		mypid := os.Getpid()
+		startOpts.TwinPid = int32(mypid)
+	}
+
+	g.Go(func() error {
+		for {
+			select {
+			case <-ctxA.Done():
+				return context.Cause(ctxA)
+			default:
+			}
+			if isRunning, err := system.IsProcesSAlive([]int32{startOpts.TwinPid}); !isRunning {
+				return err
+			}
+			time.Sleep(300 * time.Millisecond)
+		}
+	})
+
+	go func() {
+		if err := g.Wait(); err != nil && !(errors.Is(err, context.Canceled)) {
+			logrus.Errorf("%s\n", err.Error())
+			network.Reporter.SendEventToOvmJs("error", err.Error())
+			registry.SetExitCode(1)
+			notifyexit.NotifyExit(registry.GetExitCode())
+		}
+	}()
 
 	var err error
 	vmName := defaultMachineName
@@ -75,17 +109,18 @@ func start(cmd *cobra.Command, args []string) error {
 
 	logrus.Infof("Machine %q started successfully\n", vmName)
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	g, ctx := errgroup.WithContext(ctx)
+	ctxB, cancelB := context.WithCancel(context.Background())
+	defer cancelB()
+	cancelA() // Cancel the first context because we do not need that anymore
+	g, ctxB = errgroup.WithContext(ctxB)
 
 	if startOpts.TwinPid == -1 {
 		mypid := os.Getpid()
 		startOpts.TwinPid = int32(mypid)
 	}
 
-	watcher.WaitProcessAndStopMachine(g, ctx, startOpts.TwinPid, int32(machine.GlobalPIDs.GetKrunkitPID()), int32(machine.GlobalPIDs.GetGvproxyPID()))
-	watcher.WaitApiServerAndStopMachine(g, ctx, dirs)
+	watcher.WaitProcessAndStopMachine(g, ctxB, startOpts.TwinPid, int32(machine.GlobalPIDs.GetKrunkitPID()), int32(machine.GlobalPIDs.GetGvproxyPID()))
+	watcher.WaitApiServerAndStopMachine(g, ctxB, dirs)
 
 	if err := g.Wait(); err != nil {
 		logrus.Errorf("%s\n", err.Error())

@@ -36,6 +36,7 @@ func ServeIgnitionOverSocketCommon(url *url.URL, file fs.File) error {
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		logrus.Infof("New request : %s", r.RequestURI)
 		logrus.Infof("Serving ignition file: %s", cfgAbsPath)
 		_, err := w.Write(ignFile) // Ignition json file
 		if err != nil {

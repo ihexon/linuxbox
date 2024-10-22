@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/sirupsen/logrus"
 	"net/http"
+	"net/url"
 	"sync"
 )
 
@@ -66,6 +67,8 @@ func WaitAPIAndPrintInfo(reortUrl string, forwardSock string, forwardState APIFo
 
 func WaitAndPingAPI(sock string) error {
 	connCtx, err := network.NewConnection(sock)
+	connCtx.UrlParameter = url.Values{}
+	connCtx.Headers = http.Header{}
 	if err != nil {
 		return err
 	}
