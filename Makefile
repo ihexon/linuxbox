@@ -23,7 +23,7 @@ out/bin/ovm-arm64: out/bin/ovm-%:
 ##@ Clean commands
 ##@
 clean: ##@ Clean up build artifacts
-	$(RM) -rf out
+	$(RM) -rf out/bin/
 
 ##@
 ##@ Misc commands

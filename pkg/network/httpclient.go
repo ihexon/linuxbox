@@ -127,9 +127,12 @@ func (o *OvmJSListener) SendEventToOvmJs(event, message string) {
 		"event":   []string{event},
 		"message": []string{message},
 	}
-	_, err = connCtx.DoRequest("GET", "notify")
+	logrus.Infof("Request %s , %s", connCtx.URI, connCtx.UrlParameter)
+	req, err := connCtx.DoRequest("GET", "notify")
 	if err != nil {
 		logrus.Warnf("Failed to notify %q: %v\n", o.ReportUrl, err)
+	} else {
+		req.Body.Close()
 	}
 }
 

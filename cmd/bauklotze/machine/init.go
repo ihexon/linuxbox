@@ -8,19 +8,15 @@ import (
 	"bauklotze/pkg/machine/system"
 	"bauklotze/pkg/machine/vmconfigs"
 	"bauklotze/pkg/network"
-	"bauklotze/pkg/notifyexit"
 	system2 "bauklotze/pkg/system"
-	"context"
 	"errors"
 	"fmt"
 	"github.com/containers/common/pkg/strongunits"
 	"github.com/containers/storage/pkg/regexp"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	"golang.org/x/sync/errgroup"
 	"os"
 	"path/filepath"
-	"time"
 )
 
 var (
@@ -96,37 +92,15 @@ func init() {
 
 func initMachine(cmd *cobra.Command, args []string) error {
 	network.NewReporter(initOpts.SendEvt)
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	g, ctx := errgroup.WithContext(ctx)
 	// If not specified PPID, use the current process id as the parent process id
 	if initOpts.PPID == -1 {
 		mypid := os.Getpid()
 		initOpts.PPID = int32(mypid)
 	}
-
-	g.Go(func() error {
-		for {
-			select {
-			case <-ctx.Done():
-				return context.Cause(ctx)
-			default:
-			}
-			if isRunning, err := system.IsProcesSAlive([]int32{initOpts.PPID}); !isRunning {
-				return err
-			}
-			time.Sleep(300 * time.Millisecond)
-		}
-	})
-
-	go func() {
-		if err := g.Wait(); err != nil && !(errors.Is(err, context.Canceled)) {
-			logrus.Errorf("%s\n", err.Error())
-			network.Reporter.SendEventToOvmJs("error", err.Error())
-			registry.SetExitCode(1)
-			notifyexit.NotifyExit(registry.GetExitCode())
-		}
-	}()
+	// First check the parent process is alive
+	if isRunning, err := system.IsProcesSAlive([]int32{initOpts.PPID}); !isRunning {
+		return err
+	}
 
 	// Initialize the network reporter
 
@@ -161,7 +135,6 @@ func initMachine(cmd *cobra.Command, args []string) error {
 	var (
 		updateBootableImage bool = true
 		updateExternalDisk  bool = true
-		updateOverlayDisk   bool = true
 	)
 
 	switch {
@@ -192,15 +165,6 @@ func initMachine(cmd *cobra.Command, args []string) error {
 		}
 	} else {
 		logrus.Infof("Skip initialize data disk.")
-	}
-
-	// Notice the  updateOverlayDisk always be true for now !
-	if updateOverlayDisk {
-		logrus.Infof("Recreate overlay disk: %s", initOpts.Images.OverlayImage)
-		err = system2.CreateAndResizeDisk(initOpts.Images.OverlayImage, strongunits.GiB(100))
-		if err != nil {
-			return err
-		}
 	}
 
 	if !updateBootableImage {

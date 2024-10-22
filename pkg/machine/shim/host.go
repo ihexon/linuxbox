@@ -37,11 +37,6 @@ func Init(opts define.InitOptions, mp vmconfigs.VMProvider) error {
 		imagePath      *define.VMFile
 	)
 
-	// Empty callbackFuncs arraylist
-	callbackFuncs := machine.CleanupFuncs()
-	defer callbackFuncs.CleanIfErr(&err)
-	go callbackFuncs.CleanOnSignal()
-
 	dirs, err := env.GetMachineDirs(mp.VMType())
 	if err != nil {
 		return err
@@ -98,25 +93,15 @@ func Init(opts define.InitOptions, mp vmconfigs.VMProvider) error {
 	// Extract the bootable image
 	network.Reporter.SendEventToOvmJs("decompress", "running")
 	if err = mp.GetDisk(initCmdOpts.Images.BootableImage, dirs, mc.ImagePath, mp.VMType(), mc.Name); err != nil {
-		//network.SendEventToOvmJs(opts.SendEvt, "error", err.Error())
-		network.Reporter.SendEventToOvmJs("error", err.Error())
 		return err
 	} else {
 		network.Reporter.SendEventToOvmJs("decompress", "success")
 
 	}
 
-	// If any error do clean
-	callbackFuncs.Add(mc.ImagePath.Delete)
-
 	if err = connection.AddSSHConnectionsToPodmanSocket(mc.SSH.Port, mc.SSH.IdentityPath, mc.Name, mc.SSH.RemoteUsername, opts); err != nil {
 		return err
 	}
-	// if any error clean config/connectionCfg/bugbox-connections.json
-	cleanup := func() error {
-		return connection.RemoveConnections(mc.Name + "-root")
-	}
-	callbackFuncs.Add(cleanup)
 
 	err = mp.CreateVM(createOpts, mc)
 
@@ -138,7 +123,6 @@ func Init(opts define.InitOptions, mp vmconfigs.VMProvider) error {
 	network.Reporter.SendEventToOvmJs("writeConfig", "running")
 	err = mc.Write()
 	if err != nil {
-		network.Reporter.SendEventToOvmJs("error", err.Error())
 		return err
 	}
 	network.Reporter.SendEventToOvmJs("writeConfig", "success")
@@ -188,7 +172,6 @@ func checkExclusiveActiveVM(provider vmconfigs.VMProvider, mc *vmconfigs.Machine
 }
 
 func startNetAndForwardNow(
-	callBackFuncs *machine.CleanupCallback,
 	mc *vmconfigs.MachineConfig,
 	mp vmconfigs.VMProvider,
 	dirs *define.MachineDirs,
@@ -197,15 +180,6 @@ func startNetAndForwardNow(
 	machine.APIForwardingState,
 	error,
 ) {
-	gvproxyPidFile, err := dirs.RuntimeDir.AppendToNewVMFile(env.Gvpid, nil)
-	if err != nil {
-		return "", machine.NoForwarding, err
-	}
-	cleanGV := func() error {
-		return gvproxy.CleanupGVProxy(*gvproxyPidFile)
-	}
-	callBackFuncs.Add(cleanGV)
-
 	forwardSocketPath, forwardSocketState, err := startNetworking(mc, mp)
 	if err != nil {
 		return "", machine.NoForwarding, err
@@ -267,18 +241,13 @@ func Start(mc *vmconfigs.MachineConfig, mp vmconfigs.VMProvider, dirs *define.Ma
 		}
 	}()
 
-	callBackFuncs := machine.CleanupFuncs()
-	go callBackFuncs.CleanOnSignal()
-
-	forwardSocketPath, forwardingState, err := startNetAndForwardNow(&callBackFuncs, mc, mp, dirs)
-
-	defer callBackFuncs.CleanIfErr(&err)
+	forwardSocketPath, forwardingState, err := startNetAndForwardNow(mc, mp, dirs)
 	if err != nil {
 		return err
 	}
 
 	// Start krunkit now
-	releaseCmd, WaitForReady, err := mp.StartVM(mc)
+	_, WaitForReady, err := mp.StartVM(mc)
 	if err != nil {
 		return err
 	}
@@ -300,11 +269,11 @@ func Start(mc *vmconfigs.MachineConfig, mp vmconfigs.VMProvider, dirs *define.Ma
 		return err
 	}
 
-	if releaseCmd != nil && releaseCmd() != nil {
-		if err := releaseCmd(); err != nil {
-			logrus.Error(err)
-		}
-	}
+	//if releaseCmd != nil && releaseCmd() != nil {
+	//	if err := releaseCmd(); err != nil {
+	//		logrus.Error(err)
+	//	}
+	//}
 
 	err = mp.PostStartNetworking(mc, false)
 	if err != nil {

@@ -10,14 +10,14 @@ import (
 	"bauklotze/pkg/machine/vmconfigs"
 	"bauklotze/pkg/machine/watcher"
 	"bauklotze/pkg/network"
-	"bauklotze/pkg/notifyexit"
 	"context"
-	"errors"
+	"fmt"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"golang.org/x/sync/errgroup"
 	"os"
-	"time"
+	"os/signal"
+	"syscall"
 )
 
 var (
@@ -26,13 +26,9 @@ var (
 		Short:             "Start an existing machine",
 		Long:              "Start a managed virtual machine ",
 		PersistentPreRunE: machinePreRunE, // Get Provider and set workdir if needed
-		PersistentPostRunE: func(cmd *cobra.Command, args []string) error {
-			network.Reporter.SendEventToOvmJs("exit", "")
-			return nil
-		},
-		RunE:    start,
-		Args:    cobra.MaximumNArgs(1),
-		Example: `bauklotze machine start`,
+		RunE:              start,
+		Args:              cobra.MaximumNArgs(1),
+		Example:           `bauklotze machine start`,
 	}
 	startOpts = define.StartOptions{}
 )
@@ -54,37 +50,30 @@ func init() {
 
 func start(cmd *cobra.Command, args []string) error {
 	network.NewReporter(startOpts.ReportUrl)
-	ctxA, cancelA := context.WithCancel(context.Background())
-	defer cancelA()
-	g, ctxA := errgroup.WithContext(ctxA)
-	// If not specified PPID, use the current process id as the parent process id
+
 	if startOpts.TwinPid == -1 {
 		mypid := os.Getpid()
 		startOpts.TwinPid = int32(mypid)
 	}
 
+	if isRunning, err := system.IsProcesSAlive([]int32{startOpts.TwinPid}); !isRunning {
+		return err
+	}
+
+	ctx, cancelB := context.WithCancel(context.Background())
+	defer cancelB()
+	g, ctx := errgroup.WithContext(ctx)
+
 	g.Go(func() error {
-		for {
-			select {
-			case <-ctxA.Done():
-				return context.Cause(ctxA)
-			default:
-			}
-			if isRunning, err := system.IsProcesSAlive([]int32{startOpts.TwinPid}); !isRunning {
-				return err
-			}
-			time.Sleep(300 * time.Millisecond)
+		signalChan := make(chan os.Signal, 1)
+		signal.Notify(signalChan, os.Interrupt, syscall.SIGTERM, syscall.SIGQUIT)
+		select {
+		case <-ctx.Done():
+			return context.Cause(ctx)
+		case sign := <-signalChan:
+			return fmt.Errorf("signal received: %v", sign)
 		}
 	})
-
-	go func() {
-		if err := g.Wait(); err != nil && !(errors.Is(err, context.Canceled)) {
-			logrus.Errorf("%s\n", err.Error())
-			network.Reporter.SendEventToOvmJs("error", err.Error())
-			registry.SetExitCode(1)
-			notifyexit.NotifyExit(registry.GetExitCode())
-		}
-	}()
 
 	var err error
 	vmName := defaultMachineName
@@ -109,25 +98,29 @@ func start(cmd *cobra.Command, args []string) error {
 
 	logrus.Infof("Machine %q started successfully\n", vmName)
 
-	ctxB, cancelB := context.WithCancel(context.Background())
-	defer cancelB()
-	cancelA() // Cancel the first context because we do not need that anymore
-	g, ctxB = errgroup.WithContext(ctxB)
-
 	if startOpts.TwinPid == -1 {
 		mypid := os.Getpid()
 		startOpts.TwinPid = int32(mypid)
 	}
 
-	watcher.WaitProcessAndStopMachine(g, ctxB, startOpts.TwinPid, int32(machine.GlobalPIDs.GetKrunkitPID()), int32(machine.GlobalPIDs.GetGvproxyPID()))
-	watcher.WaitApiServerAndStopMachine(g, ctxB, dirs)
+	watcher.WaitProcessAndStopMachine(g, ctx, startOpts.TwinPid, int32(machine.GlobalPIDs.GetKrunkitPID()), int32(machine.GlobalPIDs.GetGvproxyPID()))
+	watcher.WaitApiServerAndStopMachine(g, ctx, dirs)
 
 	if err := g.Wait(); err != nil {
 		logrus.Errorf("%s\n", err.Error())
+		// TODO: We dont need machine.GlobalPIDs for now
+		logrus.Infof("kill krunkit [%d]  and gvproxy [ %d]", machine.GlobalPIDs.GetKrunkitPID(), machine.GlobalPIDs.GetGvproxyPID())
 		_ = system.KillProcess(machine.GlobalPIDs.GetGvproxyPID())
 		_ = system.KillProcess(machine.GlobalPIDs.GetKrunkitPID())
-		return err
 	}
+
+	gvproxyCmd := machine.GlobalCmds.GetGvproxyCmd()
+	logrus.Infof("Waiting for gvproxy to exit,pid [ %d ]", gvproxyCmd.Process.Pid)
+	_ = gvproxyCmd.Wait()
+
+	krunCmd := machine.GlobalCmds.GetKrunCmd()
+	logrus.Infof("Waiting for krun to exit, pid [ %d ]", krunCmd.Process.Pid)
+	_ = krunCmd.Wait()
 
 	return err
 }

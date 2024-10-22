@@ -145,21 +145,6 @@ func StartGenericAppleVM(mc *vmconfigs.MachineConfig, cmdBinary string, bootload
 		vm.Devices = append(vm.Devices, externalDisk)
 	}
 
-	//if mc.OverlayDisk.GetPath() != "" {
-	//	if err = fileutils.Exists(mc.OverlayDisk.GetPath()); err != nil {
-	//		logrus.Warnf("overlay disk does not exist: %s", mc.OverlayDisk.GetPath())
-	//		if err = system.CreateAndResizeDisk(mc.OverlayDisk.GetPath(), 500); err != nil {
-	//			return nil, nil, err
-	//		}
-	//	}
-	//
-	//	overlayDisk, err := vfConfig.VirtioBlkNew(mc.OverlayDisk.GetPath())
-	//	if err != nil {
-	//		return nil, nil, err
-	//	}
-	//	vm.Devices = append(vm.Devices, overlayDisk)
-	//}
-
 	mounts, err := VirtIOFsToVFKitVirtIODevice(mc.Mounts)
 	if err != nil {
 		return nil, nil, err
@@ -260,10 +245,11 @@ func StartGenericAppleVM(mc *vmconfigs.MachineConfig, cmdBinary string, bootload
 	}
 
 	mc.KRunkitPid = int32(cmd.Process.Pid)
+	machine.GlobalPIDs.SetKrunkitPID(cmd.Process.Pid)
+	machine.GlobalCmds.SetKrunCmd(cmd)
 
 	returnFunc := func() error {
 		processErrChan := make(chan error)
-		machine.GlobalPIDs.SetKrunkitPID(cmd.Process.Pid)
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
 

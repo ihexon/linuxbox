@@ -73,16 +73,17 @@ func startHostForwarder(mc *vmconfigs.MachineConfig, provider vmconfigs.VMProvid
 	if err := provider.StartNetworking(mc, &cmd); err != nil {
 		return err
 	}
-	c := cmd.Cmd(binary)
+	gvcmd := cmd.Cmd(binary)
 
 	logrus.Infof("Gvproxy command-line: %s %s", binary, strings.Join(cmd.ToCmdline(), " "))
-	if err := c.Start(); err != nil {
+	if err := gvcmd.Start(); err != nil {
 		return fmt.Errorf("unable to execute: %q: %w", cmd.ToCmdline(), err)
 	}
 
-	machine.GlobalPIDs.SetGvproxyPID(c.Process.Pid)
+	machine.GlobalPIDs.SetGvproxyPID(gvcmd.Process.Pid)
+	machine.GlobalCmds.SetGvpCmd(gvcmd)
 
-	mc.GVProxyPid = int32(c.Process.Pid)
+	mc.GVProxyPid = int32(gvcmd.Process.Pid)
 	mc.GvProxy.GvProxy.PidFile = cmd.PidFile
 	mc.GvProxy.GvProxy.LogFile = cmd.LogFile
 	mc.GvProxy.GvProxy.SSHPort = cmd.SSHPort

@@ -110,8 +110,7 @@ func parseCommands() *cobra.Command {
 	}
 
 	if err := terminal.SetConsole(); err != nil {
-		logrus.Error(err)
-		notifyexit.NotifyExit(1)
+		logrus.Warnf(err.Error())
 	}
 
 	rootCmd.SetFlagErrorFunc(flagErrorFunc)
@@ -144,6 +143,7 @@ func RootCmdExecute() {
 }
 
 func loggingHook() {
+
 	var found bool
 	for _, l := range LogLevels {
 		if l == strings.ToLower(logLevel) {

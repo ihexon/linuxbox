@@ -39,7 +39,7 @@ func (w WSLStubber) CreateVM(opts define.CreateVMOpts, mc *vmconfigs.MachineConf
 	)
 	callbackFuncs := machine.CleanupCallback{}
 	defer callbackFuncs.CleanIfErr(&err)
-	go callbackFuncs.CleanOnSignal()
+	//go callbackFuncs.CleanOnSignal()
 	mc.WSLHypervisor = new(vmconfigs.WSLConfig)
 
 	_ = setupWslProxyEnv()
