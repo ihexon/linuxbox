@@ -158,6 +158,13 @@ func (mc *MachineConfig) RuntimeDir() (*define.VMFile, error) {
 	return mc.Dirs.RuntimeDir, nil
 }
 
+func (mc *MachineConfig) LogsDir() (*define.VMFile, error) {
+	if mc.Dirs == nil || mc.Dirs.LogsDir == nil {
+		return nil, errors.New("no runtime directory set")
+	}
+	return mc.Dirs.LogsDir, nil
+}
+
 func NewMachineConfig(opts define.InitOptions, dirs *define.MachineDirs, sshIdentityPath string, mtype define.VMType) (*MachineConfig, error) {
 	mc := new(MachineConfig)
 	mc.Name = opts.Name

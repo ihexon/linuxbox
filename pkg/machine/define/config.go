@@ -35,6 +35,7 @@ type MachineDirs struct {
 	DataDir       *VMFile
 	ImageCacheDir *VMFile
 	RuntimeDir    *VMFile
+	LogsDir       *VMFile
 }
 
 type ResetOptions struct {

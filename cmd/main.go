@@ -70,13 +70,7 @@ var (
 )
 
 func init() {
-	// 初始化 rootCmd,
-	// 在 rootCmd 初始化之前，子命令 如 start,stop,init 等的 cmd 已经被提前初始化
 	rootCmd.SetUsageTemplate(usageTemplate)
-	cobra.OnInitialize(
-		loggingHook,
-		stdOutHook,
-	)
 
 	lFlags := rootCmd.Flags()
 	pFlags := rootCmd.PersistentFlags()
@@ -85,10 +79,15 @@ func init() {
 	pFlags.StringVar(&logLevel, logLevelFlagName, logLevel, fmt.Sprintf("Log messages above specified level"))
 
 	outFlagName := "log-out"
-	lFlags.StringVar(&useStdout, outFlagName, "", "Send output (stdout) from podman to a file")
+	lFlags.StringVar(&useStdout, outFlagName, "", "If set --log-out console, send output to terminal")
 
 	ovmHomedir := machine.Workspace
 	pFlags.StringVar(&ovmHomedir, ovmHomedir, "", "Bauklotze's HOME dif, default get by $HOME")
+
+	cobra.OnInitialize(
+		loggingHook,
+		stdOutHook,
+	)
 }
 
 func main() {
@@ -97,8 +96,13 @@ func main() {
 }
 
 func stdOutHook() {
-	if useStdout != "" {
-		if fd, err := os.OpenFile(useStdout, os.O_CREATE|os.O_WRONLY|os.O_APPEND, os.ModePerm); err == nil {
+	if useStdout != "console" {
+		err := os.MkdirAll(filepath.Join(rootCmd.Flag(machine.Workspace).Value.String(), "logs"), os.ModePerm)
+		if err != nil {
+			return
+		}
+		logfile := filepath.Join(rootCmd.Flag(machine.Workspace).Value.String(), "logs", "ovm.log")
+		if fd, err := os.OpenFile(logfile, os.O_CREATE|os.O_WRONLY|os.O_APPEND, os.ModePerm); err == nil {
 			logrus.SetOutput(fd)
 		} else {
 			fmt.Fprintf(os.Stderr, "Warring: unable to open file for standard output: %s\n", err.Error())

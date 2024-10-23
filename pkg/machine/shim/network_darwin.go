@@ -51,9 +51,10 @@ func startHostForwarder(mc *vmconfigs.MachineConfig, provider vmconfigs.VMProvid
 	}
 	cmd := gvproxy.NewGvproxyCommand() // New a GvProxyCommands
 	runDir := dirs.RuntimeDir
+	logsDIr := dirs.LogsDir
 
 	cmd.PidFile = filepath.Join(runDir.GetPath(), "gvproxy.pid")
-	cmd.LogFile = filepath.Join(runDir.GetPath(), "gvproxy.log")
+	cmd.LogFile = filepath.Join(logsDIr.GetPath(), "gvproxy.log")
 
 	cmd.SSHPort = mc.SSH.Port
 

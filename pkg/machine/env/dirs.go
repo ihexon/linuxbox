@@ -25,6 +25,11 @@ func ConfDirPrefix() (string, error) {
 	return filepath.Join(homeDir, "config"), nil // ${BauklotzeHomePath}/config
 }
 
+func GetLogsDir() (string, error) {
+	homeDir, _ := GetBauklotzeHomePath()
+	return filepath.Join(homeDir, "logs"), nil
+}
+
 // GetConfDir ${BauklotzeHomePath}/config/{wsl,libkrun,qemu,hyper...}
 func GetConfDir(vmType define.VMType) (string, error) {
 	confDirPrefix, err := ConfDirPrefix() // ${BauklotzeHomePath}/config
@@ -70,28 +75,59 @@ func GetMachineDirs(vmType define.VMType) (*define.MachineDirs, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	rtDirFile, err := define.NewMachineFile(rtDir, nil)
+	if err != nil {
+		return nil, err
+	}
 
 	dataDir, err := GetDataDir(vmType)
+	if err != nil {
+		return nil, err
+	}
+
 	dataDirFile, err := define.NewMachineFile(dataDir, nil)
+	if err != nil {
+		return nil, err
+	}
+
 	imageCacheDir, err := dataDirFile.AppendToNewVMFile("cache", nil)
+	if err != nil {
+		return nil, err
+	}
 
 	configDir, err := GetConfDir(vmType)
 	if err != nil {
 		return nil, err
 	}
 	configDirFile, err := define.NewMachineFile(configDir, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	logsDir, err := GetLogsDir()
+	if err != nil {
+		return nil, err
+	}
+	logsDirVMFile, err := define.NewMachineFile(logsDir, nil)
+	if err != nil {
+		return nil, err
+	}
 
 	dirs := define.MachineDirs{
 		ConfigDir:     configDirFile, // ${BauklotzeHomePath}/config/{wsl,libkrun,qemu,hyper...}
 		DataDir:       dataDirFile,   // ${BauklotzeHomePath}/data/{wsl2,libkrun,qemu,hyper...}
 		ImageCacheDir: imageCacheDir, // ${BauklotzeHomePath}/data/{wsl2,libkrun,qemu,hyper...}/cache
 		RuntimeDir:    rtDirFile,     // ${BauklotzeHomePath}/tmp/
+		LogsDir:       logsDirVMFile, // ${BauklotzeHomePath}/logs
 	}
 	if err = os.MkdirAll(rtDir, 0755); err != nil {
 		return nil, err
 	}
 	if err = os.MkdirAll(configDir, 0755); err != nil {
+		return nil, err
+	}
+	if err = os.MkdirAll(logsDirVMFile.GetPath(), 0755); err != nil {
 		return nil, err
 	}
 	err = os.MkdirAll(imageCacheDir.GetPath(), 0755)

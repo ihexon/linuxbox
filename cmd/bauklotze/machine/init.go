@@ -87,17 +87,23 @@ func init() {
 	sendEventToEndpoint := reportUrlFlag
 	flags.StringVar(&initOpts.SendEvt, sendEventToEndpoint, "", "send events to somewhere, only support unix:///....")
 
+	// Default value is -1
 	ppidFlagName := ppid
 	flags.Int32Var(&initOpts.PPID, ppidFlagName, -1, "Parent process id, if not given, the ppid is the current process's ppid")
 }
 
 func initMachine(cmd *cobra.Command, args []string) error {
+	var err error
 	logrus.Infof("============MachineInit============")
 	network.NewReporter(initOpts.SendEvt)
 	// If not specified PPID, use the current process id as the parent process id
 	if initOpts.PPID == -1 {
-		mypid := os.Getpid()
-		initOpts.PPID = int32(mypid)
+		initOpts.PPID, err = system.GetPPID(int32(os.Getpid()))
+		if err != nil {
+			return fmt.Errorf("failed to get parent pid: %w", err)
+		} else {
+			logrus.Infof("The parent pid is: %d", initOpts.PPID)
+		}
 	}
 	// First check the parent process is alive
 	if isRunning, err := system.IsProcesSAlive([]int32{initOpts.PPID}); !isRunning {

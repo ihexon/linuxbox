@@ -106,6 +106,7 @@ func WaitAPIAndPrintInfo(reortUrl string, forwardSock string, forwardState APIFo
 		return err
 	} else {
 		network.Reporter.SendEventToOvmJs("ready", "")
+		logrus.Infof("Podman API forwarding listening on: %s\n", forwardSock)
 		fmt.Printf("Podman API forwarding listening on: %s\n", forwardSock)
 	}
 	return nil

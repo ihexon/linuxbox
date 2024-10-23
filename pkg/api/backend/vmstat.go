@@ -30,10 +30,10 @@ func (v statType) String() string {
 	case running:
 		return "Running"
 	case unknown:
-		return "Unknown"
+		return "Stopped"
 	default:
 	}
-	return "Unknown"
+	return "Stopped"
 }
 
 func getVMstat(vmName string) (statType, error) {

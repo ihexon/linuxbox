@@ -41,7 +41,7 @@ func init() {
 
 	flags := startCmd.Flags()
 
-	twinPid := ppid
+	twinPid := ppid // Default is -1
 	flags.Int32Var(&startOpts.TwinPid, twinPid, -1, "the pid of PPID")
 
 	ReportUrlFlag := reportUrlFlag
@@ -49,19 +49,25 @@ func init() {
 }
 
 func start(cmd *cobra.Command, args []string) error {
+	var err error
 	logrus.Infof("============MachineStart============")
 	network.NewReporter(startOpts.ReportUrl)
 
 	if startOpts.TwinPid == -1 {
-		mypid := os.Getpid()
-		startOpts.TwinPid = int32(mypid)
+		startOpts.TwinPid, err = system.GetPPID(int32(os.Getpid()))
+		if err != nil {
+			return fmt.Errorf("failed to get parent pid: %w", err)
+		} else {
+			logrus.Infof("The parent pid is: %d", startOpts.TwinPid)
+		}
 	}
+
 	if isRunning, err := system.IsProcesSAlive([]int32{startOpts.TwinPid}); !isRunning {
 		return err
 	}
 
-	ctx, cancelB := context.WithCancel(context.Background())
-	defer cancelB()
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 	g, ctx := errgroup.WithContext(ctx)
 
 	g.Go(func() error {
@@ -71,11 +77,10 @@ func start(cmd *cobra.Command, args []string) error {
 		case <-ctx.Done():
 			return context.Cause(ctx)
 		case sign := <-signalChan:
-			return fmt.Errorf("signal received: %v", sign)
+			return fmt.Errorf("Signal received: %v", sign)
 		}
 	})
 
-	var err error
 	vmName := defaultMachineName
 	if len(args) > 0 && len(args[0]) > 0 {
 		vmName = args[0]
@@ -99,13 +104,7 @@ func start(cmd *cobra.Command, args []string) error {
 
 	logrus.Infof("Machine %q started successfully\n", vmName)
 
-	if startOpts.TwinPid == -1 {
-		mypid := os.Getpid()
-		startOpts.TwinPid = int32(mypid)
-	}
-
 	watcher.WaitProcessAndStopMachine(g, ctx, startOpts.TwinPid, int32(machine.GlobalPIDs.GetKrunkitPID()), int32(machine.GlobalPIDs.GetGvproxyPID()))
-	//watcher.WaitApiServerAndStopMachine(g, ctx, dirs)
 
 	if err = g.Wait(); err != nil {
 		logrus.Errorf("%s\n", err.Error())
