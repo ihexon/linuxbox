@@ -88,6 +88,7 @@ func start(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
+	watcher.WaitApiServerAndStopMachine(g, ctx, dirs)
 
 	logrus.Infof("starting machine %q\n", vmName)
 	network.Reporter.SendEventToOvmJs("start", "vm is staring")
@@ -104,7 +105,7 @@ func start(cmd *cobra.Command, args []string) error {
 	}
 
 	watcher.WaitProcessAndStopMachine(g, ctx, startOpts.TwinPid, int32(machine.GlobalPIDs.GetKrunkitPID()), int32(machine.GlobalPIDs.GetGvproxyPID()))
-	watcher.WaitApiServerAndStopMachine(g, ctx, dirs)
+	//watcher.WaitApiServerAndStopMachine(g, ctx, dirs)
 
 	if err = g.Wait(); err != nil {
 		logrus.Errorf("%s\n", err.Error())

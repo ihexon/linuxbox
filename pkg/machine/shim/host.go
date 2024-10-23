@@ -310,14 +310,17 @@ func Start(mc *vmconfigs.MachineConfig, mp vmconfigs.VMProvider, dirs *define.Ma
 		return err
 	}
 
-	machine.WaitAPIAndPrintInfo(
+	err = machine.WaitAPIAndPrintInfo(
 		opts.ReportUrl,
 		forwardSocketPath,
 		forwardingState,
 		mc.Name,
 	)
+	if err != nil {
+		return err
+	}
 
-	return nil
+	return err
 }
 
 // Stop stops the machine

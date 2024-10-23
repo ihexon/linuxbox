@@ -133,6 +133,7 @@ func addCommand(c registry.CliCommand) {
 
 func RootCmdExecute() {
 	err := rootCmd.Execute()
+	// Make sure no matter what happens, kill the gvproxy and Krunkit process at the end
 	_ = system.KillProcess(machine2.GlobalPIDs.GetGvproxyPID())
 	_ = system.KillProcess(machine2.GlobalPIDs.GetKrunkitPID())
 	if err != nil {

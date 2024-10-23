@@ -35,7 +35,7 @@ func ListenAndWaitOnSocket(errChan chan<- error, listener net.Listener) {
 		return
 	}
 	_, err = bufio.NewReader(conn).ReadString('\n')
-	logrus.Infof("ready ack received")
+	logrus.Infof("READY ACK received")
 
 	if closeErr := conn.Close(); closeErr != nil {
 		errChan <- closeErr
