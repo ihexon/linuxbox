@@ -5,6 +5,8 @@ import (
 	_ "bauklotze/cmd/bauklotze/machine"
 	"bauklotze/cmd/bauklotze/validata"
 	"bauklotze/cmd/registry"
+	machine2 "bauklotze/pkg/machine"
+	"bauklotze/pkg/machine/system"
 	"bauklotze/pkg/network"
 	"bauklotze/pkg/notifyexit"
 	"bauklotze/pkg/terminal"
@@ -131,6 +133,8 @@ func addCommand(c registry.CliCommand) {
 
 func RootCmdExecute() {
 	err := rootCmd.Execute()
+	_ = system.KillProcess(machine2.GlobalPIDs.GetGvproxyPID())
+	_ = system.KillProcess(machine2.GlobalPIDs.GetKrunkitPID())
 	if err != nil {
 		network.Reporter.SendEventToOvmJs("error", fmt.Sprintf("Error: %v", err))
 		fmt.Fprintln(os.Stderr, formatError(err))

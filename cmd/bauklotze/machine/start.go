@@ -106,9 +106,9 @@ func start(cmd *cobra.Command, args []string) error {
 	watcher.WaitProcessAndStopMachine(g, ctx, startOpts.TwinPid, int32(machine.GlobalPIDs.GetKrunkitPID()), int32(machine.GlobalPIDs.GetGvproxyPID()))
 	watcher.WaitApiServerAndStopMachine(g, ctx, dirs)
 
-	if err := g.Wait(); err != nil {
+	if err = g.Wait(); err != nil {
 		logrus.Errorf("%s\n", err.Error())
-		network.Reporter.SendEventToOvmJs("error", err.Error())
+		logrus.Infof("Try to shutdown the virtualMachine %s gra\n", vmName)
 		// TODO: We dont need machine.GlobalPIDs for now
 		logrus.Infof("kill krunkit [%d]  and gvproxy [ %d]", machine.GlobalPIDs.GetKrunkitPID(), machine.GlobalPIDs.GetGvproxyPID())
 		_ = system.KillProcess(machine.GlobalPIDs.GetGvproxyPID())
