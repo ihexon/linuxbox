@@ -166,7 +166,7 @@ func DoExec(w http.ResponseWriter, r *http.Request) {
 			logrus.Warnf("Client disconnected")
 			return
 		case <-time.After(3 * time.Second):
-			_, _ = fmt.Fprintf(w, "event: ping\n")
+			_, _ = fmt.Fprintf(w, ": ping\n\n")
 			w.(http.Flusher).Flush()
 			continue
 		}
