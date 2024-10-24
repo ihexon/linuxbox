@@ -145,15 +145,20 @@ func DoExec(w http.ResponseWriter, r *http.Request) {
 		case <-doneCh:
 			logrus.Infof("Command execution finished")
 			return
-		case err := <-errCh:
+		case err, ok := <-errCh:
+			if !ok {
+				continue
+			}
 			logrus.Warnf("Command execution error: %s", err)
 			_, _ = fmt.Fprintf(w, "event: error\n")
 			_, _ = fmt.Fprintf(w, "data: %s\n\n", encodeSSE(err))
 			w.(http.Flusher).Flush()
 			continue
-		case out := <-outCh.Out():
+		case out, ok := <-outCh.Out():
+			if !ok {
+				continue
+			}
 			_, _ = fmt.Fprintf(w, "event: out\n")
-			fmt.Println("------\n" + out)
 			_, _ = fmt.Fprintf(w, "data: %s\n\n", encodeSSE(out))
 			w.(http.Flusher).Flush()
 			continue

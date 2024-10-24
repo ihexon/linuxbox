@@ -12,7 +12,6 @@ import (
 func DecompressV2(compressedFilePath *define.VMFile, decompressedFilePath *define.VMFile) error {
 	var err error
 	inputFile, err := os.Open(compressedFilePath.GetPath())
-
 	if err != nil {
 		return fmt.Errorf("failed to open file: %w", err)
 	}
