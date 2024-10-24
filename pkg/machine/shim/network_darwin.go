@@ -92,5 +92,5 @@ func startHostForwarder(mc *vmconfigs.MachineConfig, provider vmconfigs.VMProvid
 	mc.GvProxy.HostSocks = hostSocks
 	mc.GvProxy.RemoteSocks = guestSock
 
-	return nil
+	return mc.Write()
 }

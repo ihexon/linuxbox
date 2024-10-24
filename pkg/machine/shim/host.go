@@ -218,7 +218,6 @@ func Start(mc *vmconfigs.MachineConfig, mp vmconfigs.VMProvider, dirs *define.Ma
 
 		if state == define.Running || state == define.Starting {
 			emsg := fmt.Errorf("machine %s: %w", mc.Name, define.ErrVMAlreadyRunning)
-			logrus.Error(emsg)
 			return emsg
 		}
 	}
