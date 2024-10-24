@@ -1,6 +1,7 @@
 package machine
 
 import (
+	cmdflags "bauklotze/cmd/bauklotze/flags"
 	"bauklotze/cmd/registry"
 	"bauklotze/pkg/machine"
 	"bauklotze/pkg/machine/define"
@@ -41,28 +42,26 @@ func init() {
 
 	flags := startCmd.Flags()
 
-	twinPid := ppid // Default is -1
-	flags.Int32Var(&startOpts.TwinPid, twinPid, -1, "the pid of PPID")
+	ppid := cmdflags.PpidFlag // Default is -1
+	flags.Int32Var(&startOpts.PPID, ppid, -1, "the pid of PPID")
 
-	ReportUrlFlag := reportUrlFlag
-	flags.StringVar(&startOpts.ReportUrl, ReportUrlFlag, "", "Report events to the url")
+	ReportUrlFlag := cmdflags.ReportUrlFlag
+	flags.StringVar(&commonOpts.ReportUrl, ReportUrlFlag, "", "Report events to the url")
 }
 
 func start(cmd *cobra.Command, args []string) error {
 	var err error
 	logrus.Infof("============MachineStart============")
-	network.NewReporter(startOpts.ReportUrl)
-
-	if startOpts.TwinPid == -1 {
-		startOpts.TwinPid, err = system.GetPPID(int32(os.Getpid()))
+	if startOpts.PPID == -1 {
+		startOpts.PPID, err = system.GetPPID(int32(os.Getpid()))
 		if err != nil {
 			return fmt.Errorf("failed to get parent pid: %w", err)
 		} else {
-			logrus.Infof("The parent pid is: %d", startOpts.TwinPid)
+			logrus.Infof("The parent pid is: %d", startOpts.PPID)
 		}
 	}
 
-	if isRunning, err := system.IsProcesSAlive([]int32{startOpts.TwinPid}); !isRunning {
+	if isRunning, err := system.IsProcesSAlive([]int32{startOpts.PPID}); !isRunning {
 		return err
 	}
 
@@ -104,11 +103,9 @@ func start(cmd *cobra.Command, args []string) error {
 
 	logrus.Infof("Machine %q started successfully\n", vmName)
 
-	watcher.WaitProcessAndStopMachine(g, ctx, startOpts.TwinPid, int32(machine.GlobalPIDs.GetKrunkitPID()), int32(machine.GlobalPIDs.GetGvproxyPID()))
+	watcher.WaitProcessAndStopMachine(g, ctx, startOpts.PPID, int32(machine.GlobalPIDs.GetKrunkitPID()), int32(machine.GlobalPIDs.GetGvproxyPID()))
 
 	if err = g.Wait(); err != nil {
-		logrus.Errorf("%s\n", err.Error())
-		logrus.Infof("Try to shutdown the virtualMachine %s gra\n", vmName)
 		// TODO: We dont need machine.GlobalPIDs for now
 		logrus.Infof("kill krunkit [%d]  and gvproxy [ %d]", machine.GlobalPIDs.GetKrunkitPID(), machine.GlobalPIDs.GetGvproxyPID())
 		_ = system.KillProcess(machine.GlobalPIDs.GetGvproxyPID())

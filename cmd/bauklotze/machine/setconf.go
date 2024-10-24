@@ -3,6 +3,7 @@
 package machine
 
 import (
+	cmdflags "bauklotze/cmd/bauklotze/flags"
 	"bauklotze/cmd/registry"
 	"bauklotze/pkg/config"
 	"bauklotze/pkg/machine/define"
@@ -37,14 +38,14 @@ func init() {
 	})
 
 	flags := setCmd.Flags()
-	cpusFlagName := cpus
+	cpusFlagName := cmdflags.CpusFlag
 	flags.Uint64Var(
 		&setOpts.CPUs,
 		cpusFlagName, 0,
 		"Number of CPUs",
 	)
 
-	memoryFlagName := memory
+	memoryFlagName := cmdflags.MemoryFlag
 	flags.Uint64VarP(
 		&setOpts.Memory,
 		memoryFlagName, "m", 0,
@@ -52,7 +53,7 @@ func init() {
 	)
 
 	slice := config.NewSlice([]string{})
-	volumeFlagName := volume
+	volumeFlagName := cmdflags.VolumeFlag
 	flags.StringArrayVarP(
 		&setOpts.Volumes,
 		volumeFlagName, "v", slice.Get(),

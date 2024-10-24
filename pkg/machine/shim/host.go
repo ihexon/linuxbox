@@ -97,7 +97,6 @@ func Init(ctx context.Context, opts define.InitOptions, mp vmconfigs.VMProvider)
 		return err
 	} else {
 		network.Reporter.SendEventToOvmJs("decompress", "success")
-
 	}
 
 	if err = connection.AddSSHConnectionsToPodmanSocket(mc.SSH.Port, mc.SSH.IdentityPath, mc.Name, mc.SSH.RemoteUsername, opts); err != nil {
@@ -110,7 +109,7 @@ func Init(ctx context.Context, opts define.InitOptions, mp vmconfigs.VMProvider)
 		return err
 	}
 
-	mc.EvtSockPath = &define.VMFile{Path: opts.SendEvt}
+	mc.EvtSockPath = &define.VMFile{Path: opts.CommonOptions.ReportUrl}
 
 	// Fill all the configure field and write into disk
 	mc.ImagePath = imagePath
@@ -311,7 +310,7 @@ func Start(mc *vmconfigs.MachineConfig, mp vmconfigs.VMProvider, dirs *define.Ma
 	}
 
 	err = machine.WaitAPIAndPrintInfo(
-		opts.ReportUrl,
+		opts.CommonOptions.ReportUrl,
 		forwardSocketPath,
 		forwardingState,
 		mc.Name,

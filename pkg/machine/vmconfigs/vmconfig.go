@@ -7,7 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	strongunits "github.com/containers/common/pkg/strongunits"
+	"github.com/containers/common/pkg/strongunits"
 	gvproxy "github.com/containers/gvisor-tap-vsock/pkg/types"
 	"github.com/containers/storage/pkg/lockfile"
 	"github.com/sirupsen/logrus"
@@ -17,16 +17,6 @@ import (
 	"strings"
 	"time"
 )
-
-func NormalizeMachineArch(arch string) (string, error) {
-	switch arch {
-	case "arm64", "aarch64":
-		return "aarch64", nil
-	case "x86_64", "amd64":
-		return "x86_64", nil
-	}
-	return "", fmt.Errorf("unsupported platform %s", arch)
-}
 
 type VMProvider interface { //nolint:interfacebloat
 	VMType() define.VMType
@@ -43,11 +33,6 @@ type VMProvider interface { //nolint:interfacebloat
 	StartVM(mc *MachineConfig) (func() error, func() error, error)
 	MountVolumesToVM(mc *MachineConfig, quiet bool) error
 	SetProviderAttrs(mc *MachineConfig, opts define.SetOptions) error
-}
-
-type machineImage interface { //nolint:unused
-	download() error
-	path() string
 }
 
 type Mount struct {

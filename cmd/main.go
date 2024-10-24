@@ -1,7 +1,7 @@
 package main
 
 import (
-	"bauklotze/cmd/bauklotze/machine"
+	cmdflags "bauklotze/cmd/bauklotze/flags"
 	_ "bauklotze/cmd/bauklotze/machine"
 	"bauklotze/cmd/bauklotze/validata"
 	"bauklotze/cmd/registry"
@@ -59,30 +59,27 @@ var (
 		SilenceUsage:          true,
 		SilenceErrors:         true,
 		TraverseChildren:      true,
-		PersistentPreRunE:     persistentPreRunE,
 		RunE:                  validata.SubCommandExists,
-		PersistentPostRunE:    persistentPostRunE,
 		DisableFlagsInUseLine: true,
 	}
-
-	logLevel  = "info"
-	useStdout = ""
+	logLevel = ""
+	logOut   = ""
+	homeDir  = ""
 )
 
 func init() {
 	rootCmd.SetUsageTemplate(usageTemplate)
-
 	lFlags := rootCmd.Flags()
 	pFlags := rootCmd.PersistentFlags()
 
-	logLevelFlagName := "log-level"
-	pFlags.StringVar(&logLevel, logLevelFlagName, logLevel, fmt.Sprintf("Log messages above specified level"))
+	logLevelFlagName := cmdflags.LogLevelFlag
+	pFlags.StringVar(&logLevel, logLevelFlagName, cmdflags.LogLevel, fmt.Sprintf("Log messages above specified level"))
 
-	outFlagName := "log-out"
-	lFlags.StringVar(&useStdout, outFlagName, "", "If set --log-out console, send output to terminal")
+	outFlagName := cmdflags.LogOutFlag
+	lFlags.StringVar(&logOut, outFlagName, cmdflags.FileBased, "If set --log-out console, send output to terminal, if set --log-out file, send output to ${workspace}/logs/")
 
-	ovmHomedir := machine.Workspace
-	pFlags.StringVar(&ovmHomedir, ovmHomedir, "", "Bauklotze's HOME dif, default get by $HOME")
+	ovmHomedir := cmdflags.WorkspaceFlag
+	pFlags.StringVar(&homeDir, ovmHomedir, "", "Bauklotze's HOME dif, default get by $HOME")
 
 	cobra.OnInitialize(
 		loggingHook,
@@ -96,16 +93,20 @@ func main() {
 }
 
 func stdOutHook() {
-	if useStdout != "console" {
-		err := os.MkdirAll(filepath.Join(rootCmd.Flag(machine.Workspace).Value.String(), "logs"), os.ModePerm)
+	if rootCmd.Flag(cmdflags.LogOutFlag).Value.String() == cmdflags.FileBased {
+		// ${workspace}/logs
+		err := os.MkdirAll(filepath.Join(rootCmd.Flag(cmdflags.WorkspaceFlag).Value.String(), "logs"), os.ModePerm)
 		if err != nil {
+			logrus.Errorf("Unable to create directory for log file: %s", err.Error())
 			return
 		}
-		logfile := filepath.Join(rootCmd.Flag(machine.Workspace).Value.String(), "logs", "ovm.log")
+		// ${workspace}/logs/ovm.log
+		logfile := filepath.Join(rootCmd.Flag(cmdflags.WorkspaceFlag).Value.String(), "logs", "ovm.log")
 		if fd, err := os.OpenFile(logfile, os.O_CREATE|os.O_WRONLY|os.O_APPEND, os.ModePerm); err == nil {
 			logrus.SetOutput(fd)
 		} else {
-			fmt.Fprintf(os.Stderr, "Warring: unable to open file for standard output: %s\n", err.Error())
+			logrus.Errorf("Warring: unable to open file for standard output: %s\n", err.Error())
+			return
 		}
 	}
 }
@@ -137,12 +138,12 @@ func addCommand(c registry.CliCommand) {
 
 func RootCmdExecute() {
 	err := rootCmd.Execute()
-	// Make sure no matter what happens, kill the gvproxy and Krunkit process at the end
+	// Make sure always kill the `gvproxy` and `krunkit` process
 	_ = system.KillProcess(machine2.GlobalPIDs.GetGvproxyPID())
 	_ = system.KillProcess(machine2.GlobalPIDs.GetKrunkitPID())
 	if err != nil {
+		logrus.Errorf(err.Error())
 		network.Reporter.SendEventToOvmJs("error", fmt.Sprintf("Error: %v", err))
-		fmt.Fprintln(os.Stderr, formatError(err))
 		registry.SetExitCode(1)
 		notifyexit.NotifyExit(registry.GetExitCode())
 	} else {
@@ -173,30 +174,4 @@ func loggingHook() {
 	if logrus.IsLevelEnabled(logrus.InfoLevel) {
 		logrus.Infof("%s filtering at log level %s", os.Args[0], logrus.GetLevel())
 	}
-}
-
-func formatError(err error) string {
-	var message string
-	switch {
-	default:
-		if logrus.IsLevelEnabled(logrus.TraceLevel) {
-			message = fmt.Sprintf("Error: %+v", err)
-		} else {
-			message = fmt.Sprintf("Error: %v", err)
-		}
-	}
-	return message
-}
-
-func persistentPreRunE(cmd *cobra.Command, args []string) error {
-	logrus.Debugf("Called %s.PersistentPreRunE(%s)", cmd.Name(), strings.Join(os.Args, " "))
-
-	if cmd.Name() == "help" || cmd.Name() == "completion" || cmd.HasSubCommands() {
-		return nil
-	}
-	return nil
-}
-
-func persistentPostRunE(cmd *cobra.Command, args []string) error {
-	return nil
 }

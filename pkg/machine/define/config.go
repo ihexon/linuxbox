@@ -38,10 +38,6 @@ type MachineDirs struct {
 	LogsDir       *VMFile
 }
 
-type ResetOptions struct {
-	Force bool
-}
-
 const (
 	DefaultMachineName string = "bugbox-machine-default"
 	DefaultUserInGuest        = "root"
@@ -52,26 +48,31 @@ var (
 )
 
 type StartOptions struct {
-	TwinPid   int32
-	ReportUrl string
+	PPID          int32
+	CommonOptions CommonOptions
 }
 
 type StopOptions struct {
-	SendEvt string
+	SendEvt       string
+	CommonOptions CommonOptions
 }
 
 type InitOptions struct {
-	PPID         int32
-	IsDefault    bool
-	CPUS         uint64
-	Volumes      []string
-	Memory       uint64
-	Name         string
-	Username     string
-	ReExec       bool
-	SendEvt      string
-	Images       ImagesStruct
-	ImageVersion ImageVerStruct
+	PPID          int32
+	IsDefault     bool
+	CPUS          uint64
+	Volumes       []string
+	Memory        uint64
+	Name          string
+	Username      string
+	ReExec        bool
+	Images        ImagesStruct
+	ImageVersion  ImageVerStruct
+	CommonOptions CommonOptions
+}
+
+type CommonOptions struct {
+	ReportUrl string
 }
 
 type ImageVerStruct struct {

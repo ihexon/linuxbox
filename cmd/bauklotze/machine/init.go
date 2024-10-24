@@ -1,13 +1,13 @@
 package machine
 
 import (
+	cmdflags "bauklotze/cmd/bauklotze/flags"
 	"bauklotze/cmd/registry"
 	"bauklotze/pkg/machine/define"
 	"bauklotze/pkg/machine/env"
 	"bauklotze/pkg/machine/shim"
 	"bauklotze/pkg/machine/system"
 	"bauklotze/pkg/machine/vmconfigs"
-	"bauklotze/pkg/network"
 	system2 "bauklotze/pkg/system"
 	"context"
 	"errors"
@@ -42,6 +42,7 @@ var (
 	initOpts = define.InitOptions{
 		Username: define.DefaultUserInGuest,
 	}
+	commonOpts         = define.CommonOptions{}
 	defaultMachineName = define.DefaultMachineName
 )
 
@@ -58,51 +59,50 @@ func init() {
 	cfg := registry.OvmInitConfig()
 	flags := initCmd.Flags()
 
-	cpusFlagName := cpus
+	cpusFlagName := cmdflags.CpusFlag
 	flags.Uint64Var(
 		&initOpts.CPUS,
 		cpusFlagName, cfg.ContainersConfDefaultsRO.Machine.CPUs,
 		"Number of CPUs",
 	)
 
-	memoryFlagName := memory
+	memoryFlagName := cmdflags.MemoryFlag
 	flags.Uint64VarP(
 		&initOpts.Memory,
 		memoryFlagName, "m", cfg.ContainersConfDefaultsRO.Machine.Memory,
 		"Memory in MiB",
 	)
 
-	VolumeFlagName := volume
+	VolumeFlagName := cmdflags.VolumeFlag
 	flags.StringArrayVarP(&initOpts.Volumes, VolumeFlagName, "v", cfg.ContainersConfDefaultsRO.Machine.Volumes.Get(), "Volumes to mount, source:target")
 
-	BootImageName := bootImage
+	BootImageName := cmdflags.BootImageFlag
 	flags.StringVar(&initOpts.Images.BootableImage, BootImageName, cfg.ContainersConfDefaultsRO.Machine.Image, "Bootable image for machine")
 
-	BootImageVersion := bootVersion
+	BootImageVersion := cmdflags.BootVersionFlag
 	flags.StringVar(&initOpts.ImageVersion.BootableImageVersion, BootImageVersion, cfg.ContainersConfDefaultsRO.Machine.Image, "Boot version field")
 
-	DataImageVersion := dataVersion
+	DataImageVersion := cmdflags.DataVersionFlag
 	flags.StringVar(&initOpts.ImageVersion.DataDiskVersion, DataImageVersion, "", "Data version field")
 
-	sendEventToEndpoint := reportUrlFlag
-	flags.StringVar(&initOpts.SendEvt, sendEventToEndpoint, "", "send events to somewhere, only support unix:///....")
+	sendEventToEndpoint := cmdflags.ReportUrlFlag
+	flags.StringVar(&commonOpts.ReportUrl, sendEventToEndpoint, "", "send events to somewhere, only support unix:///....")
 
 	// Default value is -1
-	ppidFlagName := ppid
+	ppidFlagName := cmdflags.PpidFlag
 	flags.Int32Var(&initOpts.PPID, ppidFlagName, -1, "Parent process id, if not given, the ppid is the current process's ppid")
 }
 
 func initMachine(cmd *cobra.Command, args []string) error {
 	var err error
 	logrus.Infof("============MachineInit============")
-	network.NewReporter(initOpts.SendEvt)
 	// If not specified PPID, use the current process id as the parent process id
 	if initOpts.PPID == -1 {
 		initOpts.PPID, err = system.GetPPID(int32(os.Getpid()))
 		if err != nil {
-			return fmt.Errorf("failed to get parent pid: %w", err)
+			return fmt.Errorf("Failed to get parent pid: %w", err)
 		} else {
-			logrus.Infof("The parent pid is: %d", initOpts.PPID)
+			logrus.Infof("Parent pid is: %d", initOpts.PPID)
 		}
 	}
 	// First check the parent process is alive
@@ -114,8 +114,8 @@ func initMachine(cmd *cobra.Command, args []string) error {
 	initOpts.Name = defaultMachineName
 
 	if len(args) > 0 {
-		if len(args[0]) > maxMachineNameSize {
-			return fmt.Errorf("machine name %q must be %d characters or less", args[0], maxMachineNameSize)
+		if len(args[0]) > cmdflags.MaxMachineNameSize {
+			return fmt.Errorf("machine name %q must be %d characters or less", args[0], cmdflags.MaxMachineNameSize)
 		}
 		initOpts.Name = args[0]
 		if !NameRegex.MatchString(initOpts.Name) {
@@ -191,7 +191,6 @@ func initMachine(cmd *cobra.Command, args []string) error {
 
 	err = shim.Init(context.Background(), initOpts, provider)
 	if err != nil {
-		network.Reporter.SendEventToOvmJs("error", err.Error())
 		return err
 	}
 	return nil

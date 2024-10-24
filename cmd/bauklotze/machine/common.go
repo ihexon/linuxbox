@@ -3,45 +3,22 @@
 package machine
 
 import (
+	cmdflags "bauklotze/cmd/bauklotze/flags"
 	"bauklotze/cmd/bauklotze/validata"
 	"bauklotze/cmd/registry"
 	"bauklotze/pkg/machine/env"
 	provider2 "bauklotze/pkg/machine/provider"
 	"bauklotze/pkg/machine/vmconfigs"
+	"bauklotze/pkg/network"
 	"github.com/spf13/cobra"
 )
-
-//func NewMachineEvent(event events.Status, msg string, mc *vmconfigs.MachineConfig) error {
-//	sockPath := mc.EvtSockPath.GetPath()
-//	if sockPath == "" {
-//		// Do Nothing
-//		return nil
-//	}
-//
-//	fileInfo, err := os.Stat(mc.EvtSockPath.GetPath())
-//	if err != nil {
-//		return err
-//	}
-//
-//	if fileInfo.IsDir() {
-//		// Do scan dir....
-//		return nil
-//	}
-//
-//	if stat, ok := fileInfo.Sys().(*syscall.Stat_t); ok {
-//		if stat.Mode&syscall.S_IFMT == syscall.S_IFSOCK {
-//			network.SendEventToOvmJs(event, msg, mc.EvtSockPath.GetPath())
-//		}
-//	}
-//
-//	return nil
-//}
 
 var provider vmconfigs.VMProvider
 
 func machinePreRunE(cmd *cobra.Command, args []string) error {
 	var err error = nil
-	d, _ := cmd.Flags().GetString(Workspace)
+	network.NewReporter(commonOpts.ReportUrl) // Initialize the network.NewReporter
+	d, _ := cmd.Flags().GetString(cmdflags.WorkspaceFlag)
 	env.InitCustomHomeEnvOnce(d)
 
 	provider, err = provider2.Get()

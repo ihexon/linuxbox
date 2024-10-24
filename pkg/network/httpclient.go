@@ -87,7 +87,6 @@ func (c *Connection) DoRequest(httpMethod, endpoint string) (*APIResponse, error
 	}
 
 	uri := fmt.Sprintf(baseURL + "/" + endpoint)
-	logrus.Infof("DoRequest Method: %s URI: %v", httpMethod, uri)
 	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
 	defer cancel()
 
@@ -127,7 +126,7 @@ func (o *OvmJSListener) SendEventToOvmJs(event, message string) {
 		"event":   []string{event},
 		"message": []string{message},
 	}
-	logrus.Infof("Request %s , %s", connCtx.URI, connCtx.UrlParameter)
+	logrus.Infof("Send Event to %s , %s", connCtx.URI, connCtx.UrlParameter)
 	req, err := connCtx.DoRequest("GET", "notify")
 	if err != nil {
 		logrus.Warnf("Failed to notify %q: %v\n", o.ReportUrl, err)

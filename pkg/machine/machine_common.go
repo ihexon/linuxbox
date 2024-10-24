@@ -94,8 +94,7 @@ func WaitAPIAndPrintInfo(reortUrl string, forwardSock string, forwardState APIFo
 		_ = system.KillProcess(GlobalPIDs.GetKrunkitPID())
 		_ = system.KillProcess(GlobalPIDs.GetGvproxyPID())
 
-		logrus.Errorf("Podman Rest API No forwarding")
-		return nil
+		return fmt.Errorf("Podman Rest API No forwarding")
 	}
 
 	err := WaitAndPingAPI("unix:///" + forwardSock)
@@ -128,6 +127,7 @@ pingLoop:
 		case <-timeout:
 			return fmt.Errorf("timeout reached while waiting for Podman API")
 		default:
+			logrus.Info("Ping Podman API....")
 			res, err = connCtx.DoRequest("GET", "_ping")
 			if err == nil {
 				_ = res.Response.Body.Close()

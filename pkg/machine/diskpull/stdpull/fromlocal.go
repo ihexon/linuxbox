@@ -1,7 +1,7 @@
 package stdpull
 
 import (
-	"bauklotze/pkg/archiver/decompress"
+	"bauklotze/pkg/archiver/decompress_v2"
 	"bauklotze/pkg/machine/define"
 	"fmt"
 	"github.com/containers/storage/pkg/fileutils"
@@ -29,9 +29,11 @@ func (s *StdDiskPull) Get() error {
 		return fmt.Errorf("could not find user input disk: %w", err)
 	}
 	logrus.Infof("try to decompress %s to %s", s.inputPath.GetPath(), s.finalPath.GetPath())
-	err := decompress.Decompress(s.inputPath, s.finalPath.GetPath())
+	err := decompress_v2.DecompressV2(s.inputPath, s.finalPath)
+	//err := decompress.Decompress(s.inputPath.GetPath(), s.finalPath.GetPath())
+
 	if err != nil {
-		errors := fmt.Errorf("could not decompress %s to %s: %w", s.inputPath, s.finalPath.GetPath(), err)
+		errors := fmt.Errorf("could not decompress %s to %s, %w", s.inputPath.GetPath(), s.finalPath.GetPath(), err)
 		return errors
 	}
 	return nil
