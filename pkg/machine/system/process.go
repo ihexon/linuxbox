@@ -31,5 +31,5 @@ func IsProcesSAlive(pids []int32) (bool, error) {
 			break
 		}
 	}
-	return isRunning, fmt.Errorf("PPID[ %d ] exit or got killed, possible err: [ %v ]", targetPid, err)
+	return isRunning, fmt.Errorf("PID [ %d ] exit or got killed, possible err: [ %v ]", targetPid, err)
 }

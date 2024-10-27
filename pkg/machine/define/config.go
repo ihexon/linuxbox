@@ -8,9 +8,8 @@ import (
 const (
 	DefaultIdentityName  = "sshkey"
 	MachineConfigVersion = 1
-	MyName               = "Bauklotze"
-	WorkDir              = "." + MyName + "_dir"
-	TcpIgnitionAddr      = "tcp://127.0.0.1:65530"
+	// TODO: This should be configurable, in macos it should be a unix socket
+	TcpIgnitionAddr = "tcp://127.0.0.1:65530"
 )
 
 type CreateVMOpts struct {
@@ -47,18 +46,12 @@ var (
 	DefaultFilePerm os.FileMode = 0644
 )
 
-type StartOptions struct {
-	PPID          int32
-	CommonOptions CommonOptions
-}
-
 type StopOptions struct {
 	SendEvt       string
-	CommonOptions CommonOptions
+	CommonOptions *CommonOptions
 }
 
 type InitOptions struct {
-	PPID          int32
 	IsDefault     bool
 	CPUS          uint64
 	Volumes       []string
@@ -68,11 +61,17 @@ type InitOptions struct {
 	ReExec        bool
 	Images        ImagesStruct
 	ImageVersion  ImageVerStruct
+	PPID          int32
+	CommonOptions CommonOptions
+}
+
+type StartOptions struct {
 	CommonOptions CommonOptions
 }
 
 type CommonOptions struct {
 	ReportUrl string
+	PPID      int32
 }
 
 type ImageVerStruct struct {

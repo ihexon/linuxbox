@@ -5,4 +5,5 @@ const (
 
 	DefaultRootAPIPath    = "127.0.0.1:65176"
 	DefaultRootAPIAddress = "tcp://" + DefaultRootAPIPath
+	BAUKLOTZE_HOME        = "BAUKLOTZE_HOME"
 )

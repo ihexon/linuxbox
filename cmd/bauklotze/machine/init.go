@@ -9,7 +9,6 @@ import (
 	"bauklotze/pkg/machine/system"
 	"bauklotze/pkg/machine/vmconfigs"
 	system2 "bauklotze/pkg/system"
-	"context"
 	"errors"
 	"fmt"
 	"github.com/containers/common/pkg/strongunits"
@@ -28,21 +27,23 @@ var (
 
 var (
 	initCmd = &cobra.Command{
-		Use:               "init [options] [NAME]",
-		Short:             "initialize a virtual machine",
-		Long:              "initialize a virtual machine",
-		PersistentPreRunE: machinePreRunE,
-		RunE:              initMachine,
-		PersistentPostRunE: func(cmd *cobra.Command, args []string) error {
-			return nil
+		Use:   "init [options] [NAME]",
+		Short: "initialize a virtual machine",
+		Long:  "initialize a virtual machine",
+		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+			logrus.Infof("============initCmd PersistentPreRunE============")
+			return machinePreRunE(cmd, args)
+		},
+		RunE: func(cmd *cobra.Command, args []string) error {
+			logrus.Infof("============ initCmd RunE ============")
+			return initMachine(cmd, args)
 		},
 		Args:    cobra.MaximumNArgs(1), // max positional arguments
-		Example: `machine init`,
+		Example: `machine init default`,
 	}
 	initOpts = define.InitOptions{
 		Username: define.DefaultUserInGuest,
 	}
-	commonOpts         = define.CommonOptions{}
 	defaultMachineName = define.DefaultMachineName
 )
 
@@ -78,41 +79,36 @@ func init() {
 
 	BootImageName := cmdflags.BootImageFlag
 	flags.StringVar(&initOpts.Images.BootableImage, BootImageName, cfg.ContainersConfDefaultsRO.Machine.Image, "Bootable image for machine")
+	_ = initCmd.MarkFlagRequired(BootImageName)
 
 	BootImageVersion := cmdflags.BootVersionFlag
 	flags.StringVar(&initOpts.ImageVersion.BootableImageVersion, BootImageVersion, cfg.ContainersConfDefaultsRO.Machine.Image, "Boot version field")
+	initCmd.MarkFlagRequired(BootImageVersion)
 
 	DataImageVersion := cmdflags.DataVersionFlag
 	flags.StringVar(&initOpts.ImageVersion.DataDiskVersion, DataImageVersion, "", "Data version field")
+	initCmd.MarkFlagRequired(DataImageVersion)
 
-	sendEventToEndpoint := cmdflags.ReportUrlFlag
-	flags.StringVar(&commonOpts.ReportUrl, sendEventToEndpoint, "", "send events to somewhere, only support unix:///....")
-
-	// Default value is -1
-	ppidFlagName := cmdflags.PpidFlag
-	flags.Int32Var(&initOpts.PPID, ppidFlagName, -1, "Parent process id, if not given, the ppid is the current process's ppid")
 }
 
 func initMachine(cmd *cobra.Command, args []string) error {
 	var err error
-	logrus.Infof("============MachineInit============")
-	// If not specified PPID, use the current process id as the parent process id
-	if initOpts.PPID == -1 {
-		initOpts.PPID, err = system.GetPPID(int32(os.Getpid()))
-		if err != nil {
-			return fmt.Errorf("Failed to get parent pid: %w", err)
-		} else {
-			logrus.Infof("Parent pid is: %d", initOpts.PPID)
-		}
-	}
-	// First check the parent process is alive
-	if isRunning, err := system.IsProcesSAlive([]int32{initOpts.PPID}); !isRunning {
+	// TODO Use ctx to get some parameters would be nice, also using ctx to control the lifecycle init()
+	//ctx := cmd.Context()
+	//logrus.Infof("cmd.Context().Value(\"commonOpts\") --> %v", ctx.Value("commonOpts"))
+
+	ppid, _ := cmd.Flags().GetInt32(cmdflags.PpidFlag) // Get PPID from
+	logrus.Infof("PID is [%d], PPID is: %d", os.Getpid(), ppid)
+	initOpts.CommonOptions.ReportUrl = cmd.Flag(cmdflags.ReportUrlFlag).Value.String()
+	initOpts.CommonOptions.PPID = ppid
+
+	// TODO Continue to check the ppid alive
+	// First check the parent process is alive once
+	if isRunning, err := system.IsProcesSAlive([]int32{ppid}); !isRunning {
 		return err
 	}
-
-	// Initialize the network reporter
+	logrus.Infof("Initialize machine name %s", defaultMachineName)
 	initOpts.Name = defaultMachineName
-
 	if len(args) > 0 {
 		if len(args[0]) > cmdflags.MaxMachineNameSize {
 			return fmt.Errorf("machine name %q must be %d characters or less", args[0], cmdflags.MaxMachineNameSize)
@@ -137,8 +133,8 @@ func initMachine(cmd *cobra.Command, args []string) error {
 	initOpts.Images.DataDisk = dataDisk
 
 	var (
-		updateBootableImage bool = true
-		updateExternalDisk  bool = true
+		updateBootableImage = true
+		updateExternalDisk  = true
 	)
 
 	switch {
@@ -172,8 +168,7 @@ func initMachine(cmd *cobra.Command, args []string) error {
 	}
 
 	if !updateBootableImage {
-		msg := "skip initialize virtual machine"
-		logrus.Infof(msg)
+		logrus.Infof("skip initialize virtual machine")
 		return nil
 	}
 
@@ -184,12 +179,20 @@ func initMachine(cmd *cobra.Command, args []string) error {
 	// The allocate virtual memory can not bigger than physic virtual memory
 	if cmd.Flags().Changed("memory") {
 		if err := system2.CheckMaxMemory(strongunits.MiB(initOpts.Memory)); err != nil {
-			logrus.Infof("Can not allocate the memory size %s", initOpts.Memory)
+			logrus.Errorf("Can not allocate the memory size %s", initOpts.Memory)
 			return err
 		}
 	}
 
-	err = shim.Init(context.Background(), initOpts, provider)
+	// Krun limited max cpus core to 8
+	if cmd.Flags().Changed(cmdflags.CpusFlag) {
+		if initOpts.CPUS > cmdflags.KrunMaxCpus || initOpts.CPUS < 1 {
+			return fmt.Errorf("can not allocate the CPU size %d", initOpts.CPUS)
+		}
+	}
+
+	logrus.Infof("Initialize virtual machine %s with %s", initOpts.Name, initOpts.Images.BootableImage)
+	err = shim.Init(initOpts, provider)
 	if err != nil {
 		return err
 	}

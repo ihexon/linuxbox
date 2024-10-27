@@ -2,31 +2,34 @@ package env
 
 import (
 	"bauklotze/pkg/machine/define"
+	"fmt"
 	"os"
 	"path/filepath"
 )
 
-// GetBauklotzeHomePath return $HOME/.Bauklotze_dir.
-// If the CustomHomeDir is set, then using CustomHomeDir/
+// GetBauklotzeHomePath return ${BauklotzeHomePath}/tmp/
 func GetBauklotzeHomePath() (string, error) {
-	if CustomHomeEnv != "" {
-		return CustomHomeEnv, nil
+	home := os.Getenv(BAUKLOTZE_HOME)
+	if home == "" {
+		return "", fmt.Errorf("%s is not set", BAUKLOTZE_HOME)
 	}
-	home, err := os.UserHomeDir()
-	if err != nil {
-		return "", err
-	}
-	return filepath.Join(home, define.WorkDir), nil
+	return filepath.Join(home), nil
 }
 
 // ConfDirPrefix return ${BauklotzeHomePath}/config,
 func ConfDirPrefix() (string, error) {
-	homeDir, _ := GetBauklotzeHomePath()
+	homeDir, err := GetBauklotzeHomePath()
+	if err != nil {
+		return "", err
+	}
 	return filepath.Join(homeDir, "config"), nil // ${BauklotzeHomePath}/config
 }
 
 func GetLogsDir() (string, error) {
-	homeDir, _ := GetBauklotzeHomePath()
+	homeDir, err := GetBauklotzeHomePath()
+	if err != nil {
+		return "", err
+	}
 	return filepath.Join(homeDir, "logs"), nil
 }
 

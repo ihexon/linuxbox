@@ -14,15 +14,15 @@ import (
 )
 
 // WaitProcessAndStopMachine is Non block function
-func WaitProcessAndStopMachine(g *errgroup.Group, ctx context.Context, ovmPid, krunPid, gvPid int32) {
+func WaitProcessAndStopMachine(g *errgroup.Group, ctx context.Context, ovmPPid, krunPid, gvPid int32) {
 	g.Go(func() error {
-		return watchProcess(ctx, ovmPid, krunPid, gvPid)
+		return watchProcess(ctx, ovmPPid, krunPid, gvPid)
 	})
+	logrus.Infof("Waiting for PPID [ %d ] Krun [ %d ] and GV [ %d ] to stop\n", ovmPPid, krunPid, gvPid)
 }
 
-func watchProcess(ctx context.Context, ovmPid, krunPid, gvPid int32) error {
-	logrus.Infof("Waiting PPID[%d], krunkit[%d], gvproxy[%d] exited then stop the machine\n", ovmPid, krunPid, gvPid)
-	pids := []int32{(ovmPid), (krunPid), (gvPid)}
+func watchProcess(ctx context.Context, ovmPPid, krunPid, gvPid int32) error {
+	pids := []int32{(ovmPPid), (krunPid), (gvPid)}
 	for {
 		select {
 		case <-ctx.Done():
@@ -32,9 +32,8 @@ func watchProcess(ctx context.Context, ovmPid, krunPid, gvPid int32) error {
 		if isRunning, err := system.IsProcesSAlive(pids); !isRunning {
 			return err
 		}
-		time.Sleep(400 * time.Millisecond)
+		time.Sleep(300 * time.Millisecond)
 	}
-	return nil
 }
 
 // WaitApiServerAndStopMachine is Non block function

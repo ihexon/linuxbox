@@ -102,17 +102,7 @@ func NewMachineFile(path string, symlink *string) (*VMFile, error) {
 // makeSymlink for macOS creates a symlink in $HOME/.podman/
 // for a machinefile like a socket
 func (m *VMFile) makeSymlink(symlink *string) error {
-	homeDir, err := os.UserHomeDir()
-	if err != nil {
-		return err
-	}
-	sl := filepath.Join(homeDir, "."+MyName, *symlink)
-	// make the symlink dir and throw away if it already exists
-	if err := os.MkdirAll(filepath.Dir(sl), 0700); err != nil && !errors.Is(err, os.ErrNotExist) {
-		return err
-	}
-	m.Symlink = &sl
-	return os.Symlink(m.Path, sl)
+	return nil
 }
 
 // AppendToNewVMFile takes a given path and appends it to the existing vmfile path.  The new

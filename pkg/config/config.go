@@ -28,6 +28,8 @@ type MachineConfig struct {
 	CPUs uint64
 	// DiskSize is the size of the disk in GB created when init-ing a podman-machine VM
 	DiskSize uint64
+	// DataDiskSize is the size of the disk in GB created when init-ing virtualMachine mounted to /var
+	DataDiskSize uint64
 	// Image is the image used when init-ing a podman-machine VM
 	Image string
 	// Memory in MB a machine is created with.

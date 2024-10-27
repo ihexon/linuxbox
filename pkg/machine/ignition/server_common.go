@@ -53,7 +53,7 @@ func ServeIgnitionOverSocketCommon(url *url.URL, file fs.File) error {
 		errChan <- fmt.Errorf("fetch %s and stop", cfgAbsPath)
 	})
 
-	logrus.Infof("Ignition listening on: %s://%s/%s", url.Scheme, url.Host, url.Path)
+	logrus.Infof("Ignition listening on: %s:%s/%s", url.Scheme, url.Host, url.Path)
 
 	server := &http.Server{
 		Handler: mux,

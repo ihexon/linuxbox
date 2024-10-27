@@ -6,9 +6,6 @@ import "path/filepath"
 
 // getTmpDir return ${BauklotzeHomePath}/tmp/
 func getTmpDir() (string, error) {
-	if CustomHomeEnv != "" {
-		return filepath.Join(CustomHomeEnv, "tmp"), nil
-	}
 	p, err := GetBauklotzeHomePath()
 	if err != nil {
 		return "", err

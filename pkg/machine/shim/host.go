@@ -9,7 +9,7 @@ import (
 	"bauklotze/pkg/machine/lock"
 	"bauklotze/pkg/machine/vmconfigs"
 	"bauklotze/pkg/network"
-	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/containers/common/pkg/strongunits"
@@ -31,7 +31,7 @@ func VMExists(name string, vmstubbers []vmconfigs.VMProvider) (*vmconfigs.Machin
 	return nil, false, err
 }
 
-func Init(ctx context.Context, opts define.InitOptions, mp vmconfigs.VMProvider) error {
+func Init(opts define.InitOptions, mp vmconfigs.VMProvider) error {
 	var (
 		imageExtension string
 		err            error
@@ -42,21 +42,43 @@ func Init(ctx context.Context, opts define.InitOptions, mp vmconfigs.VMProvider)
 	if err != nil {
 		return err
 	}
+	//	dirs := define.MachineDirs{
+	//		ConfigDir:     configDirFile, // ${BauklotzeHomePath}/config/{wsl,libkrun,qemu,hyper...}
+	//		DataDir:       dataDirFile,   // ${BauklotzeHomePath}/data/{wsl2,libkrun,qemu,hyper...}
+	//		ImageCacheDir: imageCacheDir, // ${BauklotzeHomePath}/data/{wsl2,libkrun,qemu,hyper...}/cache
+	//		RuntimeDir:    rtDirFile,     // ${BauklotzeHomePath}/tmp/
+	//		LogsDir:       logsDirVMFile, // ${BauklotzeHomePath}/logs
+	//	}
+	logrus.Infof("ConfigDir:     %s", dirs.ConfigDir.GetPath())
+	logrus.Infof("DataDir:       %s", dirs.DataDir.GetPath())
+	logrus.Infof("ImageCacheDir: %s", dirs.ImageCacheDir.GetPath())
+	logrus.Infof("RuntimeDir:    %s", dirs.RuntimeDir.GetPath())
+	logrus.Infof("LogsDir:       %s", dirs.LogsDir.GetPath())
 
 	sshIdentityPath, err := env.GetSSHIdentityPath(define.DefaultIdentityName)
 	if err != nil {
 		return err
 	}
-	_, err = machine.GetSSHKeys(sshIdentityPath)
+	logrus.Infof("SSH identity path: %s", sshIdentityPath)
+
+	mySSHKey, err := machine.GetSSHKeys(sshIdentityPath)
 	if err != nil {
 		return err
 	}
+	logrus.Infof("SSH key: %v", mySSHKey)
 
 	// construct a machine configure but not write into disk
 	mc, err := vmconfigs.NewMachineConfig(opts, dirs, sshIdentityPath, mp.VMType())
 	if err != nil {
 		return err
 	}
+	//jsonMC, err := json.MarshalIndent(mc, "", "  ")
+	//if err != nil {
+	//	logrus.Errorf("Failed to marshal MachineConfig to JSON: %v", err)
+	//} else {
+	//	logrus.Infof("MachineConfig: %s", jsonMC)
+	//}
+
 	// machine configure json,version always be as 1
 	mc.Version = define.MachineConfigVersion
 
@@ -78,11 +100,20 @@ func Init(ctx context.Context, opts define.InitOptions, mp vmconfigs.VMProvider)
 	}
 
 	imagePath, err = dirs.DataDir.AppendToNewVMFile(fmt.Sprintf("%s-%s%s", opts.Name, runtime.GOARCH, imageExtension), nil)
+	if err != nil {
+		return err
+	}
+	logrus.Infof("Bootable Image Path: %s", imagePath.GetPath())
 	mc.ImagePath = imagePath // mc.ImagePath is the bootable copied from user provided image --boot <bootable.img.xz>
 
 	// Generate the mc.Mounts structs from the opts.Volumes
 	mc.Mounts = CmdLineVolumesToMounts(opts.Volumes, mp.MountType())
-
+	jsonMounts, err := json.MarshalIndent(mc.Mounts, "", "  ")
+	if err != nil {
+		logrus.Errorf("Failed to marshal mc.Mounts to JSON: %v", err)
+	} else {
+		logrus.Infof("Mounts: %s", jsonMounts)
+	}
 	// Jump into Provider's GetDisk implementation, but we can using
 	// if err := diskpull.GetDisk(opts.Image, dirs, mc.ImagePath, mp.VMType(), mc.Name); err != nil {
 	//		return err
@@ -104,12 +135,11 @@ func Init(ctx context.Context, opts define.InitOptions, mp vmconfigs.VMProvider)
 	}
 
 	err = mp.CreateVM(createOpts, mc)
-
 	if err != nil {
 		return err
 	}
 
-	mc.EvtSockPath = &define.VMFile{Path: opts.CommonOptions.ReportUrl}
+	mc.ReportURL = &define.VMFile{Path: opts.CommonOptions.ReportUrl}
 
 	// Fill all the configure field and write into disk
 	mc.ImagePath = imagePath
@@ -126,8 +156,7 @@ func Init(ctx context.Context, opts define.InitOptions, mp vmconfigs.VMProvider)
 		return err
 	}
 	network.Reporter.SendEventToOvmJs("writeConfig", "success")
-
-	return nil
+	return err
 }
 
 // getMCsOverProviders loads machineconfigs from a config dir derived from the "provider".  it returns only what is known on
@@ -217,15 +246,9 @@ func Start(mc *vmconfigs.MachineConfig, mp vmconfigs.VMProvider, dirs *define.Ma
 		}
 
 		if state == define.Running || state == define.Starting {
-			emsg := fmt.Errorf("machine %s: %w", mc.Name, define.ErrVMAlreadyRunning)
-			return emsg
+			return fmt.Errorf("machine %s: %w", mc.Name, define.ErrVMAlreadyRunning)
 		}
 	}
-
-	// add machine start --volume back
-	//if opts.Volumes != nil {
-	//	mc.Mounts = CmdLineVolumesToMounts(opts.Volumes, mp.MountType()) // mp.MountType() always be vmconfigs.VirtIOFS
-	//}
 
 	// Set starting to true
 	mc.Starting = true
@@ -267,12 +290,6 @@ func Start(mc *vmconfigs.MachineConfig, mp vmconfigs.VMProvider, dirs *define.Ma
 	if err = WaitForReady(); err != nil {
 		return err
 	}
-
-	//if releaseCmd != nil && releaseCmd() != nil {
-	//	if err := releaseCmd(); err != nil {
-	//		logrus.Error(err)
-	//	}
-	//}
 
 	err = mp.PostStartNetworking(mc, false)
 	if err != nil {

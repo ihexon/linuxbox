@@ -59,11 +59,12 @@ func defaultMachineConfig() MachineConfig {
 		cpus = 1
 	}
 	return MachineConfig{
-		CPUs:     uint64(cpus),
-		DiskSize: 100,
-		Image:    "",
-		Memory:   2048,
-		Volumes:  NewSlice(getDefaultMachineVolumes()),
-		User:     getDefaultMachineUser(), // I tell u a joke :)
+		CPUs:         uint64(cpus),
+		DiskSize:     100,
+		Image:        "",
+		Memory:       2048,
+		DataDiskSize: 100,
+		Volumes:      NewSlice(getDefaultMachineVolumes()),
+		User:         getDefaultMachineUser(), // I tell u a joke :)
 	}
 }

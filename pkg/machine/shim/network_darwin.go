@@ -10,6 +10,7 @@ import (
 	"fmt"
 	gvproxy "github.com/containers/gvisor-tap-vsock/pkg/types"
 	"github.com/sirupsen/logrus"
+	"os"
 	"path/filepath"
 	"strings"
 )
@@ -75,6 +76,8 @@ func startHostForwarder(mc *vmconfigs.MachineConfig, provider vmconfigs.VMProvid
 		return err
 	}
 	gvcmd := cmd.Cmd(binary)
+	gvcmd.Stdout = os.Stdout
+	gvcmd.Stderr = os.Stderr
 
 	logrus.Infof("Gvproxy command-line: %s %s", binary, strings.Join(cmd.ToCmdline(), " "))
 	if err := gvcmd.Start(); err != nil {

@@ -8,6 +8,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"os"
 	"strings"
 	"sync"
 	"time"
@@ -110,12 +111,11 @@ func (c *Connection) DoRequest(httpMethod, endpoint string) (*APIResponse, error
 
 func (o *OvmJSListener) SendEventToOvmJs(event, message string) {
 	if o.ReportUrl == "" {
-		logrus.Warnf("No report url provided by user")
 		return
 	}
 	connCtx, err := NewConnection(o.ReportUrl)
 	if err != nil {
-		logrus.Warnf("report url not valid: %v\n", err)
+		fmt.Fprintf(os.Stderr, "report url not valid, only support unix:/// or tcp:// proto\n")
 		return
 	}
 

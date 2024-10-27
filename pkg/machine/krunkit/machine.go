@@ -133,7 +133,7 @@ func StartGenericAppleVM(mc *vmconfigs.MachineConfig, cmdBinary string, bootload
 	if mc.DataDisk.GetPath() != "" {
 		if err = fileutils.Exists(mc.DataDisk.GetPath()); err != nil {
 			logrus.Warnf("external disk does not exist: %s", mc.DataDisk.GetPath())
-			if err = system.CreateAndResizeDisk(mc.DataDisk.GetPath(), 500); err != nil {
+			if err = system.CreateAndResizeDisk(mc.DataDisk.GetPath(), 100); err != nil {
 				return nil, nil, err
 			}
 		}
@@ -155,6 +155,7 @@ func StartGenericAppleVM(mc *vmconfigs.MachineConfig, cmdBinary string, bootload
 	cfg := config.Default()
 
 	cmdBinaryPath, err := cfg.FindHelperBinary(cmdBinary, true)
+
 	if err != nil {
 		return nil, nil, err
 	}
@@ -165,10 +166,11 @@ func StartGenericAppleVM(mc *vmconfigs.MachineConfig, cmdBinary string, bootload
 		return nil, nil, err
 	}
 
-	if logrus.IsLevelEnabled(logrus.DebugLevel) {
-		cmd.Stdout = os.Stdout
-		cmd.Stderr = os.Stderr
-	}
+	//if logrus.IsLevelEnabled(logrus.InfoLevel) {
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	//}
+
 	// endpoint is krunkit rest api endpoint
 	endpointArgs, err := GetVfKitEndpointCMDArgs(endpoint)
 	if err != nil {
@@ -184,12 +186,12 @@ func StartGenericAppleVM(mc *vmconfigs.MachineConfig, cmdBinary string, bootload
 	if err != nil {
 		return nil, nil, err
 	} else {
-		logrus.Infof("listening ready event on: %s", readySocket.GetPath())
+		logrus.Infof("Listening ready event on: %s", readySocket.GetPath())
 	}
 	// Wait for ready event coming...
 	readyChan := make(chan error)
 	go sockets.ListenAndWaitOnSocket(readyChan, readyListen)
-	logrus.Debug("waiting for ready notification...")
+	logrus.Infof("Waiting for ready notification...")
 
 	ignFile, err := mc.IgnitionFile()
 	if err != nil {
@@ -247,6 +249,8 @@ func StartGenericAppleVM(mc *vmconfigs.MachineConfig, cmdBinary string, bootload
 	mc.KRunkitPid = int32(cmd.Process.Pid)
 	machine.GlobalPIDs.SetKrunkitPID(cmd.Process.Pid)
 	machine.GlobalCmds.SetKrunCmd(cmd)
+
+	mc.AppleKrunkitHypervisor.Krunkit.BinaryPath, _ = define.NewMachineFile(cmdBinaryPath, nil)
 
 	returnFunc := func() error {
 		processErrChan := make(chan error)

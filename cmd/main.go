@@ -5,11 +5,13 @@ import (
 	_ "bauklotze/cmd/bauklotze/machine"
 	"bauklotze/cmd/bauklotze/validata"
 	"bauklotze/cmd/registry"
-	machine2 "bauklotze/pkg/machine"
+	"bauklotze/pkg/machine"
+	"bauklotze/pkg/machine/define"
 	"bauklotze/pkg/machine/system"
 	"bauklotze/pkg/network"
 	"bauklotze/pkg/notifyexit"
 	"bauklotze/pkg/terminal"
+	"context"
 	"fmt"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -54,61 +56,106 @@ func flagErrorFunc(c *cobra.Command, e error) error {
 
 var (
 	rootCmd = &cobra.Command{
-		Use:                   filepath.Base(os.Args[0]) + " [options]",
-		Long:                  "Manage your bugbox",
-		SilenceUsage:          true,
-		SilenceErrors:         true,
-		TraverseChildren:      true,
-		RunE:                  validata.SubCommandExists,
+		Use:              filepath.Base(os.Args[0]) + " [options]",
+		Long:             "Manage your bugbox",
+		SilenceUsage:     true,
+		SilenceErrors:    true,
+		TraverseChildren: true,
+		// PersistentPreRunE/PreRunE/RunE will run after rootCmd.ExecuteContext(context.Background()), also run after init()
+		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+			logrus.Infof("======== rootCmd PersistentPreRunE ========\n")
+			return nil
+		},
+		PreRunE: func(cmd *cobra.Command, args []string) error {
+			logrus.Infof("======== rootCmd PreRunE ========\n")
+			return nil
+		},
+		RunE: func(cmd *cobra.Command, args []string) error {
+			logrus.Infof("======== rootCmd RunE ========\n")
+			logrus.Infof(homeDir)
+			return nil
+		},
+		PostRunE:              validata.SubCommandExists,
 		DisableFlagsInUseLine: true,
 	}
-	logLevel = ""
-	logOut   = ""
-	homeDir  = ""
+
+	commonOpts = &define.CommonOptions{}
+	logLevel   = ""
+	logOut     = ""
+	homeDir    = ""
 )
 
 func init() {
-	rootCmd.SetUsageTemplate(usageTemplate)
-	lFlags := rootCmd.Flags()
-	pFlags := rootCmd.PersistentFlags()
-
-	logLevelFlagName := cmdflags.LogLevelFlag
-	pFlags.StringVar(&logLevel, logLevelFlagName, cmdflags.LogLevel, fmt.Sprintf("Log messages above specified level"))
-
-	outFlagName := cmdflags.LogOutFlag
-	lFlags.StringVar(&logOut, outFlagName, cmdflags.FileBased, "If set --log-out console, send output to terminal, if set --log-out file, send output to ${workspace}/logs/")
-
-	ovmHomedir := cmdflags.WorkspaceFlag
-	pFlags.StringVar(&homeDir, ovmHomedir, "", "Bauklotze's HOME dif, default get by $HOME")
-
 	cobra.OnInitialize(
 		loggingHook,
 		stdOutHook,
+		ReportHook,
 	)
+	cobra.EnableTraverseRunHooks = true
+	rootCmd.SetUsageTemplate(usageTemplate)
+	pFlags := rootCmd.PersistentFlags()
+
+	logLevelFlagName := cmdflags.LogLevelFlag
+	pFlags.StringVar(&logLevel, logLevelFlagName, cmdflags.DefaultLogLevel, fmt.Sprintf("Log messages above specified level"))
+
+	outFlagName := cmdflags.LogOutFlag
+	pFlags.StringVar(&logOut, outFlagName, cmdflags.FileBased, "If set --log-out console, send output to terminal, if set --log-out file, send output to ${workspace}/logs/ovm.log")
+
+	ovmHomedir := cmdflags.WorkspaceFlag
+	pFlags.StringVar(&homeDir, ovmHomedir, "", "Bauklotze's HOME dif, default get by $HOME")
+	_ = rootCmd.MarkPersistentFlagRequired(ovmHomedir)
+
+	ReportUrlFlag := cmdflags.ReportUrlFlag
+	pFlags.StringVar(&commonOpts.ReportUrl, ReportUrlFlag, "", "Report events to the url")
+
+	ppidFlagName := cmdflags.PpidFlag
+	defaultPPID, _ := system.GetPPID(int32(os.Getpid()))
+	pFlags.Int32Var(&commonOpts.PPID, ppidFlagName, defaultPPID, "Parent process id, if not given, the ppid is the current process's ppid")
 }
 
 func main() {
 	rootCmd = parseCommands()
 	RootCmdExecute()
+	_ = system.KillProcess(machine.GlobalPIDs.GetGvproxyPID())
+	_ = system.KillProcess(machine.GlobalPIDs.GetKrunkitPID())
+}
+
+func ReportHook() {
+	if commonOpts.ReportUrl != "" {
+		logrus.Infof("Report events to the url: %s\n", commonOpts.ReportUrl)
+		network.NewReporter(commonOpts.ReportUrl)
+	} else {
+		logrus.Infof("No report url provided, skip report events\n")
+	}
 }
 
 func stdOutHook() {
-	if rootCmd.Flag(cmdflags.LogOutFlag).Value.String() == cmdflags.FileBased {
-		// ${workspace}/logs
-		err := os.MkdirAll(filepath.Join(rootCmd.Flag(cmdflags.WorkspaceFlag).Value.String(), "logs"), os.ModePerm)
+	_ = os.Stdin.Close()
+	_logOut, _ := rootCmd.PersistentFlags().GetString(cmdflags.LogOutFlag)
+	// --log-out must used with --workspace
+	hasWorkSpace, _ := rootCmd.PersistentFlags().GetString(cmdflags.WorkspaceFlag)
+	if hasWorkSpace == "" {
+		return
+	}
+
+	if _logOut == cmdflags.FileBased {
+		logFile := filepath.Join(homeDir, "logs", "ovm.log")
+		err := os.MkdirAll(filepath.Dir(logFile), os.ModePerm)
 		if err != nil {
-			logrus.Errorf("Unable to create directory for log file: %s", err.Error())
-			return
+			_, _ = fmt.Fprintf(os.Stderr, "unable to create directory for log file: %s\n", err.Error())
 		}
-		// ${workspace}/logs/ovm.log
-		logfile := filepath.Join(rootCmd.Flag(cmdflags.WorkspaceFlag).Value.String(), "logs", "ovm.log")
-		if fd, err := os.OpenFile(logfile, os.O_CREATE|os.O_WRONLY|os.O_APPEND, os.ModePerm); err == nil {
-			logrus.SetOutput(fd)
+
+		logrus.Infof("Log all output to file %s\n", logFile)
+		fd, err := os.OpenFile(logFile, os.O_CREATE|os.O_WRONLY|os.O_APPEND, os.ModePerm)
+		if err != nil {
+			_, _ = fmt.Fprintf(os.Stderr, "unable to open file for standard output: %s\n", err.Error())
 		} else {
-			logrus.Errorf("Warring: unable to open file for standard output: %s\n", err.Error())
-			return
+			os.Stdout = fd
+			os.Stderr = fd
+			logrus.SetOutput(fd)
 		}
 	}
+	logrus.Infof("Log all output to console\n")
 }
 
 func parseCommands() *cobra.Command {
@@ -136,13 +183,38 @@ func addCommand(c registry.CliCommand) {
 	c.Command.DisableFlagsInUseLine = true
 }
 
+func formatError(err error) string {
+	var message string
+	switch {
+	default:
+		if logrus.IsLevelEnabled(logrus.TraceLevel) {
+			message = fmt.Sprintf("Error: %+v", err)
+		} else {
+			message = fmt.Sprintf("Error: %v", err)
+		}
+	}
+	return message
+}
+
 func RootCmdExecute() {
-	err := rootCmd.Execute()
-	// Make sure always kill the `gvproxy` and `krunkit` process
-	_ = system.KillProcess(machine2.GlobalPIDs.GetGvproxyPID())
-	_ = system.KillProcess(machine2.GlobalPIDs.GetKrunkitPID())
+	var err error
+	// NOTE: commonOpts will be initialize after rootCmd.ExecuteContext(ctx)
+	ctx := context.WithValue(context.Background(), "commonOpts", commonOpts)
+	err = rootCmd.ExecuteContext(ctx)
+
 	if err != nil {
-		logrus.Errorf(err.Error())
+		_, _ = fmt.Fprintln(os.Stderr, formatError(err))
+		if machine.GlobalPIDs.GetGvproxyPID() != 0 || machine.GlobalPIDs.GetKrunkitPID() != 0 {
+			logrus.Infof("Killing gvproxy PID[%d]", machine.GlobalPIDs.GetGvproxyPID())
+			_ = system.KillProcess(machine.GlobalPIDs.GetGvproxyPID())
+			gvproxyCmd := machine.GlobalCmds.GetGvproxyCmd()
+			_ = gvproxyCmd.Wait()
+
+			logrus.Infof("Killing Krun PID[%d]", machine.GlobalPIDs.GetKrunkitPID())
+			_ = system.KillProcess(machine.GlobalPIDs.GetKrunkitPID())
+			krunCmd := machine.GlobalCmds.GetKrunCmd()
+			_ = krunCmd.Wait()
+		}
 		network.Reporter.SendEventToOvmJs("error", fmt.Sprintf("Error: %v", err))
 		registry.SetExitCode(1)
 		notifyexit.NotifyExit(registry.GetExitCode())
@@ -153,25 +225,11 @@ func RootCmdExecute() {
 }
 
 func loggingHook() {
-	var found bool
-	for _, l := range LogLevels {
-		if l == strings.ToLower(logLevel) {
-			found = true
-			break
-		}
+	LogLevels = []string{"trace", "debug", "info", "warn", "warning", "error", "fatal", "panic"}
+	level, err := logrus.ParseLevel(logLevel)
+	if err != nil {
+		_, _ = fmt.Fprintf(os.Stderr, "Log Level %q is not supported, choose from: %s\n", logLevel, strings.Join(LogLevels, ", "))
+		level, _ = logrus.ParseLevel("error")
 	}
-
-	if !found {
-		fmt.Fprintf(os.Stderr, "Log Level %q is not supported, choose from: %s\n", logLevel, strings.Join(LogLevels, ", "))
-		level, _ := logrus.ParseLevel("info")
-		logrus.SetLevel(level)
-		return
-	}
-
-	level, _ := logrus.ParseLevel(logLevel)
 	logrus.SetLevel(level)
-
-	if logrus.IsLevelEnabled(logrus.InfoLevel) {
-		logrus.Infof("%s filtering at log level %s", os.Args[0], logrus.GetLevel())
-	}
 }

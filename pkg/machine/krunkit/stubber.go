@@ -12,6 +12,7 @@ import (
 	"fmt"
 	gvproxy "github.com/containers/gvisor-tap-vsock/pkg/types"
 	vfConfig "github.com/crc-org/vfkit/pkg/config"
+	"github.com/sirupsen/logrus"
 	"strconv"
 )
 
@@ -89,6 +90,7 @@ const (
 )
 
 func (l LibKrunStubber) CreateVM(opts define.CreateVMOpts, mc *vmconfigs.MachineConfig) error {
+	var err error
 	mc.AppleKrunkitHypervisor = new(vmconfigs.AppleKrunkitConfig)
 	mc.AppleKrunkitHypervisor.Krunkit = hvhelper.Helper{}
 	bl := vfConfig.NewEFIBootloader(fmt.Sprintf("%s/efi-bl-%s", opts.Dirs.DataDir.GetPath(), opts.Name), true)
@@ -103,7 +105,9 @@ func (l LibKrunStubber) CreateVM(opts define.CreateVMOpts, mc *vmconfigs.Machine
 	for _, mnt := range mc.Mounts {
 		virtiofsMounts = append(virtiofsMounts, machine.MountToVirtIOFs(mnt))
 	}
-	return nil
+	mc.AppleKrunkitHypervisor.Krunkit.LogLevel = logrus.InfoLevel
+
+	return err
 }
 
 func (l LibKrunStubber) VMType() define.VMType {

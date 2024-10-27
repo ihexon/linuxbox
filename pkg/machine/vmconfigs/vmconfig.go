@@ -106,8 +106,8 @@ type MachineConfig struct {
 	Starting   bool
 	lock       *lockfile.LockFile
 	// Oomol Studio
-	EvtSockPath *define.VMFile `json:",omitempty"`
-	PidManaged  ManagedPids    `json:",omitempty"`
+	ReportURL  *define.VMFile `json:",omitempty"`
+	PidManaged ManagedPids    `json:",omitempty"`
 
 	// TODO Remove this field
 	GVProxyPid int32 `json:",omitempty"`

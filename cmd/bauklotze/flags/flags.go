@@ -15,8 +15,15 @@ const (
 )
 
 const (
-	LogLevel           = "info"
+	// 	LogLevels = []string{"trace", "debug", "info", "warn", "warning", "error", "fatal", "panic"}
+	DefaultLogLevel    = "info"
 	ConsoleBased       = "console"
 	FileBased          = "file"
 	MaxMachineNameSize = 30
+	KrunMaxCpus        = 8
+)
+
+const (
+	BAUKLOTZE_HOME = "BAUKLOTZE_HOME"
+	TMP_DIR        = "/tmp/"
 )
