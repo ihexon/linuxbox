@@ -88,7 +88,7 @@ func reassignSSHPort(mc *vmconfigs.MachineConfig, provider vmconfigs.VMProvider)
 		logrus.Warnf("could not release current ssh port allocation (%d): %s", oldPort, err.Error())
 	}
 
-	logrus.Infof("Update ssh port for %s, new ssh port: %s", mc.Name, newPort)
+	logrus.Infof("Update ssh port for %s, new ssh port: %d", mc.Name, newPort)
 	if err := provider.UpdateSSHPort(mc, newPort); err != nil {
 		return err
 	}

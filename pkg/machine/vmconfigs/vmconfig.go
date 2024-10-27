@@ -197,6 +197,7 @@ func getHostUID() int {
 
 func LoadMachineByName(name string, dirs *define.MachineDirs) (*MachineConfig, error) {
 	fullPath, err := dirs.ConfigDir.AppendToNewVMFile(name+".json", nil)
+	logrus.Infof("Try load MachineConfigure %s from %s", name, fullPath.GetPath())
 	if err != nil {
 		return nil, err
 	}

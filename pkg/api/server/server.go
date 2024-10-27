@@ -113,7 +113,7 @@ func makeNewServer(listener net.Listener) *APIServer {
 	router.NotFoundHandler = http.HandlerFunc(
 		func(w http.ResponseWriter, r *http.Request) {
 			// We can track user errors...
-			logrus.Infof("Failed Request: (%d:%s) for %s:'%s'", http.StatusNotFound, http.StatusText(http.StatusNotFound), r.Method, r.URL.String())
+			logrus.Warnf("RESTAPI Request failed: (%d:%s) for %s:'%s'", http.StatusNotFound, http.StatusText(http.StatusNotFound), r.Method, r.URL.String())
 			http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 		},
 	)

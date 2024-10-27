@@ -112,9 +112,8 @@ func start(cmd *cobra.Command, args []string) error {
 
 	watcher.WaitApiServerAndStopMachine(g, ctx, dirs)
 
-	logrus.Infof("starting machine %q\n", vmName)
+	logrus.Infof("Starting machine %q\n", vmName)
 	network.Reporter.SendEventToOvmJs("start", "vm is staring")
-
 	if err = shim.Start(mc, provider, dirs, startOpts); err != nil {
 		return err
 	}
@@ -124,6 +123,13 @@ func start(cmd *cobra.Command, args []string) error {
 	watcher.WaitProcessAndStopMachine(g, ctx, ppid, int32(machine.GlobalPIDs.GetKrunkitPID()), int32(machine.GlobalPIDs.GetGvproxyPID()))
 
 	err = g.Wait()
+
+	if err != nil {
+		logrus.Warnf("Do sync in virtualMachine now")
+		if sshError := machine.CommonSSHSilent(mc.SSH.RemoteUsername, mc.SSH.IdentityPath, mc.Name, mc.SSH.Port, []string{"sync"}); sshError != nil {
+			logrus.Error("Failed to sync in virtualMachine: %v", sshError)
+		}
+	}
 
 	return err
 }

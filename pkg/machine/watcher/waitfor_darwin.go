@@ -39,13 +39,12 @@ func watchProcess(ctx context.Context, ovmPPid, krunPid, gvPid int32) error {
 // WaitApiServerAndStopMachine is Non block function
 func WaitApiServerAndStopMachine(g *errgroup.Group, ctx context.Context, dirs *define.MachineDirs) {
 	listenPath := "unix:///" + dirs.RuntimeDir.GetPath() + "/ovm_restapi.socks"
+	logrus.Infof("Starting API Server in %s\n", listenPath)
 
 	g.Go(func() error {
 		apiURL, _ := url.Parse(listenPath)
 		return startRestApi(ctx, apiURL)
 	})
-
-	logrus.Infof("Starting API Server in %s\n", listenPath)
 }
 
 func startRestApi(ctx context.Context, apiURL *url.URL) error {
