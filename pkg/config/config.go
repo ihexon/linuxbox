@@ -1,6 +1,7 @@
 package config
 
 import (
+	"bauklotze/pkg/machine/env"
 	"fmt"
 	"github.com/sirupsen/logrus"
 	"os"
@@ -102,9 +103,9 @@ func (c *Config) FindHelperBinary(name string, searchPATH bool) (string, error) 
 			// exec.LookPath from absolute path on Unix is equal to os.Stat + IsNotDir + check for executable bits in FileMode
 			// exec.LookPath from absolute path on Windows is equal to os.Stat + IsNotDir for `file.ext` or loops through extensions from PATHEXT for `file`
 			if lp, err := exec.LookPath(abspath); err == nil {
-				err := os.Setenv("DYLD_LIBRARY_PATH", path)
+				err = os.Setenv(env.DYLD_LIBRARY_PATH, fmt.Sprintf("%s:%s", path, os.Getenv("DYLD_LIBRARY_PATH")))
 				if err != nil {
-					return "", fmt.Errorf("Can not set DYLD_LIBRARY_PATH with %s", path)
+					return "", fmt.Errorf("Can not set env DYLD_LIBRARY_PATH with %s", path)
 				}
 				return lp, nil
 			}

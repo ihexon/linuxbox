@@ -1,0 +1,31 @@
+#! /bin/bash
+set -o pipefail
+while IFS= read -r line; do
+	line=$(echo "$line" | xargs)
+
+	if [ -z "$line" ]; then
+		continue
+	fi
+
+  echo -n "$line"| grep -q '[&,;|]';ret=$?
+  if [[ $ret -eq 0 ]]; then
+    echo "Invalid character in command: $line" >&2
+    exit 100
+  fi
+
+  # Only allow ffmpeg,sleep,time
+  echo -n "$line"| grep -qE '^(ffmpeg|sleep|time|set)';ret=$?
+  if [[ $ret -ne 0 ]]; then
+      echo "Invalid character in command: $line" >&2
+      exit 100
+  fi
+
+
+	bash -c "$line;exit";
+	ret=$?
+	if [ ${ret} -ne 0 ]; then
+		echo "Command: ${line} return ${ret}" >&2
+		exit
+	fi
+	exit
+done

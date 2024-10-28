@@ -3,6 +3,7 @@ package machine
 import (
 	cmdflags "bauklotze/cmd/bauklotze/flags"
 	"bauklotze/cmd/registry"
+	"bauklotze/pkg/cliproxy"
 	"bauklotze/pkg/machine"
 	"bauklotze/pkg/machine/define"
 	"bauklotze/pkg/machine/env"
@@ -17,6 +18,7 @@ import (
 	"github.com/spf13/cobra"
 	"golang.org/x/sync/errgroup"
 	"os"
+	"os/exec"
 	"os/signal"
 	"syscall"
 )
@@ -110,6 +112,17 @@ func start(cmd *cobra.Command, args []string) error {
 		logrus.Infof("Machine Config JSON: %s", string(mcJSON))
 	}
 
+	socatCmd := &exec.Cmd{}
+	go func() {
+		cliproxyCmd, cliProxyErr := cliproxy.RunCliProxy()
+		if cliProxyErr != nil {
+			logrus.Warnf("CliProxy exited with: %v", err)
+		}
+		socatCmd = cliproxyCmd
+		_ = socatCmd.Wait()
+		logrus.Warnf("CliProxy exited")
+	}()
+
 	watcher.WaitApiServerAndStopMachine(g, ctx, dirs)
 
 	logrus.Infof("Starting machine %q\n", vmName)
@@ -129,6 +142,8 @@ func start(cmd *cobra.Command, args []string) error {
 		if sshError := machine.CommonSSHSilent(mc.SSH.RemoteUsername, mc.SSH.IdentityPath, mc.Name, mc.SSH.Port, []string{"sync"}); sshError != nil {
 			logrus.Error("Failed to sync in virtualMachine: %v", sshError)
 		}
+		logrus.Warnf("Killing cliProxy PID [%d]....", socatCmd.Process.Pid)
+		_ = socatCmd.Process.Signal(syscall.SIGKILL)
 	}
 
 	return err
