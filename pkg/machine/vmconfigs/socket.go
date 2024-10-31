@@ -23,3 +23,7 @@ func (mc *MachineConfig) IgnitionSocket() (*define.VMFile, error) {
 func (mc *MachineConfig) IgnitionTcpListenAddr() string {
 	return define.TcpIgnitionAddr
 }
+
+func (mc *MachineConfig) CliProxyUDFAddr() (*define.VMFile, error) {
+	return define.NewMachineFile("/tmp/cliproxy.sock", nil)
+}

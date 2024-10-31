@@ -10,6 +10,7 @@ const (
 	MachineConfigVersion = 1
 	// TODO: This should be configurable, in macos it should be a unix socket
 	TcpIgnitionAddr = "tcp://127.0.0.1:65530"
+	CliProxyUDF     = "/tmp/cli_proxy.sock"
 )
 
 type CreateVMOpts struct {

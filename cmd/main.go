@@ -63,7 +63,8 @@ var (
 		TraverseChildren: true,
 		// PersistentPreRunE/PreRunE/RunE will run after rootCmd.ExecuteContext(context.Background()), also run after init()
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-			logrus.Infof("======== rootCmd PersistentPreRunE ========\n")
+			logrus.Infof("\n\n\n=================== rootCmd PersistentPreRunE (OVM LOG BEGAIN) ===================\n")
+			logrus.Infof("FULL OVM COMMANDLINE: %v\n", os.Args)
 			return nil
 		},
 		PreRunE: func(cmd *cobra.Command, args []string) error {
@@ -122,7 +123,7 @@ func main() {
 
 func ReportHook() {
 	if commonOpts.ReportUrl != "" {
-		logrus.Infof("Report events to the url: %s\n", commonOpts.ReportUrl)
+		logrus.Infof("ReportHook(): Report events to the url: %s\n", commonOpts.ReportUrl)
 		network.NewReporter(commonOpts.ReportUrl)
 	} else {
 		logrus.Infof("No report url provided, skip report events\n")
@@ -154,8 +155,9 @@ func stdOutHook() {
 			os.Stderr = fd
 			logrus.SetOutput(fd)
 		}
+	} else {
+		logrus.Infof("Log all output to console\n")
 	}
-	logrus.Infof("Log all output to console\n")
 }
 
 func parseCommands() *cobra.Command {

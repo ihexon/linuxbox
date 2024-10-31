@@ -45,12 +45,15 @@ func GetDefaultDevices(mc *vmconfigs.MachineConfig) ([]vfConfig.VirtioDevice, *d
 	}
 
 	readySocket, err := mc.ReadySocket()
+	cliproxySocket, err := mc.CliProxyUDFAddr()
 	if err != nil {
 		return nil, nil, err
 	}
 
 	// Note: After Ignition, We send ready to `readySocket.GetPath()`
 	readyDevice, err := vfConfig.VirtioVsockNew(1025, readySocket.GetPath(), true)
+	cliProxyDevice, err := vfConfig.VirtioVsockNew(2025, cliproxySocket.GetPath(), true)
+
 	if err != nil {
 		return nil, nil, err
 	}
@@ -63,7 +66,7 @@ func GetDefaultDevices(mc *vmconfigs.MachineConfig) ([]vfConfig.VirtioDevice, *d
 	// DO NOT CHANGE THE 1024 VSOCK PORT
 	// See https://coreos.github.io/ignition/supported-platforms/
 	ignitionDevice, err := vfConfig.VirtioVsockNew(1024, ignitionSocket.GetPath(), true)
-	devices = append(devices, disk, rng, readyDevice, ignitionDevice)
+	devices = append(devices, disk, rng, readyDevice, ignitionDevice, cliProxyDevice)
 
 	if mc.AppleKrunkitHypervisor == nil || !logrus.IsLevelEnabled(logrus.DebugLevel) {
 		// If libkrun is the provider and we want to show the debug console,
@@ -178,6 +181,7 @@ func StartGenericAppleVM(mc *vmconfigs.MachineConfig, cmdBinary string, bootload
 	}
 
 	cmd.Args = append(cmd.Args, endpointArgs...)
+
 	// Listen ready socket
 	if err := readySocket.Delete(); err != nil {
 		logrus.Warnf("unable to delete previous ready socket: %q", err)
