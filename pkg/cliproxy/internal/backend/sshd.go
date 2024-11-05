@@ -26,11 +26,6 @@ func SSHD() error {
 			return
 		}
 
-		//if str[0] != "ffmpeg" && str[0] != "llama" {
-		//	_, _ = fmt.Fprintf(s.Stderr(), "Command not allowed\n")
-		//	return
-		//}
-
 		_, _ = fmt.Fprintf(os.Stdout, "Proxy command: %s\n", str)
 		cmd := exec.CommandContext(ctx, str[0], str[1:]...)
 		stdOut, handleErr := cmd.StdoutPipe()
@@ -47,8 +42,8 @@ func SSHD() error {
 
 		handleErr = cmd.Start()
 		if handleErr != nil {
-			_, _ = fmt.Fprintf(s.Stderr(), "Error: %s\n", handleErr)
 			_ = s.Exit(127)
+			_, _ = fmt.Fprintf(s.Stderr(), "Error: %s\n", handleErr)
 		}
 
 		go func() {
@@ -59,8 +54,8 @@ func SSHD() error {
 		}()
 
 		if err := cmd.Wait(); err != nil {
-			_, _ = fmt.Fprintf(s.Stderr(), "Error: %s\n", err)
 			_ = s.Exit(cmd.ProcessState.ExitCode())
+			_, _ = fmt.Fprintf(s.Stderr(), "Error: %s\n", err)
 		} else {
 			_, _ = fmt.Fprintf(os.Stdout, "Command: %s finished\n", str)
 		}

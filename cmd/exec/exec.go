@@ -97,7 +97,7 @@ func main() {
 	// 开始执行命令
 	if err := session.Start(str); err != nil {
 		logrus.Fatalf("Failed to start command: %s", err)
-		os.Exit(127)
+		os.Exit(err.(*ssh.ExitError).ExitStatus())
 	}
 
 	// 实时输出命令执行结果
