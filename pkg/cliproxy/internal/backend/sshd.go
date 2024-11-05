@@ -48,6 +48,7 @@ func SSHD() error {
 		handleErr = cmd.Start()
 		if handleErr != nil {
 			_, _ = fmt.Fprintf(s.Stderr(), "Error: %s\n", handleErr)
+			_ = s.Exit(127)
 		}
 
 		go func() {
@@ -59,6 +60,7 @@ func SSHD() error {
 
 		if err := cmd.Wait(); err != nil {
 			_, _ = fmt.Fprintf(s.Stderr(), "Error: %s\n", err)
+			_ = s.Exit(cmd.ProcessState.ExitCode())
 		} else {
 			_, _ = fmt.Fprintf(os.Stdout, "Command: %s finished\n", str)
 		}
