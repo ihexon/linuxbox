@@ -11,7 +11,7 @@ import (
 // no ignition path is provided
 func AddSSHConnectionsToPodmanSocket(uid, port int, identityPath, name, remoteUsername string, opts define.InitOptions) error {
 	cons := createConnections(name, uid, port, remoteUsername)
-	return addConnection(cons, identityPath, opts.IsDefault)
+	return addConnection(cons, identityPath, true)
 }
 
 func createConnections(name string, uid, port int, remoteUsername string) []connection {
