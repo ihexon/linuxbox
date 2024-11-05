@@ -12,7 +12,12 @@ import (
 	"path/filepath"
 )
 
-const connectionsFile = "bugbox-connections.json"
+const connectionsFile = "connections.json"
+
+type ConnectionConfig struct {
+	Default     string                 `json:",omitempty"`
+	Connections map[string]Destination `json:",omitempty"`
+}
 
 type ConnectionsFile struct {
 	Connection ConnectionConfig `json:",omitempty"`
@@ -24,8 +29,7 @@ func connectionsConfigFile() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	p := filepath.Join(path, "connectionCfg", connectionsFile)
-	return p, nil // ${BauklotzeHomePath}/config/connectionCfg/bugbox-connections.json
+	return filepath.Join(path, "connectionCfg", connectionsFile), nil // ${BauklotzeHomePath}/config/connectionCfg/bugbox-connections.json
 }
 
 func readConnectionConf(path string) (*ConnectionsFile, error) {
@@ -69,6 +73,9 @@ func writeConnectionConf(path string, conf *ConnectionsFile) error {
 	return configFile.Commit()
 }
 
+// EditConnectionConfig must be used to edit the connections config.
+// The function will read and write the file automatically and the
+// callback function just needs to modify the cfg as needed.
 func EditConnectionConfig(callback func(cfg *ConnectionsFile) error) error {
 	path, err := connectionsConfigFile()
 	if err != nil {
@@ -77,7 +84,6 @@ func EditConnectionConfig(callback func(cfg *ConnectionsFile) error) error {
 
 	lockPath := path + ".lock"
 	lock, err := lockfile.GetLockFile(lockPath)
-
 	if err != nil {
 		return fmt.Errorf("obtain lock file: %w", err)
 	}

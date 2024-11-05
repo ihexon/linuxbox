@@ -130,7 +130,7 @@ func Init(opts define.InitOptions, mp vmconfigs.VMProvider) error {
 		network.Reporter.SendEventToOvmJs("decompress", "success")
 	}
 
-	if err = connection.AddSSHConnectionsToPodmanSocket(mc.SSH.Port, mc.SSH.IdentityPath, mc.Name, mc.SSH.RemoteUsername, opts); err != nil {
+	if err = connection.AddSSHConnectionsToPodmanSocket(0, mc.SSH.Port, mc.SSH.IdentityPath, mc.Name, mc.SSH.RemoteUsername, opts); err != nil {
 		return err
 	}
 

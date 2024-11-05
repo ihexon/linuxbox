@@ -10,11 +10,6 @@ import (
 	"strings"
 )
 
-type ConnectionConfig struct {
-	Default     string                 `json:",omitempty"`
-	Connections map[string]Destination `json:",omitempty"`
-}
-
 // Destination represents destination for remote service
 type Destination struct {
 	// URI, required. Example: ssh://root@example.com:22/run/podman/podman.sock

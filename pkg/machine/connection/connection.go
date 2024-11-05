@@ -20,35 +20,42 @@ type connection struct {
 	uri  *url.URL
 }
 
-func addConnection(cons []connection, identity string) error {
+func addConnection(cons []connection, identity string, isDefault bool) error {
 	if len(identity) < 1 {
 		return errors.New("identity must be defined")
 	}
 
-	return config.EditConnectionConfig(
-		func(cfg *config.ConnectionsFile) error {
-			for _, con := range cons {
-				dst := config.Destination{
-					URI:      con.uri.String(),
-					Identity: identity,
-				}
-
-				if cfg.Connection.Connections == nil {
-					cfg.Connection.Connections = map[string]config.Destination{
-						con.name: dst,
-					}
-					cfg.Connection.Default = con.name
-				} else {
-					cfg.Connection.Connections[con.name] = dst
-				}
+	return config.EditConnectionConfig(func(cfg *config.ConnectionsFile) error {
+		for i, con := range cons {
+			if _, ok := cfg.Connection.Connections[con.name]; ok {
+				return fmt.Errorf("cannot overwrite connection %q", con.name)
 			}
-			return nil
-		},
-	)
+
+			dst := config.Destination{
+				URI:      con.uri.String(),
+				Identity: identity,
+			}
+
+			if isDefault && i == 0 {
+				cfg.Connection.Default = con.name
+			}
+
+			if cfg.Connection.Connections == nil {
+				cfg.Connection.Connections = map[string]config.Destination{
+					con.name: dst,
+				}
+				cfg.Connection.Default = con.name
+			} else {
+				cfg.Connection.Connections[con.name] = dst
+			}
+		}
+
+		return nil
+	})
 }
 
-func UpdateConnectionPairPort(name string, port int, remoteUsername string, identityPath string) error {
-	cons := createConnections(name, port, remoteUsername)
+func UpdateConnectionPairPort(name string, port, uid int, remoteUsername string, identityPath string) error {
+	cons := createConnections(name, uid, port, remoteUsername)
 	return config.EditConnectionConfig(func(cfg *config.ConnectionsFile) error {
 		for _, con := range cons {
 			dst := config.Destination{
@@ -61,7 +68,6 @@ func UpdateConnectionPairPort(name string, port int, remoteUsername string, iden
 		return nil
 	})
 }
-
 func RemoveConnections(names ...string) error {
 	return config.EditConnectionConfig(func(cfg *config.ConnectionsFile) error {
 		for _, name := range names {
