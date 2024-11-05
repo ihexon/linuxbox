@@ -72,6 +72,8 @@ func start(cmd *cobra.Command, args []string) error {
 		case <-ctx.Done():
 			return context.Cause(ctx)
 		case sign := <-signalChan:
+			_ = system.KillProcess(machine.GlobalPIDs.GetKrunkitPID())
+			_ = system.KillProcess(machine.GlobalPIDs.GetKrunkitPID())
 			return fmt.Errorf("Signal received: %v", sign)
 		}
 	})
