@@ -7,6 +7,7 @@ import (
 	"bauklotze/pkg/machine/env"
 	"bauklotze/pkg/machine/gvproxy"
 	"bauklotze/pkg/machine/lock"
+	"bauklotze/pkg/machine/provider"
 	"bauklotze/pkg/machine/vmconfigs"
 	"bauklotze/pkg/network"
 	"encoding/json"
@@ -37,6 +38,10 @@ func Init(opts define.InitOptions, mp vmconfigs.VMProvider) error {
 		err            error
 		imagePath      *define.VMFile
 	)
+
+	callbackFuncs := machine.CleanUp()
+	defer callbackFuncs.CleanIfErr(&err)
+	go callbackFuncs.CleanOnSignal()
 
 	dirs, err := env.GetMachineDirs(mp.VMType())
 	if err != nil {
@@ -72,12 +77,6 @@ func Init(opts define.InitOptions, mp vmconfigs.VMProvider) error {
 	if err != nil {
 		return err
 	}
-	//jsonMC, err := json.MarshalIndent(mc, "", "  ")
-	//if err != nil {
-	//	logrus.Errorf("Failed to marshal MachineConfig to JSON: %v", err)
-	//} else {
-	//	logrus.Infof("MachineConfig: %s", jsonMC)
-	//}
 
 	// machine configure json,version always be as 1
 	mc.Version = define.MachineConfigVersion
@@ -114,25 +113,36 @@ func Init(opts define.InitOptions, mp vmconfigs.VMProvider) error {
 	} else {
 		logrus.Infof("Mounts: %s", jsonMounts)
 	}
+
+	initCmdOpts := opts
+	logrus.Infof("A bootable Image provided: %s", initCmdOpts.Images.BootableImage)
+	// Extract the bootable image
+
 	// Jump into Provider's GetDisk implementation, but we can using
 	// if err := diskpull.GetDisk(opts.Image, dirs, mc.ImagePath, mp.VMType(), mc.Name); err != nil {
 	//		return err
 	//	}
 	// for simplify code, but for now keep using Provider's GetDisk implementation
-	initCmdOpts := opts
-	logrus.Infof("A bootable Image provided: %s", initCmdOpts.Images.BootableImage)
-
-	// Extract the bootable image
 	network.Reporter.SendEventToOvmJs("decompress", "running")
 	if err = mp.GetDisk(initCmdOpts.Images.BootableImage, dirs, mc.ImagePath, mp.VMType(), mc.Name); err != nil {
 		return err
 	} else {
 		network.Reporter.SendEventToOvmJs("decompress", "success")
 	}
+	callbackFuncs.Add(mc.ImagePath.Delete)
 
 	if err = connection.AddSSHConnectionsToPodmanSocket(0, mc.SSH.Port, mc.SSH.IdentityPath, mc.Name, mc.SSH.RemoteUsername, opts); err != nil {
 		return err
 	}
+
+	cleanup := func() error {
+		machines, err := provider.GetAllMachinesAndRootfulness()
+		if err != nil {
+			return err
+		}
+		return connection.RemoveConnections(machines, mc.Name+"-root")
+	}
+	callbackFuncs.Add(cleanup)
 
 	err = mp.CreateVM(createOpts, mc)
 	if err != nil {
@@ -154,8 +164,11 @@ func Init(opts define.InitOptions, mp vmconfigs.VMProvider) error {
 	err = mc.Write()
 	if err != nil {
 		return err
+	} else {
+		network.Reporter.SendEventToOvmJs("writeConfig", "success")
+		callbackFuncs.Add(mc.ConfigPath.Delete)
 	}
-	network.Reporter.SendEventToOvmJs("writeConfig", "success")
+	//err = fmt.Errorf("Test Error happend")
 	return err
 }
 

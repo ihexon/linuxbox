@@ -16,7 +16,7 @@ import (
 )
 
 const (
-	defaultGuestSock = "/run/podman/podman.sock"
+	podmanGuestSocks = "/run/podman/podman.sock"
 )
 
 func setupMachineSockets(mc *vmconfigs.MachineConfig, dirs *define.MachineDirs) ([]string, string, machine.APIForwardingState, error) {
@@ -42,7 +42,7 @@ func setupForwardingLinks(hostSocket, dataDir *define.VMFile) (string, machine.A
 func startHostForwarder(mc *vmconfigs.MachineConfig, provider vmconfigs.VMProvider, dirs *define.MachineDirs, hostSocks []string) error {
 	forwardUser := mc.SSH.RemoteUsername
 
-	guestSock := defaultGuestSock
+	guestSock := podmanGuestSocks
 
 	cfg := config.Default()
 
