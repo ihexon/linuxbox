@@ -19,20 +19,21 @@ func (c *CleanupCallback) CleanIfErr(err *error) {
 	if *err == nil {
 		return
 	}
+	logrus.Infof("--> Callback: cleaning up due to error")
 	c.clean()
 }
 
 func (c *CleanupCallback) CleanOnSignal() {
 	ch := make(chan os.Signal, 1)
-	signal.Notify(ch, os.Interrupt, syscall.SIGTERM)
+	signal.Notify(ch, os.Interrupt, syscall.SIGTERM, syscall.SIGINT, syscall.SIGQUIT)
 
 	_, ok := <-ch
 	if !ok {
 		return
 	}
 
+	logrus.Infof("--> Callback: caught signal, cleaning up")
 	c.clean()
-	os.Exit(1)
 }
 
 func (c *CleanupCallback) clean() {

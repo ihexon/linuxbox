@@ -13,6 +13,7 @@ import (
 	gvproxy "github.com/containers/gvisor-tap-vsock/pkg/types"
 	vfConfig "github.com/crc-org/vfkit/pkg/config"
 	"github.com/sirupsen/logrus"
+	"os/exec"
 	"strconv"
 )
 
@@ -114,7 +115,7 @@ func (l LibKrunStubber) VMType() define.VMType {
 	return define.LibKrun
 }
 
-func (l LibKrunStubber) StartVM(mc *vmconfigs.MachineConfig) (func() error, func() error, error) {
+func (l LibKrunStubber) StartVM(mc *vmconfigs.MachineConfig) (*exec.Cmd, func() error, error) {
 	bl := mc.AppleKrunkitHypervisor.Krunkit.VirtualMachine.Bootloader
 	if bl == nil {
 		return nil, nil, fmt.Errorf("unable to determine boot loader for this machine")

@@ -88,12 +88,11 @@ func (p *AllCmds) GetGvproxyCmd() exec.Cmd {
 	return exec.Cmd{}
 }
 
-// DO NOT BLOCK THIS FUNCTION
+// DO NOT BLOCK THIS FUNCTION FOR LONG TIME
 func WaitAPIAndPrintInfo(reortUrl string, forwardSock string, forwardState APIForwardingState, name string) error {
 	if forwardState == NoForwarding {
 		_ = system.KillProcess(GlobalPIDs.GetKrunkitPID())
 		_ = system.KillProcess(GlobalPIDs.GetGvproxyPID())
-
 		return fmt.Errorf("Podman Rest API No forwarding")
 	}
 
@@ -119,7 +118,7 @@ func WaitAndPingAPI(sock string) error {
 	connCtx.UrlParameter = url.Values{}
 	connCtx.Headers = http.Header{}
 
-	timeout := time.After(10 * time.Second)
+	timeout := time.After(5 * time.Second)
 	res := &network.APIResponse{}
 pingLoop:
 	for {

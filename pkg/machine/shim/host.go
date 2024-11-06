@@ -8,6 +8,7 @@ import (
 	"bauklotze/pkg/machine/gvproxy"
 	"bauklotze/pkg/machine/lock"
 	"bauklotze/pkg/machine/provider"
+	"bauklotze/pkg/machine/system"
 	"bauklotze/pkg/machine/vmconfigs"
 	"bauklotze/pkg/network"
 	"encoding/json"
@@ -15,6 +16,7 @@ import (
 	"fmt"
 	"github.com/containers/common/pkg/strongunits"
 	"github.com/sirupsen/logrus"
+	"os"
 	"runtime"
 	"time"
 )
@@ -231,6 +233,11 @@ func startNetAndForwardNow(
 
 func Start(mc *vmconfigs.MachineConfig, mp vmconfigs.VMProvider, dirs *define.MachineDirs, opts define.StartOptions) error {
 	var err error
+
+	callBackFuncs := machine.CleanUp()
+	defer callBackFuncs.CleanIfErr(&err)
+	go callBackFuncs.CleanOnSignal()
+
 	mc.Lock()
 	defer mc.Unlock()
 
@@ -280,23 +287,37 @@ func Start(mc *vmconfigs.MachineConfig, mp vmconfigs.VMProvider, dirs *define.Ma
 	if err != nil {
 		return err
 	}
-
-	// Start krunkit now
-	_, WaitForReady, err := mp.StartVM(mc)
+	gvproxyPidFile, err := dirs.RuntimeDir.AppendToNewVMFile("gvproxy.pid", nil)
 	if err != nil {
 		return err
 	}
 
-	// Ready means:
-	// 1. running gvproxy first
-	// 	  - podman forwardSocket, (host)podman-api.sock -> (guest)podman.sock.
-	//    - ssh port forward (host)ssh-port:[random-assigned] -> (guest)ssh-port:22
-	// 2. the virtualMachine boot succeed!
-	// 3. the ignition finished
-	// 4. the podman startup succeed
-	// 5. ready event send to bauklotze
+	cleanGV := func() error {
+		_ = system.KillProcess(machine.GlobalPIDs.GetGvproxyPID())
+		logrus.Infof("--> Callback: clean gvproxy process %d", machine.GlobalPIDs.GetGvproxyPID())
+		_ = gvproxyPidFile.Delete()
+		_ = os.Remove(forwardSocketPath)
+		return nil
+	}
+	callBackFuncs.Add(cleanGV)
+
+	// Start krunkit now
+	krunCmd, WaitForReady, err := mp.StartVM(mc)
+	if err != nil {
+		return err
+	}
+
+	cleanKRUN := func() error {
+		_ = krunCmd.Process.Kill()
+		logrus.Infof("--> Callback: clean krunkit process %d", krunCmd.Process.Pid)
+		return nil
+	}
+
+	callBackFuncs.Add(cleanKRUN)
+
 	if WaitForReady == nil {
-		return errors.New("no valid WaitForReady function returned")
+		err = errors.New("no valid WaitForReady function returned")
+		return err
 	}
 
 	// continue check krunkit runnning and wait ready event comming

@@ -13,13 +13,10 @@ import (
 	"bauklotze/pkg/machine/watcher"
 	"bauklotze/pkg/network"
 	"context"
-	"fmt"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"golang.org/x/sync/errgroup"
 	"os"
-	"os/signal"
-	"syscall"
 )
 
 var (
@@ -64,19 +61,20 @@ func start(cmd *cobra.Command, args []string) error {
 	defer cancel()
 	g, ctx := errgroup.WithContext(ctx)
 
-	g.Go(func() error {
-		logrus.Infof("Listen for os.Interrupt, syscall.SIGTERM, syscall.SIGQUIT signals")
-		signalChan := make(chan os.Signal, 1)
-		signal.Notify(signalChan, os.Interrupt, syscall.SIGTERM, syscall.SIGQUIT)
-		select {
-		case <-ctx.Done():
-			return context.Cause(ctx)
-		case sign := <-signalChan:
-			_ = system.KillProcess(machine.GlobalPIDs.GetKrunkitPID())
-			_ = system.KillProcess(machine.GlobalPIDs.GetKrunkitPID())
-			return fmt.Errorf("Signal received: %v", sign)
-		}
-	})
+	//g.Go(func() error {
+	//	logrus.Infof("Listen for os.Interrupt, syscall.SIGTERM, syscall.SIGQUIT signals")
+	//	signalChan := make(chan os.Signal, 1)
+	//	signal.Notify(signalChan, os.Interrupt, syscall.SIGTERM, syscall.SIGINT, syscall.SIGQUIT)
+	//	select {
+	//	case <-ctx.Done():
+	//		return context.Cause(ctx)
+	//	case sign := <-signalChan:
+	//		logrus.Infof("======================")
+	//		_ = system.KillProcess(machine.GlobalPIDs.GetKrunkitPID())
+	//		_ = system.KillProcess(machine.GlobalPIDs.GetKrunkitPID())
+	//		return fmt.Errorf("Signal received: %v", sign)
+	//	}
+	//})
 
 	vmName := defaultMachineName
 	if len(args) > 0 && len(args[0]) > 0 {
@@ -105,13 +103,13 @@ func start(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	mcJSON, err := json.MarshalIndent(mc, "", "  ")
-	if err != nil {
-		logrus.Errorf("Failed to marshal machine config to JSON: %v", err)
-		return err
-	} else {
-		logrus.Infof("Machine Config JSON: %s", string(mcJSON))
-	}
+	//mcJSON, err := json.MarshalIndent(mc, "", "  ")
+	//if err != nil {
+	//	logrus.Errorf("Failed to marshal machine config to JSON: %v", err)
+	//	return err
+	//} else {
+	//	logrus.Infof("Machine Config JSON: %s", string(mcJSON))
+	//}
 
 	go func() {
 		logrus.Infof("CMDProxy starting...")
@@ -141,8 +139,6 @@ func start(cmd *cobra.Command, args []string) error {
 		if sshError := machine.CommonSSHSilent(mc.SSH.RemoteUsername, mc.SSH.IdentityPath, mc.Name, mc.SSH.Port, []string{"sync"}); sshError != nil {
 			logrus.Error("Failed to sync in virtualMachine: %v", sshError)
 		}
-		//logrus.Warnf("Killing cliProxy PID [%d]....", socatCmd.Process.Pid)
-		//_ = socatCmd.Process.Signal(syscall.SIGKILL)
 	}
 
 	return err

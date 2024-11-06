@@ -13,6 +13,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"io/fs"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"time"
@@ -30,7 +31,7 @@ type VMProvider interface { //nolint:interfacebloat
 	UpdateSSHPort(mc *MachineConfig, port int) error
 	StartNetworking(mc *MachineConfig, cmd *gvproxy.GvproxyCommand) error
 	PostStartNetworking(mc *MachineConfig, noInfo bool) error
-	StartVM(mc *MachineConfig) (func() error, func() error, error)
+	StartVM(mc *MachineConfig) (*exec.Cmd, func() error, error)
 	MountVolumesToVM(mc *MachineConfig, quiet bool) error
 	SetProviderAttrs(mc *MachineConfig, opts define.SetOptions) error
 }

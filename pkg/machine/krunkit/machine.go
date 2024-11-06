@@ -19,6 +19,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"net"
 	"os"
+	"os/exec"
 	"syscall"
 	"time"
 )
@@ -106,7 +107,7 @@ func readFileContent(path string) string {
 	return string(content)
 }
 
-func StartGenericAppleVM(mc *vmconfigs.MachineConfig, cmdBinary string, bootloader vfConfig.Bootloader, endpoint string) (func() error, func() error, error) {
+func StartGenericAppleVM(mc *vmconfigs.MachineConfig, cmdBinary string, bootloader vfConfig.Bootloader, endpoint string) (*exec.Cmd, func() error, error) {
 	// Add networking
 	netDevice, err := vfConfig.VirtioNetNew(applehvMACAddress)
 	if err != nil {
@@ -299,7 +300,7 @@ func StartGenericAppleVM(mc *vmconfigs.MachineConfig, cmdBinary string, bootload
 		return nil
 	}
 
-	return cmd.Process.Release, returnFunc, nil
+	return cmd, returnFunc, nil
 }
 
 // CheckProcessRunning checks non blocking if the pid exited

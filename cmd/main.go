@@ -203,27 +203,14 @@ func RootCmdExecute() {
 	// NOTE: commonOpts will be initialize after rootCmd.ExecuteContext(ctx)
 	ctx := context.WithValue(context.Background(), "commonOpts", commonOpts)
 	err = rootCmd.ExecuteContext(ctx)
-
 	if err != nil {
 		_, _ = fmt.Fprintln(os.Stderr, formatError(err))
-		if machine.GlobalPIDs.GetGvproxyPID() != 0 || machine.GlobalPIDs.GetKrunkitPID() != 0 {
-			logrus.Infof("Killing gvproxy PID[%d]", machine.GlobalPIDs.GetGvproxyPID())
-			_ = system.KillProcess(machine.GlobalPIDs.GetGvproxyPID())
-			gvproxyCmd := machine.GlobalCmds.GetGvproxyCmd()
-			_ = gvproxyCmd.Wait()
-
-			logrus.Infof("Killing Krun PID[%d]", machine.GlobalPIDs.GetKrunkitPID())
-			_ = system.KillProcess(machine.GlobalPIDs.GetKrunkitPID())
-			krunCmd := machine.GlobalCmds.GetKrunCmd()
-			_ = krunCmd.Wait()
-		}
 		network.Reporter.SendEventToOvmJs("error", fmt.Sprintf("Error: %v", err))
 		registry.SetExitCode(1)
-		notifyexit.NotifyExit(registry.GetExitCode())
 	} else {
 		registry.SetExitCode(0)
-		notifyexit.NotifyExit(registry.GetExitCode())
 	}
+	notifyexit.NotifyExit(registry.GetExitCode())
 }
 
 func loggingHook() {
