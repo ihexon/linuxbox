@@ -131,7 +131,10 @@ func Init(opts define.InitOptions, mp vmconfigs.VMProvider) error {
 	} else {
 		network.Reporter.SendEventToOvmJs("decompress", "success")
 	}
-	callbackFuncs.Add(mc.ImagePath.Delete)
+	callbackFuncs.Add(func() error {
+		logrus.Infof("--> Callback: Removing image %s", mc.ImagePath.GetPath())
+		return mc.ImagePath.Delete()
+	})
 
 	if err = connection.AddSSHConnectionsToPodmanSocket(0, mc.SSH.Port, mc.SSH.IdentityPath, mc.Name, mc.SSH.RemoteUsername, opts); err != nil {
 		return err
@@ -142,6 +145,7 @@ func Init(opts define.InitOptions, mp vmconfigs.VMProvider) error {
 		if err != nil {
 			return err
 		}
+		logrus.Infof("--> Callback: Removing connections for %s", mc.Name)
 		return connection.RemoveConnections(machines, mc.Name+"-root")
 	}
 	callbackFuncs.Add(cleanup)
@@ -168,7 +172,11 @@ func Init(opts define.InitOptions, mp vmconfigs.VMProvider) error {
 		return err
 	} else {
 		network.Reporter.SendEventToOvmJs("writeConfig", "success")
-		callbackFuncs.Add(mc.ConfigPath.Delete)
+		//callbackFuncs.Add(mc.ConfigPath.Delete)
+		callbackFuncs.Add(func() error {
+			logrus.Infof("--> Callback: Removing Machine config %s", mc.ConfigPath.GetPath())
+			return mc.ConfigPath.Delete()
+		})
 	}
 	//err = fmt.Errorf("Test Error happend")
 	return err
@@ -336,7 +344,7 @@ func Start(mc *vmconfigs.MachineConfig, mp vmconfigs.VMProvider, dirs *define.Ma
 	}
 
 	defaultBackoff := 500 * time.Millisecond
-	maxBackoffs := 6
+	maxBackoffs := 3
 
 	if mp.VMType() != define.WSLVirt {
 		connected, sshError, err := conductVMReadinessCheck(mc, maxBackoffs, defaultBackoff, stateF)

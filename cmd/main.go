@@ -117,8 +117,7 @@ func init() {
 func main() {
 	rootCmd = parseCommands()
 	RootCmdExecute()
-	_ = system.KillProcess(machine.GlobalPIDs.GetGvproxyPID())
-	_ = system.KillProcess(machine.GlobalPIDs.GetKrunkitPID())
+
 }
 
 func ReportHook() {
@@ -210,6 +209,10 @@ func RootCmdExecute() {
 	} else {
 		registry.SetExitCode(0)
 	}
+	logrus.Infof("--> system.KillProcess(machine.GlobalPIDs.GetGvproxyPID()): %d", machine.GlobalPIDs.GetGvproxyPID())
+	_ = system.KillProcess(machine.GlobalPIDs.GetGvproxyPID())
+	logrus.Infof("--> system.KillProcess(machine.GlobalPIDs.GetKrunkitPID()): %d", machine.GlobalPIDs.GetKrunkitPID())
+	_ = system.KillProcess(machine.GlobalPIDs.GetKrunkitPID())
 	notifyexit.NotifyExit(registry.GetExitCode())
 }
 

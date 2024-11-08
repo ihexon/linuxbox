@@ -17,6 +17,7 @@ import (
 	"github.com/spf13/cobra"
 	"golang.org/x/sync/errgroup"
 	"os"
+	"syscall"
 )
 
 var (
@@ -61,25 +62,11 @@ func start(cmd *cobra.Command, args []string) error {
 	defer cancel()
 	g, ctx := errgroup.WithContext(ctx)
 
-	//g.Go(func() error {
-	//	logrus.Infof("Listen for os.Interrupt, syscall.SIGTERM, syscall.SIGQUIT signals")
-	//	signalChan := make(chan os.Signal, 1)
-	//	signal.Notify(signalChan, os.Interrupt, syscall.SIGTERM, syscall.SIGINT, syscall.SIGQUIT)
-	//	select {
-	//	case <-ctx.Done():
-	//		return context.Cause(ctx)
-	//	case sign := <-signalChan:
-	//		logrus.Infof("======================")
-	//		_ = system.KillProcess(machine.GlobalPIDs.GetKrunkitPID())
-	//		_ = system.KillProcess(machine.GlobalPIDs.GetKrunkitPID())
-	//		return fmt.Errorf("Signal received: %v", sign)
-	//	}
-	//})
-
 	vmName := defaultMachineName
 	if len(args) > 0 && len(args[0]) > 0 {
 		vmName = args[0]
 	}
+
 	dirs, err := env.GetMachineDirs(provider.VMType())
 	if err != nil {
 		return err
@@ -103,14 +90,6 @@ func start(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	//mcJSON, err := json.MarshalIndent(mc, "", "  ")
-	//if err != nil {
-	//	logrus.Errorf("Failed to marshal machine config to JSON: %v", err)
-	//	return err
-	//} else {
-	//	logrus.Infof("Machine Config JSON: %s", string(mcJSON))
-	//}
-
 	go func() {
 		logrus.Infof("CMDProxy starting...")
 		cmdProxyErr := cmdproxy.RunCMDProxy()
@@ -133,12 +112,13 @@ func start(cmd *cobra.Command, args []string) error {
 	watcher.WaitProcessAndStopMachine(g, ctx, ppid, int32(machine.GlobalPIDs.GetKrunkitPID()), int32(machine.GlobalPIDs.GetGvproxyPID()))
 
 	err = g.Wait()
-
 	if err != nil {
-		logrus.Warnf("Do sync in virtualMachine now")
+		logrus.Infof("Do sync in virtualMachine now")
 		if sshError := machine.CommonSSHSilent(mc.SSH.RemoteUsername, mc.SSH.IdentityPath, mc.Name, mc.SSH.Port, []string{"sync"}); sshError != nil {
-			logrus.Error("Failed to sync in virtualMachine: %v", sshError)
+			logrus.Warnf("Failed to sync in virtualMachine: %v", sshError)
 		}
+		// send SIGTERM to myself, then callback func will get executed
+		_ = syscall.Kill(os.Getpid(), syscall.SIGTERM)
 	}
 
 	return err

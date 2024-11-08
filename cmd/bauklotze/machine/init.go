@@ -95,10 +95,12 @@ func initMachine(cmd *cobra.Command, args []string) error {
 	var err error
 	// TODO Use ctx to get some parameters would be nice, also using ctx to control the lifecycle init()
 	//ctx := cmd.Context()
+	//ctx, cancel := context.WithCancelCause(ctx)
 	//logrus.Infof("cmd.Context().Value(\"commonOpts\") --> %v", ctx.Value("commonOpts"))
 
 	ppid, _ := cmd.Flags().GetInt32(cmdflags.PpidFlag) // Get PPID from
 	logrus.Infof("PID is [%d], PPID is: %d", os.Getpid(), ppid)
+
 	initOpts.CommonOptions.ReportUrl = cmd.Flag(cmdflags.ReportUrlFlag).Value.String()
 	initOpts.CommonOptions.PPID = ppid
 

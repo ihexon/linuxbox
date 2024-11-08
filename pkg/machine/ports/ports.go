@@ -67,7 +67,12 @@ func IsLocalPortAvailable(port int) bool {
 }
 
 func getRandomPortHold() (io.Closer, int, error) {
-	l, err := net.Listen("tcp", "127.0.0.1:0")
+	l, err := net.Listen("tcp", "127.0.0.1:60321")
+	if err == nil {
+		return l, 60321, nil
+	}
+
+	l, err = net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
 		return nil, 0, fmt.Errorf("unable to get free machine port: %w", err)
 	}

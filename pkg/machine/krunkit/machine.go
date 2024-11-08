@@ -252,6 +252,7 @@ func StartGenericAppleVM(mc *vmconfigs.MachineConfig, cmdBinary string, bootload
 	}
 
 	mc.KRunkitPid = int32(cmd.Process.Pid)
+	logrus.Warnf("Set krunkit pid: %d", mc.KRunkitPid)
 	machine.GlobalPIDs.SetKrunkitPID(cmd.Process.Pid)
 	machine.GlobalCmds.SetKrunCmd(cmd)
 

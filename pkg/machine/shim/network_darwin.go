@@ -84,6 +84,7 @@ func startHostForwarder(mc *vmconfigs.MachineConfig, provider vmconfigs.VMProvid
 		return fmt.Errorf("unable to execute: %q: %w", cmd.ToCmdline(), err)
 	}
 
+	logrus.Warnf("Set Gvproxy Pid: %d", gvcmd.Process.Pid)
 	machine.GlobalPIDs.SetGvproxyPID(gvcmd.Process.Pid)
 	machine.GlobalCmds.SetGvpCmd(gvcmd)
 
