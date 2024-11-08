@@ -15,6 +15,7 @@ import (
 	"fmt"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -146,7 +147,30 @@ func stdOutHook() {
 		}
 
 		logrus.Infof("Log all output to file %s\n", logFile)
+
+		// discard first 5MB if the logfile large than 10MB
+		fileInfo, err := os.Stat(logFile)
+		if err == nil {
+			if fileInfo.Size() <= 10*1024*1024 { // 10MB
+				logrus.Infof("File size is within limit, no changes made.")
+			} else {
+				logrus.Infof("File size is %d bytes, trimming the file.", fileInfo.Size())
+				// If the logFile large then 10*1024*1024 (10MB)
+				file, _ := os.Open(logFile)
+				defer file.Close()
+				file.Seek(5*1024*1024, io.SeekStart) // 5MB
+				tempFile, _ := os.CreateTemp("", "trimmed-ovm-log.txt")
+				defer tempFile.Close()
+				io.Copy(tempFile, file)
+				file.Close()
+				tempFile.Close()
+				os.Rename(tempFile.Name(), logFile)
+				logrus.Infof("Successfully trimmed the file.")
+			}
+		}
+
 		fd, err := os.OpenFile(logFile, os.O_CREATE|os.O_WRONLY|os.O_APPEND, os.ModePerm)
+
 		if err != nil {
 			_, _ = fmt.Fprintf(os.Stderr, "unable to open file for standard output: %s\n", err.Error())
 		} else {
@@ -209,10 +233,12 @@ func RootCmdExecute() {
 	} else {
 		registry.SetExitCode(0)
 	}
+
 	logrus.Infof("--> system.KillProcess(machine.GlobalPIDs.GetGvproxyPID()): %d", machine.GlobalPIDs.GetGvproxyPID())
 	_ = system.KillProcess(machine.GlobalPIDs.GetGvproxyPID())
 	logrus.Infof("--> system.KillProcess(machine.GlobalPIDs.GetKrunkitPID()): %d", machine.GlobalPIDs.GetKrunkitPID())
 	_ = system.KillProcess(machine.GlobalPIDs.GetKrunkitPID())
+
 	notifyexit.NotifyExit(registry.GetExitCode())
 }
 

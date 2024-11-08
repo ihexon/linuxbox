@@ -108,7 +108,6 @@ func start(cmd *cobra.Command, args []string) error {
 	}
 
 	logrus.Infof("Machine %q started successfully\n", vmName)
-
 	watcher.WaitProcessAndStopMachine(g, ctx, ppid, int32(machine.GlobalPIDs.GetKrunkitPID()), int32(machine.GlobalPIDs.GetGvproxyPID()))
 
 	err = g.Wait()
