@@ -178,9 +178,22 @@ func initMachine(cmd *cobra.Command, args []string) error {
 		initOpts.Volumes[idx] = os.ExpandEnv(vol)
 	}
 
-	// The allocate virtual memory can not bigger than physic virtual memory
+	if err = systemResourceCheck(cmd); err != nil {
+		return err
+	}
+
+	logrus.Infof("Initialize virtual machine %s with %s", initOpts.Name, initOpts.Images.BootableImage)
+	err = shim.Init(initOpts, provider)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func systemResourceCheck(cmd *cobra.Command) error {
+	var err error
 	if cmd.Flags().Changed("memory") {
-		if err := system2.CheckMaxMemory(strongunits.MiB(initOpts.Memory)); err != nil {
+		if err = system2.CheckMaxMemory(strongunits.MiB(initOpts.Memory)); err != nil {
 			logrus.Errorf("Can not allocate the memory size %s", initOpts.Memory)
 			return err
 		}
@@ -193,10 +206,5 @@ func initMachine(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	logrus.Infof("Initialize virtual machine %s with %s", initOpts.Name, initOpts.Images.BootableImage)
-	err = shim.Init(initOpts, provider)
-	if err != nil {
-		return err
-	}
-	return nil
+	return err
 }

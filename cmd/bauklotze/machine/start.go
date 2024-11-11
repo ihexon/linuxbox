@@ -79,6 +79,7 @@ func start(cmd *cobra.Command, args []string) error {
 	//		RuntimeDir:    rtDirFile,     // ${BauklotzeHomePath}/tmp/
 	//		LogsDir:       logsDirVMFile, // ${BauklotzeHomePath}/logs
 	//	}
+
 	logrus.Infof("ConfigDir:     %s", dirs.ConfigDir.GetPath())
 	logrus.Infof("DataDir:       %s", dirs.DataDir.GetPath())
 	logrus.Infof("ImageCacheDir: %s", dirs.ImageCacheDir.GetPath())

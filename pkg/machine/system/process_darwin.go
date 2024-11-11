@@ -8,7 +8,6 @@ import (
 )
 
 // IsProcessAliveV3 returns true if process with a given pid is running.
-
 func IsProcessAliveV3(pid int32) (bool, error) {
 	proc, err := process.NewProcess(pid)
 	if err != nil {
@@ -20,7 +19,12 @@ func IsProcessAliveV3(pid int32) (bool, error) {
 	}
 
 	for _, v := range s {
-		if v != process.Zombie {
+		switch v {
+		case process.Zombie:
+		case process.Stop:
+		case process.UnknownState:
+			return false, nil
+		default:
 			return true, nil
 		}
 	}

@@ -131,6 +131,7 @@ func Init(opts define.InitOptions, mp vmconfigs.VMProvider) error {
 	} else {
 		network.Reporter.SendEventToOvmJs("decompress", "success")
 	}
+
 	callbackFuncs.Add(func() error {
 		logrus.Infof("--> Callback: Removing image %s", mc.ImagePath.GetPath())
 		return mc.ImagePath.Delete()
