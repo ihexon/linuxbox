@@ -3,6 +3,7 @@ package machine
 import (
 	cmdflags "bauklotze/cmd/bauklotze/flags"
 	"bauklotze/cmd/registry"
+	"bauklotze/pkg/machine"
 	"bauklotze/pkg/machine/define"
 	"bauklotze/pkg/machine/env"
 	"bauklotze/pkg/machine/shim"
@@ -126,6 +127,15 @@ func initMachine(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
+	// update machine configure
+	if oldMc != nil {
+		logrus.Infof("Update configure %s", oldMc.ConfigPath.GetPath())
+		oldMc.Resources.CPUs = initOpts.CPUS
+		oldMc.Resources.Memory = strongunits.MiB(initOpts.Memory)
+		oldMc.Mounts = CmdLineVolumesToMounts(initOpts.Volumes, provider.MountType())
+		_ = oldMc.Write()
+	}
+
 	dataDir, err := env.DataDirPrefix() // ${BauklotzeHomePath}/data
 	if err != nil {
 		return fmt.Errorf("can not get Data dir %v", err)
@@ -207,4 +217,30 @@ func systemResourceCheck(cmd *cobra.Command) error {
 	}
 
 	return err
+}
+
+func CmdLineVolumesToMounts(volumes []string, volumeType vmconfigs.VolumeMountType) []*vmconfigs.Mount {
+	mounts := []*vmconfigs.Mount{}
+	for i, volume := range volumes {
+		if volume == "" {
+			continue
+		}
+		var mount vmconfigs.Mount
+		tag, source, target, readOnly, _ := vmconfigs.SplitVolume(i, volume)
+		switch volumeType {
+		case vmconfigs.VirtIOFS:
+			mount = machine.NewVirtIoFsMount(source, target, readOnly).ToMount()
+		default:
+			mount = vmconfigs.Mount{
+				Type:          volumeType.String(),
+				Tag:           tag,
+				Source:        source,
+				Target:        target,
+				ReadOnly:      readOnly,
+				OriginalInput: volume,
+			}
+		}
+		mounts = append(mounts, &mount)
+	}
+	return mounts
 }
