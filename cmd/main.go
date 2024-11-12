@@ -65,6 +65,7 @@ var (
 		// PersistentPreRunE/PreRunE/RunE will run after rootCmd.ExecuteContext(context.Background()), also run after init()
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 			logrus.Infof("\n\n\n=================== rootCmd PersistentPreRunE (OVM LOG BEGAIN) ===================\n")
+			logrus.Infof("OVM VERSION dev-f60f531c344c9210935d68d76a0034fb19c1ab2f")
 			logrus.Infof("FULL OVM COMMANDLINE: %v\n", os.Args)
 			return nil
 		},
@@ -133,7 +134,7 @@ func ReportHook() {
 func stdOutHook() {
 	_ = os.Stdin.Close()
 	_logOut, _ := rootCmd.PersistentFlags().GetString(cmdflags.LogOutFlag)
-	// --log-out must used with --workspace
+	// --log-out must use with --workspace
 	hasWorkSpace, _ := rootCmd.PersistentFlags().GetString(cmdflags.WorkspaceFlag)
 	if hasWorkSpace == "" {
 		return
@@ -148,7 +149,7 @@ func stdOutHook() {
 
 		logrus.Infof("Log all output to file %s\n", logFile)
 
-		// discard first 5MB if the logfile large than 10MB
+		// discard first 5MB if the logfile larger than 10MB
 		fileInfo, err := os.Stat(logFile)
 		if err == nil {
 			if fileInfo.Size() <= 10*1024*1024 { // 10MB

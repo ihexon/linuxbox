@@ -12,9 +12,11 @@ import (
 	"github.com/containers/storage/pkg/lockfile"
 	"github.com/sirupsen/logrus"
 	"io/fs"
+	"net"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -171,9 +173,17 @@ func NewMachineConfig(opts define.InitOptions, dirs *define.MachineDirs, sshIden
 	}
 	mc.Resources = mrc
 
-	sshPort, err := ports.AllocateMachinePort()
-	if err != nil {
-		return nil, err
+	sshPort := 0
+	listener, tempErr := net.Listen("tcp", "127.0.0.1:61234")
+	if tempErr != nil {
+		logrus.Infof("Gvproxy SSH port 61234 port can not be used , try to get a random port...")
+		if sshPort, err = ports.AllocateMachinePort(); err != nil {
+			return nil, err
+		}
+	} else {
+		_, portString, _ := net.SplitHostPort(listener.Addr().String())
+		sshPort, _ = strconv.Atoi(portString)
+		listener.Close()
 	}
 
 	sshConfig := SSHConfig{
