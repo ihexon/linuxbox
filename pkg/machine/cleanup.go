@@ -27,12 +27,12 @@ func (c *CleanupCallback) CleanOnSignal() {
 	ch := make(chan os.Signal, 1)
 	signal.Notify(ch, os.Interrupt, syscall.SIGTERM, syscall.SIGINT, syscall.SIGQUIT)
 
-	_, ok := <-ch
+	sigType, ok := <-ch
 	if !ok {
 		return
 	}
 
-	logrus.Infof("--> Callback: caught signal, cleaning up")
+	logrus.Infof("--> Callback: caught signal [ %s ], cleaning up", sigType.String())
 	c.clean()
 }
 
@@ -51,7 +51,7 @@ func (c *CleanupCallback) clean() {
 	// Cleanup functions can now exclusively be run
 	for _, cleanfunc := range funcs {
 		if err := cleanfunc(); err != nil {
-			logrus.Error(err)
+			logrus.Error("--> Callback cleanfunc() failed: %v", err.Error())
 		}
 	}
 }

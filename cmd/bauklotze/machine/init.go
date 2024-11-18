@@ -3,7 +3,6 @@ package machine
 import (
 	cmdflags "bauklotze/cmd/bauklotze/flags"
 	"bauklotze/cmd/registry"
-	"bauklotze/pkg/machine"
 	"bauklotze/pkg/machine/define"
 	"bauklotze/pkg/machine/env"
 	"bauklotze/pkg/machine/shim"
@@ -130,9 +129,9 @@ func initMachine(cmd *cobra.Command, args []string) error {
 	// update machine configure
 	if oldMc != nil {
 		logrus.Infof("Update configure %s", oldMc.ConfigPath.GetPath())
-		oldMc.Resources.CPUs = initOpts.CPUS
-		oldMc.Resources.Memory = strongunits.MiB(initOpts.Memory)
-		oldMc.Mounts = CmdLineVolumesToMounts(initOpts.Volumes, provider.MountType())
+		oldMc.Resources.CPUs = initOpts.CPUS                                               // Update the CPUs
+		oldMc.Resources.Memory = strongunits.MiB(initOpts.Memory)                          // Update the Memory
+		oldMc.Mounts = shim.CmdLineVolumesToMounts(initOpts.Volumes, provider.MountType()) // Update the Volumes
 		_ = oldMc.Write()
 	}
 
@@ -161,19 +160,19 @@ func initMachine(cmd *cobra.Command, args []string) error {
 	switch {
 	case oldMc == nil: // If machine not initialize before
 		updateExternalDisk = true
-	case oldMc.DataDiskVersion == initOpts.ImageVersion.DataDiskVersion: // If old version != given version
+	case oldMc.DataDiskVersion == initOpts.ImageVersion.DataDiskVersion: // If old version == given version
 		updateExternalDisk = false
 	default:
 		updateExternalDisk = true
+		oldMc.DataDiskVersion = initOpts.ImageVersion.DataDiskVersion
+		_ = oldMc.Write()
 	}
 
 	if updateExternalDisk {
-		if initOpts.Images.DataDisk != "" {
-			logrus.Infof("Recreate data disk: %s", initOpts.Images.DataDisk)
-			err = system2.CreateAndResizeDisk(initOpts.Images.DataDisk, strongunits.GiB(100))
-			if err != nil {
-				return err
-			}
+		logrus.Infof("Recreate data disk: %s", initOpts.Images.DataDisk)
+		err = system2.CreateAndResizeDisk(initOpts.Images.DataDisk, strongunits.GiB(100))
+		if err != nil {
+			return err
 		}
 	} else {
 		logrus.Infof("Skip initialize data disk.")
@@ -217,30 +216,4 @@ func systemResourceCheck(cmd *cobra.Command) error {
 	}
 
 	return err
-}
-
-func CmdLineVolumesToMounts(volumes []string, volumeType vmconfigs.VolumeMountType) []*vmconfigs.Mount {
-	mounts := []*vmconfigs.Mount{}
-	for i, volume := range volumes {
-		if volume == "" {
-			continue
-		}
-		var mount vmconfigs.Mount
-		tag, source, target, readOnly, _ := vmconfigs.SplitVolume(i, volume)
-		switch volumeType {
-		case vmconfigs.VirtIOFS:
-			mount = machine.NewVirtIoFsMount(source, target, readOnly).ToMount()
-		default:
-			mount = vmconfigs.Mount{
-				Type:          volumeType.String(),
-				Tag:           tag,
-				Source:        source,
-				Target:        target,
-				ReadOnly:      readOnly,
-				OriginalInput: volume,
-			}
-		}
-		mounts = append(mounts, &mount)
-	}
-	return mounts
 }
