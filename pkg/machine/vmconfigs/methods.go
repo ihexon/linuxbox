@@ -17,6 +17,6 @@ func (mc *MachineConfig) Write() error {
 	if err != nil {
 		return err
 	}
-	logrus.Debugf("writing configuration file %q", mc.ConfigPath.Path)
+	logrus.Infof("writing configuration file %q", mc.ConfigPath.Path)
 	return ioutils.AtomicWriteFile(mc.ConfigPath.GetPath(), b, define.DefaultFilePerm)
 }

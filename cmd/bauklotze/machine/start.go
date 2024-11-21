@@ -49,9 +49,11 @@ func init() {
 func start(cmd *cobra.Command, args []string) error {
 	var err error
 
-	ppid, _ := cmd.Flags().GetInt32(cmdflags.PpidFlag) // Get PPID from
+	ppid, _ := cmd.Flags().GetInt32(cmdflags.PpidFlag) // Get PPID from --ppid flag
 	logrus.Infof("PID is [%d], PPID is: %d", os.Getpid(), ppid)
-	startOpts.CommonOptions.ReportUrl = cmd.Flag(cmdflags.ReportUrlFlag).Value.String()
+	reportURL := cmd.Flag(cmdflags.ReportUrlFlag).Value.String()
+
+	startOpts.CommonOptions.ReportUrl = reportURL
 	startOpts.CommonOptions.PPID = ppid
 
 	if isRunning, err := system.IsProcesSAlive([]int32{ppid}); !isRunning {

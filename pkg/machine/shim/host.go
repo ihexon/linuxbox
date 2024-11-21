@@ -88,7 +88,7 @@ func Init(opts define.InitOptions, mp vmconfigs.VMProvider) error {
 		Name: opts.Name,
 		Dirs: dirs,
 		// UserImageFile: Image Path form machine init --image [rootfs.tar]
-		UserImageFile: opts.Images.BootableImage,
+		UserImageFile: opts.ImagesStruct.BootableImage,
 	}
 
 	switch mp.VMType() {
@@ -117,7 +117,7 @@ func Init(opts define.InitOptions, mp vmconfigs.VMProvider) error {
 	}
 
 	initCmdOpts := opts
-	logrus.Infof("A bootable Image provided: %s", initCmdOpts.Images.BootableImage)
+	logrus.Infof("A bootable Image provided: %s", initCmdOpts.ImagesStruct.BootableImage)
 	// Extract the bootable image
 
 	// Jump into Provider's GetDisk implementation, but we can using
@@ -126,7 +126,7 @@ func Init(opts define.InitOptions, mp vmconfigs.VMProvider) error {
 	//	}
 	// for simplify code, but for now keep using Provider's GetDisk implementation
 	network.Reporter.SendEventToOvmJs("decompress", "running")
-	if err = mp.GetDisk(initCmdOpts.Images.BootableImage, dirs, mc.ImagePath, mp.VMType(), mc.Name); err != nil {
+	if err = mp.GetDisk(initCmdOpts.ImagesStruct.BootableImage, dirs, mc.ImagePath, mp.VMType(), mc.Name); err != nil {
 		return err
 	} else {
 		network.Reporter.SendEventToOvmJs("decompress", "success")
@@ -160,12 +160,11 @@ func Init(opts define.InitOptions, mp vmconfigs.VMProvider) error {
 
 	// Fill all the configure field and write into disk
 	mc.ImagePath = imagePath
-	mc.ImageVersion = opts.ImageVersion.BootableImageVersion
+	mc.BootableDiskVersion = opts.ImageVerStruct.BootableImageVersion
 
-	mc.DataDisk = &define.VMFile{Path: opts.Images.DataDisk}
-	mc.OverlayDisk = &define.VMFile{Path: opts.Images.OverlayImage}
+	mc.DataDisk = &define.VMFile{Path: opts.ImagesStruct.DataDisk}
 
-	mc.DataDiskVersion = opts.ImageVersion.DataDiskVersion
+	mc.DataDiskVersion = opts.ImageVerStruct.DataDiskVersion
 
 	network.Reporter.SendEventToOvmJs("writeConfig", "running")
 	err = mc.Write()

@@ -64,17 +64,17 @@ var (
 		TraverseChildren: true,
 		// PersistentPreRunE/PreRunE/RunE will run after rootCmd.ExecuteContext(context.Background()), also run after init()
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-			logrus.Infof("\n\n\n=================== rootCmd PersistentPreRunE (OVM LOG BEGAIN) ===================\n")
-			logrus.Infof("OVM VERSION dev-3be30961ebf804d408e21fddc6b4dc08d71742dc")
+			logrus.Infoln("=================== rootCmd PersistentPreRunE (OVM LOG BEGAIN) ===================")
+			logrus.Infoln("OVM VERSION dev-3be30961ebf804d408e21fddc6b4dc08d71742dc")
 			logrus.Infof("FULL OVM COMMANDLINE: %v\n", os.Args)
 			return nil
 		},
 		PreRunE: func(cmd *cobra.Command, args []string) error {
-			logrus.Infof("======== rootCmd PreRunE ========\n")
+			logrus.Debugln("======== rootCmd PreRunE ========")
 			return nil
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			logrus.Infof("======== rootCmd RunE ========\n")
+			logrus.Infoln("======== rootCmd RunE ========")
 			logrus.Infof(homeDir)
 			return nil
 		},
@@ -99,13 +99,13 @@ func init() {
 	pFlags := rootCmd.PersistentFlags()
 
 	logLevelFlagName := cmdflags.LogLevelFlag
-	pFlags.StringVar(&logLevel, logLevelFlagName, cmdflags.DefaultLogLevel, fmt.Sprintf("Log messages above specified level"))
+	pFlags.StringVar(&logLevel, logLevelFlagName, cmdflags.DefaultLogLevel, fmt.Sprintf("Log messages above specified level,by default is info"))
 
 	outFlagName := cmdflags.LogOutFlag
 	pFlags.StringVar(&logOut, outFlagName, cmdflags.FileBased, "If set --log-out console, send output to terminal, if set --log-out file, send output to ${workspace}/logs/ovm.log")
 
 	ovmHomedir := cmdflags.WorkspaceFlag
-	pFlags.StringVar(&homeDir, ovmHomedir, "", "Bauklotze's HOME dif, default get by $HOME")
+	pFlags.StringVar(&homeDir, ovmHomedir, "", "Bauklotze's HOME directory, this flag is mandatory required")
 	_ = rootCmd.MarkPersistentFlagRequired(ovmHomedir)
 
 	ReportUrlFlag := cmdflags.ReportUrlFlag
@@ -210,15 +210,7 @@ func addCommand(c registry.CliCommand) {
 }
 
 func formatError(err error) string {
-	var message string
-	switch {
-	default:
-		if logrus.IsLevelEnabled(logrus.TraceLevel) {
-			message = fmt.Sprintf("Error: %+v", err)
-		} else {
-			message = fmt.Sprintf("Error: %v", err)
-		}
-	}
+	message := fmt.Sprintf("Error: %+v", err)
 	return message
 }
 

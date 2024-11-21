@@ -89,13 +89,13 @@ type MachineConfig struct {
 	Dirs     *define.MachineDirs
 	HostUser HostUser
 	Name     string
-	// TODO Using Image struct and ImageVersion struct
+	// TODO Using Image struct and BootableDiskVersion struct
 	ImagePath   *define.VMFile // mc.ImagePath is the bootable copied from user provided image --boot <bootable.img.xz>
 	DataDisk    *define.VMFile // External Disk file
 	OverlayDisk *define.VMFile // Overlay Disk file
 
-	ImageVersion    string `json:",omitempty"` // Bootable Image for now
-	DataDiskVersion string `json:",omitempty"` // External Disk for now
+	BootableDiskVersion string `json:",omitempty"` // Bootable Image for now
+	DataDiskVersion     string `json:",omitempty"` // External Disk for now
 
 	AppleKrunkitHypervisor *AppleKrunkitConfig `json:",omitempty"`
 	WSLHypervisor          *WSLConfig          `json:",omitempty"`

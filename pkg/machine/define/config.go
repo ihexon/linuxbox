@@ -53,17 +53,16 @@ type StopOptions struct {
 }
 
 type InitOptions struct {
-	IsDefault     bool
-	CPUS          uint64
-	Volumes       []string
-	Memory        uint64
-	Name          string
-	Username      string
-	ReExec        bool
-	Images        ImagesStruct
-	ImageVersion  ImageVerStruct
-	PPID          int32
-	CommonOptions CommonOptions
+	IsDefault      bool
+	CPUS           uint64
+	Volumes        []string
+	Memory         uint64
+	Name           string
+	Username       string
+	ReExec         bool
+	ImagesStruct   ImagesStruct
+	ImageVerStruct ImageVerStruct
+	CommonOptions  CommonOptions
 }
 
 type StartOptions struct {
@@ -83,7 +82,6 @@ type ImageVerStruct struct {
 type ImagesStruct struct {
 	BootableImage string // Bootable image
 	DataDisk      string // Mounted in /var
-	OverlayImage  string // Overlay image mounted /
 }
 
 type SetOptions struct {

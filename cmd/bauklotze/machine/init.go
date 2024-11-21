@@ -78,17 +78,16 @@ func init() {
 	flags.StringArrayVarP(&initOpts.Volumes, VolumeFlagName, "v", cfg.ContainersConfDefaultsRO.Machine.Volumes.Get(), "Volumes to mount, source:target")
 
 	BootImageName := cmdflags.BootImageFlag
-	flags.StringVar(&initOpts.Images.BootableImage, BootImageName, cfg.ContainersConfDefaultsRO.Machine.Image, "Bootable image for machine")
+	flags.StringVar(&initOpts.ImagesStruct.BootableImage, BootImageName, cfg.ContainersConfDefaultsRO.Machine.Image, "Bootable image for machine")
 	_ = initCmd.MarkFlagRequired(BootImageName)
 
 	BootImageVersion := cmdflags.BootVersionFlag
-	flags.StringVar(&initOpts.ImageVersion.BootableImageVersion, BootImageVersion, cfg.ContainersConfDefaultsRO.Machine.Image, "Boot version field")
+	flags.StringVar(&initOpts.ImageVerStruct.BootableImageVersion, BootImageVersion, cfg.ContainersConfDefaultsRO.Machine.Image, "Boot version field")
 	initCmd.MarkFlagRequired(BootImageVersion)
 
 	DataImageVersion := cmdflags.DataVersionFlag
-	flags.StringVar(&initOpts.ImageVersion.DataDiskVersion, DataImageVersion, "", "Data version field")
+	flags.StringVar(&initOpts.ImageVerStruct.DataDiskVersion, DataImageVersion, "", "Data version field")
 	initCmd.MarkFlagRequired(DataImageVersion)
-
 }
 
 func initMachine(cmd *cobra.Command, args []string) error {
@@ -99,7 +98,7 @@ func initMachine(cmd *cobra.Command, args []string) error {
 	//logrus.Infof("cmd.Context().Value(\"commonOpts\") --> %v", ctx.Value("commonOpts"))
 
 	ppid, _ := cmd.Flags().GetInt32(cmdflags.PpidFlag) // Get PPID from
-	logrus.Infof("PID is [%d], PPID is: %d", os.Getpid(), ppid)
+	logrus.Infof("PID is [ %d ], watching PPID: [ %d ]", os.Getpid(), ppid)
 
 	initOpts.CommonOptions.ReportUrl = cmd.Flag(cmdflags.ReportUrlFlag).Value.String()
 	initOpts.CommonOptions.PPID = ppid
@@ -109,7 +108,7 @@ func initMachine(cmd *cobra.Command, args []string) error {
 	if isRunning, err := system.IsProcesSAlive([]int32{ppid}); !isRunning {
 		return err
 	}
-	logrus.Infof("Initialize machine name %s", defaultMachineName)
+
 	initOpts.Name = defaultMachineName
 	if len(args) > 0 {
 		if len(args[0]) > cmdflags.MaxMachineNameSize {
@@ -127,13 +126,6 @@ func initMachine(cmd *cobra.Command, args []string) error {
 	}
 
 	// update machine configure
-	if oldMc != nil {
-		logrus.Infof("Update configure %s", oldMc.ConfigPath.GetPath())
-		oldMc.Resources.CPUs = initOpts.CPUS                                               // Update the CPUs
-		oldMc.Resources.Memory = strongunits.MiB(initOpts.Memory)                          // Update the Memory
-		oldMc.Mounts = shim.CmdLineVolumesToMounts(initOpts.Volumes, provider.MountType()) // Update the Volumes
-		_ = oldMc.Write()
-	}
 
 	dataDir, err := env.DataDirPrefix() // ${BauklotzeHomePath}/data
 	if err != nil {
@@ -141,45 +133,63 @@ func initMachine(cmd *cobra.Command, args []string) error {
 	}
 
 	dataDisk := filepath.Join(dataDir, "external_disk", initOpts.Name, "data.raw") // ${BauklotzeHomePath}/data/{MachineName}/data.raw
-	initOpts.Images.DataDisk = dataDisk
+	initOpts.ImagesStruct.DataDisk = dataDisk
 
+	// Default do not update anything
 	var (
-		updateBootableImage = true
-		updateExternalDisk  = true
+		updateBootableImage = false
+		updateExternalDisk  = false
 	)
 
 	switch {
-	case oldMc == nil: // If machine not initialize before
-		updateBootableImage = true
-	case oldMc.ImageVersion == initOpts.ImageVersion.BootableImageVersion: // If old version != given version
-		updateBootableImage = false
-	default:
-		updateBootableImage = true
+	case oldMc == nil: // If machine not initialize before, mark updateBootableImage=true  && updateExternalDisk=true
+		updateExternalDisk = true
+	case oldMc.DataDiskVersion != initOpts.ImageVerStruct.DataDiskVersion: // If old DataDisk version != given DataDisk version
+		updateExternalDisk = true
 	}
 
 	switch {
-	case oldMc == nil: // If machine not initialize before
-		updateExternalDisk = true
-	case oldMc.DataDiskVersion == initOpts.ImageVersion.DataDiskVersion: // If old version == given version
-		updateExternalDisk = false
-	default:
-		updateExternalDisk = true
-		oldMc.DataDiskVersion = initOpts.ImageVersion.DataDiskVersion
-		_ = oldMc.Write()
+	case oldMc == nil: // If machine not initialize before, mark updateBootableImage=true  && updateExternalDisk=true
+		updateBootableImage = true
+	case oldMc.BootableDiskVersion != initOpts.ImageVerStruct.BootableImageVersion: // If old bootable version != given bootable version
+		updateBootableImage = true
 	}
 
+	// Recreate DataDisk first if needed.
 	if updateExternalDisk {
-		logrus.Infof("Recreate data disk: %s", initOpts.Images.DataDisk)
-		err = system2.CreateAndResizeDisk(initOpts.Images.DataDisk, strongunits.GiB(100))
+		logrus.Infof("Recreate data disk: %s", initOpts.ImagesStruct.DataDisk)
+		err = system2.CreateAndResizeDisk(initOpts.ImagesStruct.DataDisk, strongunits.GiB(100))
 		if err != nil {
 			return err
 		}
+
+		if oldMc != nil {
+			// If old machine exists, update the DataDiskVersion field
+			oldMc.DataDiskVersion = initOpts.ImageVerStruct.DataDiskVersion
+			logrus.Infof("Update old machine configure DataDiskVersion field: %s", oldMc.ConfigPath.GetPath())
+			if err = oldMc.Write(); err != nil {
+				return err
+			}
+		}
+
 	} else {
 		logrus.Infof("Skip initialize data disk.")
 	}
 
-	if !updateBootableImage {
-		logrus.Infof("skip initialize virtual machine")
+	if err = systemResourceCheck(cmd); err != nil {
+		return err
+	}
+
+	// Update the machine configure  Resources field
+	if oldMc != nil {
+		err = updateMachineResource(oldMc)
+		if err != nil {
+			return err
+		}
+	}
+
+	if updateBootableImage == false {
+		logrus.Infof("Skip initialize virtual machine with %s", initOpts.Name)
 		return nil
 	}
 
@@ -187,11 +197,7 @@ func initMachine(cmd *cobra.Command, args []string) error {
 		initOpts.Volumes[idx] = os.ExpandEnv(vol)
 	}
 
-	if err = systemResourceCheck(cmd); err != nil {
-		return err
-	}
-
-	logrus.Infof("Initialize virtual machine %s with %s", initOpts.Name, initOpts.Images.BootableImage)
+	logrus.Infof("Initialize virtual machine [ %s ] with bootable image: [ %s ]", initOpts.Name, initOpts.ImagesStruct.BootableImage)
 	err = shim.Init(initOpts, provider)
 	if err != nil {
 		return err
@@ -215,5 +221,19 @@ func systemResourceCheck(cmd *cobra.Command) error {
 		}
 	}
 
+	return err
+}
+
+func updateMachineResource(mc *vmconfigs.MachineConfig) error {
+	var err error
+	if mc != nil {
+		mc.Resources.CPUs = initOpts.CPUS                                               // Update the CPUs
+		mc.Resources.Memory = strongunits.MiB(initOpts.Memory)                          // Update the Memory
+		mc.Mounts = shim.CmdLineVolumesToMounts(initOpts.Volumes, provider.MountType()) // Update the Volumes
+		logrus.Infof("Update old machine CPU/Memory/Mounts configure: [ %s ]", mc.ConfigPath.GetPath())
+		if err = mc.Write(); err != nil {
+			return err
+		}
+	}
 	return err
 }
