@@ -115,13 +115,10 @@ func start(cmd *cobra.Command, args []string) error {
 		}
 	})
 
-	g.Go(func() error {
-		var (
-			err error
-			mc  *vmconfigs.MachineConfig
-		)
-		errCh := make(chan error, 1)
+	var mc *vmconfigs.MachineConfig
 
+	g.Go(func() error {
+		errCh := make(chan error, 1)
 		vmName := define.DefaultMachineName
 		if len(args) > 0 && len(args[0]) > 0 {
 			vmName = args[0]
@@ -165,6 +162,14 @@ func start(cmd *cobra.Command, args []string) error {
 	}()
 
 	err = g.Wait()
+
+	if mc != nil {
+		logrus.Infof("Do sync in virtualMachine....")
+		if err = machine.CommonSSHSilent(mc.SSH.RemoteUsername, mc.SSH.IdentityPath, mc.Name, mc.SSH.Port, []string{"sync"}); err != nil {
+			logrus.Warnf("Sync failed: %v", err)
+		}
+	}
+
 	if kruncmd := machine.GlobalCmds.GetKrunCmd(); kruncmd != nil {
 		logrus.Infof("--> Killing krun PID: %d", kruncmd.Process.Pid)
 		_ = kruncmd.Process.Kill()
