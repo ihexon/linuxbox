@@ -64,17 +64,15 @@ var (
 		// PersistentPreRunE/PreRunE/RunE will run after rootCmd.ExecuteContext(context.Background()), also run after init()
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 			logrus.Infof("==========================================================")
-			logrus.Infoln("OVM VERSION dev-4923a23063976064b3d6c3843c6ff839fe302e6d")
+			logrus.Infoln("OVM VERSION dev-3ebd31206f30ae206978ec0a19b50608b9b85851")
 			logrus.Infof("FULL OVM COMMANDLINE: %v\n", os.Args)
 			return nil
 		},
 		PreRunE: func(cmd *cobra.Command, args []string) error {
-			logrus.Debugln("======== rootCmd PreRunE ========")
 			return nil
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			logrus.Infoln("======== rootCmd RunE ========")
-			logrus.Infof(homeDir)
+			logrus.Infof("WORKSPACE: %s", homeDir)
 			return nil
 		},
 		PostRunE:              validata.SubCommandExists,

@@ -55,7 +55,7 @@ func (vf *Helper) State() (define.Status, error) {
 	if err == nil {
 		return vmState, nil
 	}
-	if errors.Is(err, unix.ECONNREFUSED) {
+	if errors.Is(err, unix.ECONNREFUSED) || errors.Is(err, unix.ECONNRESET) {
 		return define.Stopped, nil
 	}
 	return "", err

@@ -238,7 +238,7 @@ func Start(ctx context.Context, mc *vmconfigs.MachineConfig, mp vmconfigs.VMProv
 		}
 	}()
 
-	gvproxyPidFile, err := dirs.RuntimeDir.AppendToNewVMFile(fmt.Sprintf("%s-gvproxy.pid", mc.Name), nil)
+	gvproxyPidFile, err := dirs.RuntimeDir.AppendToNewVMFile(fmt.Sprintf("gvproxy.pid", mc.Name), nil)
 	if err != nil {
 		return err
 	}
