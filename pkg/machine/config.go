@@ -8,10 +8,6 @@ var (
 
 const (
 	NoForwarding APIForwardingState = iota
-	ClaimUnsupported
-	NotInstalled
-	MachineLocal
-	DockerGlobal
 	InForwarding
 )
 

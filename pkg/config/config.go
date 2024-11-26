@@ -67,7 +67,7 @@ func findBindir() string {
 	return execPath
 }
 
-func (c *Config) FindHelperBinary(name string, searchPATH bool) (string, error) {
+func (c *Config) FindHelperBinary(name string) (string, error) {
 	dirList := c.Machine.HelperBinariesDir.Get()
 	bindirPath := ""
 

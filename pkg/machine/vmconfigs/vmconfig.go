@@ -35,7 +35,6 @@ type VMProvider interface { //nolint:interfacebloat
 	PostStartNetworking(mc *MachineConfig, noInfo bool) error
 	StartVM(mc *MachineConfig) (*exec.Cmd, func() error, error)
 	MountVolumesToVM(mc *MachineConfig, quiet bool) error
-	SetProviderAttrs(mc *MachineConfig, opts define.SetOptions) error
 }
 
 type Mount struct {
@@ -109,17 +108,7 @@ type MachineConfig struct {
 	Starting   bool
 	lock       *lockfile.LockFile
 	// Oomol Studio
-	ReportURL  *define.VMFile `json:",omitempty"`
-	PidManaged ManagedPids    `json:",omitempty"`
-
-	// TODO Remove this field
-	GVProxyPid int32 `json:",omitempty"`
-	KRunkitPid int32 `json:",omitempty"`
-}
-
-type ManagedPids struct {
-	gvproxy int32
-	krunkit int32
+	ReportURL *define.VMFile `json:",omitempty"`
 }
 
 type GvproxyCommand struct {

@@ -26,7 +26,8 @@ func (l LibKrunStubber) State(mc *vmconfigs.MachineConfig) (define.Status, error
 }
 
 func (l LibKrunStubber) StopVM(mc *vmconfigs.MachineConfig, ifHardStop bool) error {
-	return mc.AppleKrunkitHypervisor.Krunkit.Stop(mc.KRunkitPid, mc.GVProxyPid, ifHardStop)
+	// Not implement yet
+	return nil
 }
 
 func (l LibKrunStubber) GetDisk(userInputPath string, dirs *define.MachineDirs, imagePath *define.VMFile, vmType define.VMType, name string) error {
@@ -77,10 +78,6 @@ func (l LibKrunStubber) UpdateSSHPort(mc *vmconfigs.MachineConfig, port int) err
 	return nil
 }
 
-func (l LibKrunStubber) GetRosetta(mc *vmconfigs.MachineConfig) (bool, error) {
-	return false, nil
-}
-
 func (l LibKrunStubber) MountType() vmconfigs.VolumeMountType {
 	return vmconfigs.VirtIOFS
 }
@@ -121,13 +118,4 @@ func (l LibKrunStubber) StartVM(mc *vmconfigs.MachineConfig) (*exec.Cmd, func() 
 		return nil, nil, fmt.Errorf("unable to determine boot loader for this machine")
 	}
 	return StartGenericAppleVM(mc, krunkitBinary, bl, mc.AppleKrunkitHypervisor.Krunkit.Endpoint)
-}
-
-// SetProviderAttrs sets the provider attributes for the machine, mostly used for set machine configure
-func (l LibKrunStubber) SetProviderAttrs(mc *vmconfigs.MachineConfig, opts define.SetOptions) error {
-	state, err := l.State(mc)
-	if err != nil {
-		return err
-	}
-	return SetProviderAttrs(mc, opts, state)
 }

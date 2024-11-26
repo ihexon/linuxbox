@@ -1,7 +1,6 @@
 package machine
 
 import (
-	"bauklotze/pkg/machine/system"
 	"bauklotze/pkg/network"
 	"fmt"
 	"github.com/sirupsen/logrus"
@@ -11,44 +10,6 @@ import (
 	"sync"
 	"time"
 )
-
-var GlobalPIDs = &AllPIDs{}
-
-type AllPIDs struct {
-	KrunkitPID *int
-	GvproxyPID *int
-	mu         sync.Mutex
-}
-
-func (p *AllPIDs) SetKrunkitPID(pid int) {
-	p.mu.Lock()
-	defer p.mu.Unlock()
-	p.KrunkitPID = &pid
-}
-
-func (p *AllPIDs) GetKrunkitPID() int {
-	p.mu.Lock()
-	defer p.mu.Unlock()
-	if p.KrunkitPID != nil {
-		return *p.KrunkitPID
-	}
-	return 0
-}
-
-func (p *AllPIDs) SetGvproxyPID(pid int) {
-	p.mu.Lock()
-	defer p.mu.Unlock()
-	p.GvproxyPID = &pid
-}
-
-func (p *AllPIDs) GetGvproxyPID() int {
-	p.mu.Lock()
-	defer p.mu.Unlock()
-	if p.GvproxyPID != nil {
-		return *p.GvproxyPID
-	}
-	return 0
-}
 
 type AllCmds struct {
 	Gvcmd   *exec.Cmd
@@ -70,42 +31,36 @@ func (p *AllCmds) SetKrunCmd(cmd *exec.Cmd) {
 	p.Kruncmd = cmd
 }
 
-func (p *AllCmds) GetKrunCmd() exec.Cmd {
+func (p *AllCmds) GetKrunCmd() *exec.Cmd {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	if p.Kruncmd != nil {
-		return *p.Kruncmd
+		return p.Kruncmd
 	}
-	return exec.Cmd{}
+	return nil
 }
 
-func (p *AllCmds) GetGvproxyCmd() exec.Cmd {
+func (p *AllCmds) GetGvproxyCmd() *exec.Cmd {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	if p.Gvcmd != nil {
-		return *p.Gvcmd
+		return p.Gvcmd
 	}
-	return exec.Cmd{}
+	return nil
 }
 
 // DO NOT BLOCK THIS FUNCTION FOR LONG TIME
-func WaitAPIAndPrintInfo(reortUrl string, forwardSock string, forwardState APIForwardingState, name string) error {
+func WaitAPIAndPrintInfo(sockInHost string, forwardState APIForwardingState, name string) error {
 	if forwardState == NoForwarding {
-		_ = system.KillProcess(GlobalPIDs.GetKrunkitPID())
-		_ = system.KillProcess(GlobalPIDs.GetGvproxyPID())
-		return fmt.Errorf("Podman Rest API No forwarding")
+		return fmt.Errorf("Podman Rest API No forwarding....")
 	}
-
-	err := WaitAndPingAPI("unix:///" + forwardSock)
+	err := WaitAndPingAPI("unix:///" + sockInHost)
 	if err != nil {
-		// Why not stop krunkit and gvproxy, because I want get into machine when problem occurs, and I can debug it.
-		// DO NOT STOP the krunkit and gvproxy !
 		logrus.Error("failed to ping Podman API: ", err)
 		return err
 	} else {
 		network.Reporter.SendEventToOvmJs("ready", "")
-		logrus.Infof("Podman API forwarding listening on: %s\n", forwardSock)
-		fmt.Printf("Podman API forwarding listening on: %s\n", forwardSock)
+		fmt.Printf("Podman API forwarding listening on: %s\n", sockInHost)
 	}
 	return nil
 }
@@ -127,6 +82,7 @@ pingLoop:
 			return fmt.Errorf("timeout reached while waiting for Podman API")
 		default:
 			logrus.Info("Ping Podman API....")
+			time.Sleep(100 * time.Microsecond)
 			res, err = connCtx.DoRequest("GET", "_ping")
 			if err == nil {
 				_ = res.Response.Body.Close()

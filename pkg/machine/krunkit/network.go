@@ -9,7 +9,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-// StartGenericNetworking is wrapped by apple provider methods
+// StartGenericNetworking most has been logic removed
 func StartGenericNetworking(mc *vmconfigs.MachineConfig, cmd *gvproxy.GvproxyCommand) error {
 	gvProxySock, err := mc.GVProxySocket()
 	if err != nil {
@@ -18,7 +18,10 @@ func StartGenericNetworking(mc *vmconfigs.MachineConfig, cmd *gvproxy.GvproxyCom
 	// make sure it does not exist before gvproxy is called
 	if err := gvProxySock.Delete(); err != nil {
 		logrus.Error(err)
+		return err
 	}
+
 	cmd.AddVfkitSocket(fmt.Sprintf("unixgram://%s", gvProxySock.GetPath()))
+
 	return nil
 }

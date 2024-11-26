@@ -2,15 +2,12 @@ package system
 
 import "testing"
 
-func TestIsProcessAliveV2(t *testing.T) {
-	pid := 212
-	isRunning, err := IsProcessAliveV2(pid)
+func TestFindPidByCommandLine(t *testing.T) {
+	cmdline, err := FindPIDByCmdline("ovm/vm-res")
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Logf("error: %v", err)
 	}
-	if isRunning {
-		t.Logf("Process %d is  running", pid)
-	} else {
-		t.Logf("Process %d is not running", pid)
+	for _, pid := range cmdline {
+		t.Logf("pid: %d", pid)
 	}
 }

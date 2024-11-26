@@ -5,7 +5,6 @@ import (
 	_ "bauklotze/cmd/bauklotze/machine"
 	"bauklotze/cmd/bauklotze/validata"
 	"bauklotze/cmd/registry"
-	"bauklotze/pkg/machine"
 	"bauklotze/pkg/machine/define"
 	"bauklotze/pkg/machine/system"
 	"bauklotze/pkg/network"
@@ -64,8 +63,8 @@ var (
 		TraverseChildren: true,
 		// PersistentPreRunE/PreRunE/RunE will run after rootCmd.ExecuteContext(context.Background()), also run after init()
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-			logrus.Infoln("=================== rootCmd PersistentPreRunE (OVM LOG BEGAIN) ===================")
-			logrus.Infoln("OVM VERSION dev-3be30961ebf804d408e21fddc6b4dc08d71742dc")
+			logrus.Infof("==========================================================")
+			logrus.Infoln("OVM VERSION dev-4923a23063976064b3d6c3843c6ff839fe302e6d")
 			logrus.Infof("FULL OVM COMMANDLINE: %v\n", os.Args)
 			return nil
 		},
@@ -119,7 +118,6 @@ func init() {
 func main() {
 	rootCmd = parseCommands()
 	RootCmdExecute()
-
 }
 
 func ReportHook() {
@@ -171,7 +169,6 @@ func stdOutHook() {
 		}
 
 		fd, err := os.OpenFile(logFile, os.O_CREATE|os.O_WRONLY|os.O_APPEND, os.ModePerm)
-
 		if err != nil {
 			_, _ = fmt.Fprintf(os.Stderr, "unable to open file for standard output: %s\n", err.Error())
 		} else {
@@ -226,11 +223,6 @@ func RootCmdExecute() {
 	} else {
 		registry.SetExitCode(0)
 	}
-
-	logrus.Infof("--> system.KillProcess(machine.GlobalPIDs.GetGvproxyPID()): %d", machine.GlobalPIDs.GetGvproxyPID())
-	_ = system.KillProcess(machine.GlobalPIDs.GetGvproxyPID())
-	logrus.Infof("--> system.KillProcess(machine.GlobalPIDs.GetKrunkitPID()): %d", machine.GlobalPIDs.GetKrunkitPID())
-	_ = system.KillProcess(machine.GlobalPIDs.GetKrunkitPID())
 
 	notifyexit.NotifyExit(registry.GetExitCode())
 }

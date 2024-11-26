@@ -36,7 +36,6 @@ func KillProcess(pid int) error {
 	if err != nil {
 		return fmt.Errorf("failed to find process: %v", err)
 	}
-
 	_ = proc.Kill()
 
 	return nil

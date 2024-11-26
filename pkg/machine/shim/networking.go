@@ -4,13 +4,13 @@ import (
 	"bauklotze/pkg/machine"
 	"bauklotze/pkg/machine/connection"
 	"bauklotze/pkg/machine/define"
-	"bauklotze/pkg/machine/env"
 	"bauklotze/pkg/machine/ports"
 	"bauklotze/pkg/machine/vmconfigs"
 	"errors"
 	"fmt"
 	"github.com/sirupsen/logrus"
 	"net"
+	"os/exec"
 	"time"
 )
 
@@ -109,28 +109,25 @@ func reassignSSHPort(mc *vmconfigs.MachineConfig, provider vmconfigs.VMProvider)
 	return nil
 }
 
-func startNetworking(mc *vmconfigs.MachineConfig, provider vmconfigs.VMProvider) (string, machine.APIForwardingState, error) {
+func startNetworking(mc *vmconfigs.MachineConfig, provider vmconfigs.VMProvider) (string, machine.APIForwardingState, *exec.Cmd, error) {
 	// Check if SSH port is in use, and reassign if necessary
 	if !ports.IsLocalPortAvailable(mc.SSH.Port) {
 		logrus.Warnf("detected port conflict on machine ssh port [%d], reassigning", mc.SSH.Port)
 		if err := reassignSSHPort(mc, provider); err != nil {
-			return "", machine.NoForwarding, err
+			return "", machine.NoForwarding, nil, err
 		}
 	}
 
-	dirs, err := env.GetMachineDirs(provider.VMType())
+	socksInHost, socksInGuest, err := setupMachineSockets(mc, mc.Dirs)
 	if err != nil {
-		return "", machine.NoForwarding, err
+		return "", machine.NoForwarding, nil, err
 	}
 
-	hostSocks, forwardSock, _, err := setupMachineSockets(mc, dirs)
+	// forward the IO in socksInHost to socksInGuest
+	gvcmd, err := startHostForwarder(mc, provider, mc.Dirs, socksInHost, socksInGuest)
 	if err != nil {
-		return "", machine.NoForwarding, err
+		return "", machine.NoForwarding, nil, err
 	}
 
-	if err := startHostForwarder(mc, provider, dirs, hostSocks); err != nil {
-		return "", machine.NoForwarding, err
-	}
-
-	return forwardSock, machine.InForwarding, nil
+	return socksInHost, machine.InForwarding, gvcmd, nil
 }

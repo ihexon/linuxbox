@@ -53,13 +53,6 @@ func ReferenceIDHandler() mux.MiddlewareFunc /* Note type MiddlewareFunc func(ht
 			out = logrus.StandardLogger().Out
 		}
 
-		// CombinedLoggingHandler 返回 loggingHandler struct 类型，而 loggingHandler struct 有自己的的
-		// ServeHTTP(w http.ResponseWriter, req *http.Request) 方法。所以 CombinedLoggingHandler 返回的是一个实现了 http.Handler 接口的对象
-		// type loggingHandler struct {
-		//	writer    io.Writer --> out
-		//	handler   http.Handler --> http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {...}
-		//	formatter LogFormatter
-		//}
 		return handlers.CombinedLoggingHandler(out,
 			http.HandlerFunc(
 				func(w http.ResponseWriter, r *http.Request) {
@@ -82,7 +75,6 @@ func ReferenceIDHandler() mux.MiddlewareFunc /* Note type MiddlewareFunc func(ht
 }
 
 func WriteJSON(w http.ResponseWriter, code int, value interface{}) {
-	// FIXME: we don't need to write the header in all/some circumstances.
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(code)
 

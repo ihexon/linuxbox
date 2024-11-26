@@ -28,8 +28,8 @@ func IsProcesSAlive(pids []int32) (bool, error) {
 		targetPid = pid
 		isRunning, err = IsProcessAliveV3(targetPid)
 		if !isRunning {
-			break
+			return false, fmt.Errorf("PID [ %d ] exit or got killed, possible err: [ %v ]", targetPid, err)
 		}
 	}
-	return isRunning, fmt.Errorf("PID [ %d ] exit or got killed, possible err: [ %v ]", targetPid, err)
+	return isRunning, nil
 }

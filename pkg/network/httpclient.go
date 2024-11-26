@@ -36,7 +36,6 @@ func JoinURL(elements ...string) string {
 }
 
 func NewConnection(uri string) (*Connection, error) {
-
 	_url, err := url.Parse(uri)
 	if err != nil {
 		return nil, fmt.Errorf("not a valid url: %s: %w", uri, err)

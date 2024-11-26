@@ -5,6 +5,7 @@ import (
 	"bauklotze/cmd/registry"
 	"bauklotze/pkg/api/server"
 	"bauklotze/pkg/machine/env"
+	"context"
 	"fmt"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -42,7 +43,7 @@ func service(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return fmt.Errorf("%s is an invalid socket destination", args[0])
 	}
-	return server.RestService(listenUrl)
+	return server.RestService(context.Background(), listenUrl)
 }
 
 // resolveAPIURI resolves the API URI from the given arguments, if no arguments are given, it tries to get the URI from the env.DefaultRootAPIAddress

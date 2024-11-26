@@ -3,13 +3,10 @@
 package watcher
 
 import (
-	"bauklotze/pkg/api/server"
-	"bauklotze/pkg/machine/define"
 	"bauklotze/pkg/machine/system"
 	"context"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/sync/errgroup"
-	"net/url"
 	"time"
 )
 
@@ -34,26 +31,4 @@ func watchProcess(ctx context.Context, ovmPPid, krunPid, gvPid int32) error {
 		}
 		time.Sleep(300 * time.Millisecond)
 	}
-}
-
-// WaitApiServerAndStopMachine is Non block function
-func WaitApiServerAndStopMachine(g *errgroup.Group, ctx context.Context, dirs *define.MachineDirs) {
-	listenPath := "unix:///" + dirs.RuntimeDir.GetPath() + "/ovm_restapi.socks"
-	logrus.Infof("Starting API Server in %s\n", listenPath)
-
-	g.Go(func() error {
-		apiURL, _ := url.Parse(listenPath)
-		return startRestApi(ctx, apiURL)
-	})
-}
-
-func startRestApi(ctx context.Context, apiURL *url.URL) error {
-	ctx, cancel := context.WithCancelCause(ctx)
-	go func() {
-		if err := server.RestService(apiURL); err != nil {
-			cancel(err)
-		}
-	}()
-	<-ctx.Done()
-	return context.Cause(ctx)
 }

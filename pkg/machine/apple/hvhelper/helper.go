@@ -4,7 +4,6 @@ package hvhelper
 
 import (
 	"bauklotze/pkg/machine/define"
-	"bauklotze/pkg/machine/system"
 	"bytes"
 	"encoding/json"
 	"errors"
@@ -15,7 +14,6 @@ import (
 	"golang.org/x/sys/unix"
 	"io"
 	"net/http"
-	"time"
 )
 
 const (
@@ -114,38 +112,6 @@ func ToMachineStatus(val string) (define.Status, error) {
 		return "", errors.New("machine is in error state")
 	}
 	return "", fmt.Errorf("unknown machine state: %s", val)
-}
-
-func (vf *Helper) Stop(gvproxypid, krunkitpid int32, force bool) error {
-	state := rest.Stop
-	if force {
-		state = rest.HardStop
-		if gvproxypid != 0 && krunkitpid != 0 {
-
-			_ = system.KillProcess(int(gvproxypid))
-			_ = system.KillProcess(int(krunkitpid))
-		} else {
-			logrus.Error("Can not get gvproxy and krunkit pid")
-		}
-		return nil
-	}
-
-	if err := vf.stateChange(state); err != nil {
-		return err
-	}
-
-	waitDuration := time.Millisecond * 500
-	for i := 0; i < 10; i++ {
-		_, err := vf.getRawState()
-		if err != nil || errors.Is(err, unix.ECONNREFUSED) {
-			return nil
-		}
-		time.Sleep(waitDuration)
-	}
-	msg := "Failed to gracefully stop machine, performing hard stop, you must kill -9 krunkit for now"
-	logrus.Warn(msg)
-	// we waited long enough do a hard stop
-	return fmt.Errorf(msg)
 }
 
 func (vf *Helper) stateChange(newState rest.StateChange) error {

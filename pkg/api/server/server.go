@@ -13,6 +13,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 )
 
@@ -21,19 +22,19 @@ type APIServer struct {
 	net.Listener
 	context.Context
 	context.CancelFunc
-	//CorsHeaders string // Inject Cross-Origin Resource Sharing (CORS) headers
 	idleTracker *idleTracker
 }
 
-func RestService(apiurl *url.URL) error {
+func RestService(ctx context.Context, apiurl *url.URL) error {
 	var (
 		listener net.Listener
 		err      error
+		path     string
 	)
 
 	switch apiurl.Scheme {
 	case "unix":
-		path, err := filepath.Abs(apiurl.Path)
+		path, err = filepath.Abs(apiurl.Path)
 		if err != nil {
 			return err
 		}
@@ -43,11 +44,6 @@ func RestService(apiurl *url.URL) error {
 		listener, err = net.Listen(apiurl.Scheme, path)
 		if err != nil {
 			return fmt.Errorf("failed to listen on %s: %w", path, err)
-		}
-	case "tcp":
-		listener, err = net.Listen(apiurl.Scheme, apiurl.Host)
-		if err != nil {
-			return fmt.Errorf("failed to listen on %s: %w", apiurl.Host, err)
 		}
 	default:
 		return fmt.Errorf("API Service endpoint scheme %q is not supported", apiurl.Scheme)
@@ -65,6 +61,15 @@ func RestService(apiurl *url.URL) error {
 	server := makeNewServer(listener)
 
 	defer func() {
+		if err := server.Shutdown(); err != nil {
+			logrus.Warnf("error when stopping API service: %s", err)
+			_ = server.Close()
+		}
+	}()
+
+	go func() {
+		<-ctx.Done()
+		logrus.Infof("API service is shutting down")
 		if err := server.Shutdown(); err != nil {
 			logrus.Warnf("error when stopping API service: %s", err)
 			_ = server.Close()
@@ -118,14 +123,23 @@ func makeNewServer(listener net.Listener) *APIServer {
 		},
 	)
 
-	//router.MethodNotAllowedHandler = http.HandlerFunc(
-	//	func(w http.ResponseWriter, r *http.Request) {
-	//		// We can track user errors...
-	//		logrus.Infof("Failed Request: (%d:%s) for %s:'%s'", http.StatusMethodNotAllowed, http.StatusText(http.StatusMethodNotAllowed), r.Method, r.URL.String())
-	//		http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
-	//	},
-	//)
 	server.setupRouter(router)
+
+	if logrus.IsLevelEnabled(logrus.InfoLevel) {
+		_ = router.Walk(func(route *mux.Route, r *mux.Router, ancestors []*mux.Route) error {
+			path, err := route.GetPathTemplate()
+			if err != nil {
+				path = "<N/A>"
+			}
+			methods, err := route.GetMethods()
+			if err != nil {
+				methods = []string{"<N/A>"}
+			}
+			logrus.Infof("Methods: %6s Path: %s", strings.Join(methods, ", "), path)
+			return nil
+		})
+	}
+
 	return &server
 }
 

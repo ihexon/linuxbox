@@ -31,11 +31,9 @@ var (
 		Short: "initialize a virtual machine",
 		Long:  "initialize a virtual machine",
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-			logrus.Infof("============initCmd PersistentPreRunE============")
 			return machinePreRunE(cmd, args)
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			logrus.Infof("============ initCmd RunE ============")
 			return initMachine(cmd, args)
 		},
 		Args:    cobra.MaximumNArgs(1), // max positional arguments
@@ -171,7 +169,6 @@ func initMachine(cmd *cobra.Command, args []string) error {
 				return err
 			}
 		}
-
 	} else {
 		logrus.Infof("Skip initialize data disk.")
 	}

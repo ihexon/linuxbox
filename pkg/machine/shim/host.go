@@ -5,18 +5,15 @@ import (
 	"bauklotze/pkg/machine/connection"
 	"bauklotze/pkg/machine/define"
 	"bauklotze/pkg/machine/env"
-	"bauklotze/pkg/machine/gvproxy"
-	"bauklotze/pkg/machine/lock"
 	"bauklotze/pkg/machine/provider"
 	"bauklotze/pkg/machine/system"
 	"bauklotze/pkg/machine/vmconfigs"
 	"bauklotze/pkg/network"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/containers/common/pkg/strongunits"
 	"github.com/sirupsen/logrus"
-	"os"
 	"runtime"
 	"time"
 )
@@ -49,6 +46,7 @@ func Init(opts define.InitOptions, mp vmconfigs.VMProvider) error {
 	if err != nil {
 		return err
 	}
+
 	//	dirs := define.MachineDirs{
 	//		ConfigDir:     configDirFile, // ${BauklotzeHomePath}/config/{wsl,libkrun,qemu,hyper...}
 	//		DataDir:       dataDirFile,   // ${BauklotzeHomePath}/data/{wsl2,libkrun,qemu,hyper...}
@@ -204,137 +202,66 @@ func getMCsOverProviders(vmstubbers []vmconfigs.VMProvider) (map[string]*vmconfi
 	return mcs, nil
 }
 
-// checkExclusiveActiveVM checks if any of the machines are already running
-func checkExclusiveActiveVM(provider vmconfigs.VMProvider, mc *vmconfigs.MachineConfig) error {
-	// Check if any other machines are running; if so, we error
-	localMachines, err := getMCsOverProviders([]vmconfigs.VMProvider{provider})
-	if err != nil {
-		return err
-	}
-	for name, localMachine := range localMachines {
-		state, err := provider.State(localMachine)
-		if err != nil {
-			return err
-		}
-		if state == define.Running || state == define.Starting {
-			return fmt.Errorf("unable to start %q: machine %s: %w", mc.Name, name, define.ErrVMAlreadyRunning)
-		}
-	}
-	return nil
-}
-
-func startNetAndForwardNow(
-	mc *vmconfigs.MachineConfig,
-	mp vmconfigs.VMProvider,
-	dirs *define.MachineDirs,
-) (
-	string,
-	machine.APIForwardingState,
-	error,
-) {
-	forwardSocketPath, forwardSocketState, err := startNetworking(mc, mp)
-	if err != nil {
-		return "", machine.NoForwarding, err
-	}
-	return forwardSocketPath, forwardSocketState, nil
-}
-
-func Start(mc *vmconfigs.MachineConfig, mp vmconfigs.VMProvider, dirs *define.MachineDirs, opts define.StartOptions) error {
+func Start(ctx context.Context, mc *vmconfigs.MachineConfig, mp vmconfigs.VMProvider, dirs *define.MachineDirs, opts define.StartOptions) error {
 	var err error
-
-	callBackFuncs := machine.CleanUp()
-	defer callBackFuncs.CleanIfErr(&err)
-	go callBackFuncs.CleanOnSignal()
-
-	mc.Lock()
-	defer mc.Unlock()
 
 	if err := mc.Refresh(); err != nil {
 		return fmt.Errorf("reload config: %w", err)
 	}
 
-	// Don't check if provider supports parallel running machines
-	// RequireExclusiveActive return false means the provider supports parallel running
-	if mp.RequireExclusiveActive() {
-		startLock, err := lock.GetMachineStartLock()
-		if err != nil {
-			return err
-		}
-		startLock.Lock()
-		defer startLock.Unlock()
-
-		if err := checkExclusiveActiveVM(mp, mc); err != nil {
-			return err
-		}
-	} else {
-		// still should make sure we do not start the same machine twice
-		state, err := mp.State(mc)
-		if err != nil {
-			return err
-		}
-
-		if state == define.Running || state == define.Starting {
-			return fmt.Errorf("machine %s: %w", mc.Name, define.ErrVMAlreadyRunning)
-		}
+	state, err := mp.State(mc)
+	if err != nil {
+		return err
 	}
+
+	if state == define.Running || state == define.Starting {
+		return fmt.Errorf("machine %s: %w", mc.Name, define.ErrVMAlreadyRunning)
+	}
+
+	logrus.Infof("Require machine lock, if there is any other operation on this machine, it will be blocked")
+	mc.Lock()
+	logrus.Infof("Machine lock require success")
+
+	defer mc.Unlock()
 
 	// Set starting to true
 	mc.Starting = true
-	if err := mc.Write(); err != nil {
+	if err = mc.Write(); err != nil {
 		logrus.Error(err)
 	}
+
 	// Set starting to false on exit
 	defer func() {
 		mc.Starting = false
-		if err := mc.Write(); err != nil {
+		if err = mc.Write(); err != nil {
 			logrus.Error(err)
 		}
 	}()
 
-	forwardSocketPath, forwardingState, err := startNetAndForwardNow(mc, mp, dirs)
-	if err != nil {
-		return err
-	}
-	gvproxyPidFile, err := dirs.RuntimeDir.AppendToNewVMFile("gvproxy.pid", nil)
+	gvproxyPidFile, err := dirs.RuntimeDir.AppendToNewVMFile(fmt.Sprintf("%s-gvproxy.pid", mc.Name), nil)
 	if err != nil {
 		return err
 	}
 
-	cleanGV := func() error {
-		_ = system.KillProcess(machine.GlobalPIDs.GetGvproxyPID())
-		logrus.Infof("--> Callback: clean gvproxy process %d", machine.GlobalPIDs.GetGvproxyPID())
-		_ = gvproxyPidFile.Delete()
-		_ = os.Remove(forwardSocketPath)
-		return nil
+	// start gvproxy and set up the API socket forwarding
+	socksInHost, forwardingState, gvcmd, err := startNetworking(mc, mp)
+	if err != nil {
+		return err
 	}
-	callBackFuncs.Add(cleanGV)
 
 	// Start krunkit now
+	logrus.Infof("Start krunkit....")
 	krunCmd, WaitForReady, err := mp.StartVM(mc)
 	if err != nil {
 		return err
 	}
-
-	cleanKRUN := func() error {
-		_ = krunCmd.Process.Kill()
-		logrus.Infof("--> Callback: clean krunkit process %d", krunCmd.Process.Pid)
-		return nil
-	}
-
-	callBackFuncs.Add(cleanKRUN)
 
 	if WaitForReady == nil {
 		err = errors.New("no valid WaitForReady function returned")
 		return err
 	}
 
-	// continue check krunkit runnning and wait ready event comming
 	if err = WaitForReady(); err != nil {
-		return err
-	}
-
-	err = mp.PostStartNetworking(mc, false)
-	if err != nil {
 		return err
 	}
 
@@ -342,7 +269,7 @@ func Start(mc *vmconfigs.MachineConfig, mp vmconfigs.VMProvider, dirs *define.Ma
 	stateF := func() (define.Status, error) {
 		return mp.State(mc)
 	}
-
+	//
 	defaultBackoff := 500 * time.Millisecond
 	maxBackoffs := 3
 
@@ -362,111 +289,17 @@ func Start(mc *vmconfigs.MachineConfig, mp vmconfigs.VMProvider, dirs *define.Ma
 		}
 	}
 
-	// mount the volumes to the VM
-	if err := mp.MountVolumesToVM(mc, false); err != nil {
+	if err = machine.WaitAPIAndPrintInfo(socksInHost, forwardingState, mc.Name); err != nil {
 		return err
 	}
 
-	err = machine.WaitAPIAndPrintInfo(
-		opts.CommonOptions.ReportUrl,
-		forwardSocketPath,
-		forwardingState,
-		mc.Name,
-	)
-	if err != nil {
-		return err
+	running := false
+	for {
+		pids := []int32{int32(gvcmd.Process.Pid), int32(krunCmd.Process.Pid)}
+		running, err = system.IsProcesSAlive(pids)
+		if !running {
+			_ = gvproxyPidFile.Delete()
+			return fmt.Errorf("%v", err)
+		}
 	}
-
-	return err
-}
-
-// Stop stops the machine
-func Stop(mc *vmconfigs.MachineConfig, mp vmconfigs.VMProvider, dirs *define.MachineDirs, hardStop bool) error {
-	mc.Lock()
-	defer mc.Unlock()
-	if err := mc.Refresh(); err != nil {
-		return fmt.Errorf("reload config: %w", err)
-	}
-
-	return stopLocked(mc, mp, dirs, hardStop)
-}
-
-// stopLocked stops the machine and expects the caller to hold the machine's lock.
-func stopLocked(mc *vmconfigs.MachineConfig, machineProvider vmconfigs.VMProvider, dirs *define.MachineDirs, hardStop bool) error {
-	var err error
-	state, err := machineProvider.State(mc)
-	if err != nil {
-		return err
-	}
-	// stopping a stopped machine is NOT an error
-	if state == define.Stopped {
-		return nil
-	}
-	if state != define.Running {
-		return define.ErrWrongState
-	}
-
-	// Provider stops the machine
-	if err = machineProvider.StopVM(mc, hardStop); err != nil {
-		return err
-	}
-
-	// Remove Ready Socket
-	readySocket, err := mc.ReadySocket()
-	if err != nil {
-		return err
-	}
-	if err := readySocket.Delete(); err != nil {
-		return err
-	}
-	// Remove ignitionSocket Socket
-	ignitionSocket, err := mc.IgnitionSocket()
-	if err != nil {
-		return err
-	}
-	if err := ignitionSocket.Delete(); err != nil {
-		return err
-	}
-
-	// Stop GvProxy and remove PID file
-	gvproxyPidFile, err := dirs.RuntimeDir.AppendToNewVMFile(env.Gvpid, nil)
-	if err != nil {
-		return err
-	}
-	if err := gvproxy.CleanupGVProxy(*gvproxyPidFile); err != nil {
-		return fmt.Errorf("unable to clean up gvproxy: %w", err)
-	}
-
-	// Update last time up
-	mc.LastUp = time.Now()
-	return mc.Write()
-}
-
-// Set set configure for virtualMachine configuration
-func Set(mc *vmconfigs.MachineConfig, mp vmconfigs.VMProvider, opts define.SetOptions) error {
-	mc.Lock()
-	defer mc.Unlock()
-
-	if err := mc.Refresh(); err != nil {
-		return fmt.Errorf("reload config: %w", err)
-	}
-
-	if opts.CPUs != 0 {
-		mc.Resources.CPUs = opts.CPUs
-	}
-
-	if opts.Memory != 0 {
-		mc.Resources.Memory = strongunits.MiB(opts.Memory)
-	}
-
-	if opts.Volumes != nil {
-		mc.Mounts = CmdLineVolumesToMounts(opts.Volumes, mp.MountType())
-	}
-
-	if err := mp.SetProviderAttrs(mc, opts); err != nil {
-		return err
-	}
-
-	// Update the configuration file last if everything earlier worked
-	return mc.Write()
 }
