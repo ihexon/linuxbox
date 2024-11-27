@@ -174,6 +174,9 @@ func StartGenericAppleVM(mc *vmconfigs.MachineConfig, cmdBinary string, bootload
 	}
 
 	krunCmd.Args = append(krunCmd.Args, endpointArgs...)
+	// Add the "krun-log-level" flag for setting up the desired log level for libkrun's debug facilities.
+	// Log level for libkrun (0=off, 1=error, 2=warn, 3=info, 4=debug, 5 or higher=trace)
+	krunCmd.Args = append(krunCmd.Args, "--krun-log-level", "3")
 
 	// Listen ready socket
 	if err := readySocket.Delete(); err != nil {
