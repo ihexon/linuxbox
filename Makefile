@@ -1,6 +1,10 @@
 .PHONY: all build build-arm64 clean help
 
-CGO_CFLAGS=-mmacosx-version-min=12.3
+CGO_CFLAGS=-mmacosx-version-min=13.1
+GIT_COMMIT = $(shell git rev-parse HEAD 2> /dev/null || true)
+GO_LDFLAGS = -ldflags
+BUILD_FLAGS = \
+	$(if $(GIT_COMMIT),-X bauklotze/pkg/machine/define.GitCommit=$(GIT_COMMIT),)
 
 all: help
 
@@ -8,6 +12,8 @@ all: help
 ##@ Build commands
 ##@
 build: ##@ Build binaries for all architectures
+	@echo "Build commit:  ${GIT_COMMIT}"
+	@echo "GO_LDFLAGS: ${GO_LDFLAGS}"
 	@$(MAKE) out/bin/ovm-arm64
 
 
@@ -16,7 +22,7 @@ build-arm64: ##@ Build arm64 binary
 
 out/bin/ovm-arm64: out/bin/ovm-%:
 	@mkdir -p $(@D)
-	CGO_ENABLED=1 CGO_CFLAGS=$(CGO_CFLAGS) CGO_CFLAGS=$(CGO_CFLAGS) GOOS=darwin GOARCH=$* go build -o $@ bauklotze/cmd
+	CGO_ENABLED=1 CGO_CFLAGS=$(CGO_CFLAGS) CGO_CFLAGS=$(CGO_CFLAGS) GOOS=darwin GOARCH=$* go build $(GO_LDFLAGS) '$(BUILD_FLAGS)' -o $@ bauklotze/cmd
 
 
 ##@

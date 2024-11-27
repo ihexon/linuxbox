@@ -5,12 +5,10 @@ go 1.22
 require (
 	github.com/Code-Hex/go-infinity-channel v1.0.0
 	github.com/DataDog/zstd v1.5.6
-	github.com/Microsoft/go-winio v0.6.2
 	github.com/containers/common v0.60.3
 	github.com/containers/gvisor-tap-vsock v0.7.5
 	github.com/containers/podman/v5 v5.2.3
 	github.com/containers/storage v1.55.0
-	github.com/containers/winquit v1.1.0
 	github.com/coreos/ignition/v2 v2.19.0
 	github.com/crc-org/vfkit v0.5.1
 	github.com/gliderlabs/ssh v0.3.7
@@ -26,7 +24,6 @@ require (
 	golang.org/x/crypto v0.26.0
 	golang.org/x/sync v0.8.0
 	golang.org/x/sys v0.24.0
-	golang.org/x/text v0.17.0
 )
 
 require (
@@ -71,6 +68,7 @@ require (
 	github.com/yusufpapurcu/wmi v1.2.4 // indirect
 	golang.org/x/arch v0.7.0 // indirect
 	golang.org/x/net v0.28.0 // indirect
+	golang.org/x/text v0.17.0 // indirect
 	google.golang.org/protobuf v1.34.2 // indirect
 	gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect

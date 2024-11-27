@@ -64,7 +64,7 @@ var (
 		// PersistentPreRunE/PreRunE/RunE will run after rootCmd.ExecuteContext(context.Background()), also run after init()
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 			logrus.Infof("==========================================================")
-			logrus.Infoln("OVM VERSION dev-3ebd31206f30ae206978ec0a19b50608b9b85851")
+			logrus.Infof("OVM VERSION dev-%s\n", define.GitCommit)
 			logrus.Infof("FULL OVM COMMANDLINE: %v\n", os.Args)
 			return nil
 		},
