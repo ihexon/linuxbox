@@ -3,7 +3,7 @@ name: Release
 on:
   push:
     tags:
-      - 'v*.*.*-RC*'
+      - 'v*.*.*'
 
 permissions:
   contents: write
@@ -15,6 +15,24 @@ jobs:
     runs-on: macos-latest
 
     steps:
+      - name: Configure R2 Credentials
+        run: |
+          aws configure set aws_access_key_id ${{ secrets.R2_OOMOL_STATIC_S3_AK }}
+          aws configure set aws_secret_access_key ${{ secrets.R2_OOMOL_STATIC_S3_SK }}
+          aws configure set region auto
+
+      - name: Setup Codesign
+        run: |
+          echo $MACOS_CERTIFICATE | base64 --decode > certificate.p12
+          security create-keychain -p action build.keychain
+          security default-keychain -s build.keychain
+          security unlock-keychain -p action build.keychain
+          security import certificate.p12 -k build.keychain -P $MACOS_CERTIFICATE_PWD -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k action build.keychain
+        env:
+          MACOS_CERTIFICATE: ${{ secrets.MACOS_CERTIFICATE }}
+          MACOS_CERTIFICATE_PWD: ${{ secrets.MACOS_CERTIFICATE_PWD }}
+
       - name: Checkout
         uses: "actions/checkout@v4"
 
@@ -24,9 +42,28 @@ jobs:
           go-version: '1.23'
 
       - name: Build
+        run: make build
+        env:
+          CODESIGN_IDENTITY: ${{ secrets.CODESIGN_IDENTITY }}
+
+      - name: Get Tag Name
+        shell: bash
+        run: echo "RELEASE_VERSION=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
+
+      - name: Upload To R2
+        shell: bash
         run: |
-          git log -1
-          make clean && make build
+          aws s3 cp \
+            --endpoint-url ${{ secrets.R2_OOMOL_STATIC_S3_ENDPOINT }} \
+            ./out/bin/ \
+            s3://oomol-static/ovm-resources/Bauklotze/$RELEASE_VERSION \
+            --recursive --exclude "*" --include "ovm*"
+
+      - name: Gen SHA256 Release Notes
+        run: |
+          echo '```' > ./release_notes.md
+          cat ./out/sha256.txt >> ./release_notes.md
+          echo '```' >> ./release_notes.md
 
       - name: Create Release
         id: create_release
@@ -34,6 +71,7 @@ jobs:
         with:
           files: out/bin/*
           generate_release_notes: true
+          body_path: ./release_notes.md
           draft: false
-          prerelease: true
+          prerelease: false
           fail_on_unmatched_files: true
