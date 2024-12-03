@@ -46,6 +46,17 @@ jobs:
         env:
           CODESIGN_IDENTITY: ${{ secrets.CODESIGN_IDENTITY }}
 
+      - name: Gen SHA256
+        working-directory: ./out/bin
+        run: |
+          shasum -a 256 ./* > ../sha256.txt
+
+      - name: Gen Release Notes
+        run: |
+          echo '```' > ./release_notes.md
+          cat ./out/sha256.txt >> ./release_notes.md
+          echo '```' >> ./release_notes.md
+
       - name: Get Tag Name
         shell: bash
         run: echo "RELEASE_VERSION=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
@@ -58,12 +69,6 @@ jobs:
             ./out/bin/ \
             s3://oomol-static/ovm-resources/Bauklotze/$RELEASE_VERSION \
             --recursive --exclude "*" --include "ovm*"
-
-      - name: Gen SHA256 Release Notes
-        run: |
-          echo '```' > ./release_notes.md
-          cat ./out/sha256.txt >> ./release_notes.md
-          echo '```' >> ./release_notes.md
 
       - name: Create Release
         id: create_release
