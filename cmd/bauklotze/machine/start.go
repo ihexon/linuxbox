@@ -165,8 +165,8 @@ func start(cmd *cobra.Command, args []string) error {
 
 	if mc != nil {
 		logrus.Infof("Do sync in virtualMachine....")
-		if err = machine.CommonSSHSilent(mc.SSH.RemoteUsername, mc.SSH.IdentityPath, mc.Name, mc.SSH.Port, []string{"sync"}); err != nil {
-			logrus.Warnf("Sync failed: %v", err)
+		if syncErr := machine.CommonSSHSilent(mc.SSH.RemoteUsername, mc.SSH.IdentityPath, mc.Name, mc.SSH.Port, []string{"sync"}); syncErr != nil {
+			logrus.Warnf("Sync failed: %v", syncErr)
 		}
 	}
 
