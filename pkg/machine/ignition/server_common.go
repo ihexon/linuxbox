@@ -31,6 +31,9 @@ func ServeIgnitionOverSocketCommon(url *url.URL, file fs.File) error {
 	}
 
 	s, err := file.Stat()
+	if err != nil {
+		return err
+	}
 	cfgAbsPath, err := filepath.Abs(s.Name())
 	if err != nil {
 		return err
@@ -64,7 +67,7 @@ func ServeIgnitionOverSocketCommon(url *url.URL, file fs.File) error {
 	}
 
 	go func() {
-		if err := server.Serve(listener); err != nil && !errors.Is(http.ErrServerClosed, err) {
+		if err := server.Serve(listener); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			logrus.Errorf("Failed to serve ignition file: %v", err)
 			errChan <- err
 		}

@@ -18,7 +18,6 @@ func FindPIDByCmdline(targetArgs string) ([]int32, error) {
 
 	var matchingPIDs []int32
 	for _, proc := range procs {
-
 		cmdline, err := proc.Cmdline()
 		if err != nil {
 			continue

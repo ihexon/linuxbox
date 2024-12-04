@@ -12,17 +12,20 @@ import (
 
 func TestHttpClient(t *testing.T) {
 	connCtx, err := NewConnection("unix:///tmp/report_url.socks")
+	if err != nil {
+		t.Error(err.Error())
+	}
 	connCtx.Headers = http.Header{
 		"Content-Type": []string{"application/json"},
 	}
-	connCtx.UrlParameter = url.Values{
+	connCtx.URLParameter = url.Values{
 		"key": []string{"value"},
 	}
 
 	// connCtx.Body = strings.NewReader("Hello, World!")
 	response, err := connCtx.DoRequest("GET", "notify")
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Error(err.Error())
 	}
 
 	if response.Response != nil {

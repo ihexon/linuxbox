@@ -159,7 +159,7 @@ func Init(opts define.InitOptions, mp vmconfigs.VMProvider) error {
 		return err
 	}
 
-	mc.ReportURL = &define.VMFile{Path: opts.CommonOptions.ReportUrl}
+	mc.ReportURL = &define.VMFile{Path: opts.CommonOptions.ReportURL}
 
 	// Fill all the configure field and write into disk
 	mc.ImagePath = imagePath
@@ -181,7 +181,7 @@ func Init(opts define.InitOptions, mp vmconfigs.VMProvider) error {
 			return mc.ConfigPath.Delete()
 		})
 	}
-	// err = fmt.Errorf("Test Error happend")
+	// err = fmt.Errorf("Test Error happened")
 	return err
 }
 
@@ -243,7 +243,7 @@ func Start(ctx context.Context, mc *vmconfigs.MachineConfig, mp vmconfigs.VMProv
 		}
 	}()
 
-	gvproxyPidFile, err := dirs.RuntimeDir.AppendToNewVMFile(fmt.Sprintf("gvproxy.pid", mc.Name), nil)
+	gvproxyPidFile, err := dirs.RuntimeDir.AppendToNewVMFile("gvproxy.pid", nil)
 	if err != nil {
 		return err
 	}
@@ -298,10 +298,9 @@ func Start(ctx context.Context, mc *vmconfigs.MachineConfig, mp vmconfigs.VMProv
 		return err
 	}
 
-	running := false
 	for {
 		pids := []int32{int32(gvcmd.Process.Pid), int32(krunCmd.Process.Pid)}
-		running, err = system.IsProcesSAlive(pids)
+		running, err := system.IsProcesSAlive(pids)
 		if !running {
 			_ = gvproxyPidFile.Delete()
 			return fmt.Errorf("%v", err)

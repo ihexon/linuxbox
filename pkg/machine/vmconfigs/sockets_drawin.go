@@ -19,7 +19,7 @@ func gvProxySocket(name string, machineRuntimeDir *define.VMFile) (*define.VMFil
 	return machineRuntimeDir.AppendToNewVMFile(socketName, nil)
 }
 
-func podmanApiSocketOnHost(name string, socketDir *define.VMFile) (*define.VMFile, error) {
+func podmanAPISocketOnHost(name string, socketDir *define.VMFile) (*define.VMFile, error) {
 	socketName := fmt.Sprintf("%s-podman-api.sock", name)
 	return socketDir.AppendToNewVMFile(socketName, nil)
 }

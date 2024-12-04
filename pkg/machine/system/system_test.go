@@ -32,7 +32,6 @@ func TestGetPPID(t *testing.T) {
 
 	// Using ps -p <pid> -o ppid= find ppid of pid
 	t.Logf("Using ps get ppid : ps -p %d -o ppid=", ppid)
-	s, _ := exec.Command("ps", "-p", strconv.Itoa(int(pid)), "-o", "ppid=").Output()
+	s, _ := exec.Command("ps", "-p", strconv.Itoa(pid), "-o", "ppid=").Output()
 	t.Logf("PPID is: %s", s)
-
 }

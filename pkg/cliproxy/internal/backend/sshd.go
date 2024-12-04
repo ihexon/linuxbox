@@ -26,7 +26,7 @@ func SSHD() error {
 		}()
 
 		str := s.Command()
-		if str == nil || len(str) == 0 {
+		if len(str) == 0 {
 			return
 		}
 
@@ -63,7 +63,6 @@ func SSHD() error {
 		} else {
 			_, _ = fmt.Fprintf(os.Stdout, "Command: %s finished\n", str)
 		}
-		return
 	})
 
 	err = ssh.ListenAndServe("127.0.0.1:5321", nil)

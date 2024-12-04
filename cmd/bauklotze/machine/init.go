@@ -26,23 +26,19 @@ import (
 
 var (
 	NameRegex     = regexp.Delayed("^[a-zA-Z0-9][a-zA-Z0-9_.-]*$")
-	RegexError    = fmt.Errorf("names must match [a-zA-Z0-9][a-zA-Z0-9_.-]*: %w", ErrInvalidArg)
+	ErrRegex      = fmt.Errorf("names must match [a-zA-Z0-9][a-zA-Z0-9_.-]*: %w", ErrInvalidArg)
 	ErrInvalidArg = errors.New("invalid argument")
 )
 
 var (
 	initCmd = &cobra.Command{
-		Use:   "init [options] [NAME]",
-		Short: "initialize a virtual machine",
-		Long:  "initialize a virtual machine",
-		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-			return machinePreRunE(cmd, args)
-		},
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return initMachine(cmd, args)
-		},
-		Args:    cobra.MaximumNArgs(1), // max positional arguments
-		Example: `machine init default`,
+		Use:               "init [options] [NAME]",
+		Short:             "initialize a virtual machine",
+		Long:              "initialize a virtual machine",
+		PersistentPreRunE: machinePreRunE,
+		RunE:              initMachine,
+		Args:              cobra.MaximumNArgs(1), // max positional arguments
+		Example:           `machine init default`,
 	}
 	initOpts = define.InitOptions{
 		Username: define.DefaultUserInGuest,
@@ -86,11 +82,11 @@ func init() {
 
 	BootImageVersion := cmdflags.BootVersionFlag
 	flags.StringVar(&initOpts.ImageVerStruct.BootableImageVersion, BootImageVersion, cfg.ContainersConfDefaultsRO.Machine.Image, "Boot version field")
-	initCmd.MarkFlagRequired(BootImageVersion)
+	_ = initCmd.MarkFlagRequired(BootImageVersion)
 
 	DataImageVersion := cmdflags.DataVersionFlag
 	flags.StringVar(&initOpts.ImageVerStruct.DataDiskVersion, DataImageVersion, "", "Data version field")
-	initCmd.MarkFlagRequired(DataImageVersion)
+	_ = initCmd.MarkFlagRequired(DataImageVersion)
 }
 
 func initMachine(cmd *cobra.Command, args []string) error {
@@ -103,7 +99,7 @@ func initMachine(cmd *cobra.Command, args []string) error {
 	ppid, _ := cmd.Flags().GetInt32(cmdflags.PpidFlag) // Get PPID from
 	logrus.Infof("PID is [ %d ], watching PPID: [ %d ]", os.Getpid(), ppid)
 
-	initOpts.CommonOptions.ReportUrl = cmd.Flag(cmdflags.ReportUrlFlag).Value.String()
+	initOpts.CommonOptions.ReportURL = cmd.Flag(cmdflags.ReportURLFlag).Value.String()
 	initOpts.CommonOptions.PPID = ppid
 
 	// TODO Continue to check the ppid alive
@@ -119,7 +115,7 @@ func initMachine(cmd *cobra.Command, args []string) error {
 		}
 		initOpts.Name = args[0]
 		if !NameRegex.MatchString(initOpts.Name) {
-			return fmt.Errorf("invalid name %q: %w", initOpts.Name, RegexError)
+			return fmt.Errorf("invalid name %q: %w", initOpts.Name, ErrRegex)
 		}
 	}
 
@@ -190,7 +186,7 @@ func initMachine(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	if updateBootableImage == false {
+	if !updateBootableImage {
 		logrus.Infof("Skip initialize virtual machine with %s", initOpts.Name)
 		return nil
 	}
@@ -211,7 +207,7 @@ func systemResourceCheck(cmd *cobra.Command) error {
 	var err error
 	if cmd.Flags().Changed("memory") {
 		if err = system2.CheckMaxMemory(strongunits.MiB(initOpts.Memory)); err != nil {
-			logrus.Errorf("Can not allocate the memory size %s", initOpts.Memory)
+			logrus.Errorf("Can not allocate the memory size %d", initOpts.Memory)
 			return err
 		}
 	}

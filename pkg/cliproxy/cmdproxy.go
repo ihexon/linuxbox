@@ -10,8 +10,7 @@ import (
 )
 
 func RunCMDProxy() error {
-	var err error
-	err = backend.SSHD()
+	err := backend.SSHD()
 	if err != nil {
 		return err
 	}

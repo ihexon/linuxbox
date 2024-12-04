@@ -10,7 +10,6 @@ import (
 	"os/exec"
 	"strconv"
 
-	"bauklotze/pkg/machine"
 	"bauklotze/pkg/machine/apple/hvhelper"
 	"bauklotze/pkg/machine/define"
 	"bauklotze/pkg/machine/diskpull"
@@ -104,10 +103,6 @@ func (l LibKrunStubber) CreateVM(opts define.CreateVMOpts, mc *vmconfigs.Machine
 	}
 	// Endpoint is a string: http://127.0.0.1/[random_port]
 	mc.AppleKrunkitHypervisor.Krunkit.Endpoint = localhostURI + ":" + strconv.Itoa(randPort)
-	virtiofsMounts := make([]machine.VirtIoFs, 0, len(mc.Mounts))
-	for _, mnt := range mc.Mounts {
-		virtiofsMounts = append(virtiofsMounts, machine.MountToVirtIOFs(mnt))
-	}
 	mc.AppleKrunkitHypervisor.Krunkit.LogLevel = logrus.InfoLevel
 
 	return err

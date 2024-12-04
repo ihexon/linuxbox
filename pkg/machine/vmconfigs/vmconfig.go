@@ -167,7 +167,7 @@ func NewMachineConfig(opts define.InitOptions, dirs *define.MachineDirs, sshIden
 	}
 	mc.Resources = mrc
 
-	sshPort := 0
+	var sshPort int
 	listener, tempErr := net.Listen("tcp", "127.0.0.1:61234")
 	if tempErr != nil {
 		logrus.Infof("Gvproxy SSH port 61234 port can not be used , try to get a random port...")

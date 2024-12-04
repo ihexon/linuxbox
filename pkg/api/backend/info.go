@@ -13,7 +13,6 @@ import (
 )
 
 func getPodmanConnection(vmName string) *vmconfigs.MachineConfig {
-
 	providers = provider2.GetAll()
 	for _, s := range providers {
 		dirs, err := env.GetMachineDirs(s.VMType())

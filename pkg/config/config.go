@@ -74,8 +74,6 @@ func findBindir() string {
 
 func (c *Config) FindHelperBinary(name string) (string, error) {
 	dirList := c.Machine.HelperBinariesDir.Get()
-	bindirPath := ""
-
 	if len(dirList) == 0 {
 		return "", fmt.Errorf("could not find %q because there are no helper binary directories configured", name)
 	}
@@ -83,7 +81,7 @@ func (c *Config) FindHelperBinary(name string) (string, error) {
 	for _, path := range dirList {
 		if path == bindirPrefix || strings.HasPrefix(path, bindirPrefix+string(filepath.Separator)) {
 			// Calculate the path to the executable first time we encounter a $BINDIR prefix.
-			bindirPath = findBindir()
+			bindirPath := findBindir()
 
 			// If there's an error, don't stop the search for the helper binary.
 			// findBindir() will have warned once during the first failure.
@@ -103,9 +101,9 @@ func (c *Config) FindHelperBinary(name string) (string, error) {
 			// exec.LookPath from absolute path on Unix is equal to os.Stat + IsNotDir + check for executable bits in FileMode
 			// exec.LookPath from absolute path on Windows is equal to os.Stat + IsNotDir for `file.ext` or loops through extensions from PATHEXT for `file`
 			if lp, err := exec.LookPath(abspath); err == nil {
-				err = os.Setenv(env.DYLD_LIBRARY_PATH, fmt.Sprintf("%s:%s", path, os.Getenv("DYLD_LIBRARY_PATH")))
+				err = os.Setenv(env.DYLDLibraryPath, fmt.Sprintf("%s:%s", path, os.Getenv(env.DYLDLibraryPath)))
 				if err != nil {
-					return "", fmt.Errorf("Can not set env DYLD_LIBRARY_PATH with %s", path)
+					return "", fmt.Errorf("can not set env DYLD_LIBRARY_PATH with %s", path)
 				}
 				return lp, nil
 			}

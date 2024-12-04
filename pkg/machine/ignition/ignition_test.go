@@ -172,13 +172,16 @@ func TestDynamicIgnitionV2_GenerateIgnitionConfig(t *testing.T) {
 	}
 	t.Log(string(jsonDirs))
 	err = ignBuilder.Build()
+	if err != nil {
+		t.Error(err)
+	}
 }
 
 func TestIgnServer(t *testing.T) {
 	addr := "tcp://127.0.0.1:8899"
 	listener, err := url.Parse(addr)
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Error(err.Error())
 	}
 	fileStr := "C:\\Users\\localuser\\Bauklotze\\README.md"
 
@@ -193,5 +196,5 @@ func TestIgnServer(t *testing.T) {
 	}
 
 	err = <-errChan
-	t.Logf(err.Error())
+	t.Log(err.Error())
 }

@@ -32,17 +32,13 @@ import (
 
 var (
 	startCmd = &cobra.Command{
-		Use:   "start [options] [MACHINE]",
-		Short: "Start an existing machine",
-		Long:  "Start a managed virtual machine ",
-		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-			return machinePreRunE(cmd, args)
-		}, // Get Provider and set workdir if needed
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return start(cmd, args)
-		},
-		Args:    cobra.MaximumNArgs(1),
-		Example: `bauklotze machine start`,
+		Use:               "start [options] [MACHINE]",
+		Short:             "Start an existing machine",
+		Long:              "Start a managed virtual machine ",
+		PersistentPreRunE: machinePreRunE, // Get Provider and set workdir if needed
+		RunE:              start,
+		Args:              cobra.MaximumNArgs(1),
+		Example:           `bauklotze machine start`,
 	}
 	startOpts = define.StartOptions{}
 )
@@ -57,7 +53,7 @@ func init() {
 func start(cmd *cobra.Command, args []string) error {
 	// Killall ovm process before running ovm, this should never happen,
 	// but we still do this to avoid any issue
-	pids := []int32{}
+	var pids []int32
 	pidskrun, _ := system2.FindPIDByCmdline(".oomol-studio/ovm-krun/data/libkrun/default-arm64.raw")
 	pidsGvp, _ := system2.FindPIDByCmdline(".oomol-studio/ovm-krun/tmp/gvproxy.pid")
 
@@ -71,9 +67,9 @@ func start(cmd *cobra.Command, args []string) error {
 
 	ppid, _ := cmd.Flags().GetInt32(cmdflags.PpidFlag) // Get PPID from --ppid flag
 	logrus.Infof("PID is [%d], PPID is: %d", os.Getpid(), ppid)
-	reportURL := cmd.Flag(cmdflags.ReportUrlFlag).Value.String()
+	reportURL := cmd.Flag(cmdflags.ReportURLFlag).Value.String()
 
-	startOpts.CommonOptions.ReportUrl = reportURL
+	startOpts.CommonOptions.ReportURL = reportURL
 	startOpts.CommonOptions.PPID = ppid
 
 	// now we have dirs, and we do not need env.GetMachineDirs again
@@ -99,7 +95,7 @@ func start(cmd *cobra.Command, args []string) error {
 		case <-sigChan:
 			// Listen SIGTERM signal, and return an error
 			// when the signal is received
-			return fmt.Errorf("Received shutdown signal")
+			return fmt.Errorf("received shutdown signal")
 		}
 	})
 

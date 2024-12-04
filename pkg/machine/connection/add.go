@@ -18,7 +18,7 @@ func AddSSHConnectionsToPodmanSocket(uid, port int, identityPath, name, remoteUs
 	return addConnection(cons, identityPath, true)
 }
 
-func createConnections(name string, uid, port int, remoteUsername string) []connection {
+func createConnections(name string, _uid, port int, _remoteUsername string) []connection {
 	uriRoot := makeSSHURL(LocalhostIP, guestPodmanAPI, strconv.Itoa(port), "root")
 
 	return []connection{

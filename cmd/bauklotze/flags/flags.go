@@ -5,7 +5,7 @@ package cmdflags
 
 const (
 	WorkspaceFlag   = "workspace"
-	ReportUrlFlag   = "report-url"
+	ReportURLFlag   = "report-url"
 	BootImageFlag   = "boot"
 	BootVersionFlag = "boot-version"
 	DataVersionFlag = "data-version"
@@ -27,6 +27,5 @@ const (
 )
 
 const (
-	BAUKLOTZE_HOME = "BAUKLOTZE_HOME"
-	TMP_DIR        = "/tmp/"
+	BauklotzeHome = "BAUKLOTZE_HOME"
 )

@@ -67,6 +67,9 @@ func GetDefaultDevices(mc *vmconfigs.MachineConfig) ([]vfConfig.VirtioDevice, *d
 	// DO NOT CHANGE THE 1024 VSOCK PORT
 	// See https://coreos.github.io/ignition/supported-platforms/
 	ignitionDevice, err := vfConfig.VirtioVsockNew(1024, ignitionSocket.GetPath(), true)
+	if err != nil {
+		return nil, nil, err
+	}
 	devices = append(devices, disk, rng, readyDevice, ignitionDevice)
 
 	if mc.AppleKrunkitHypervisor == nil || !logrus.IsLevelEnabled(logrus.DebugLevel) {
@@ -130,6 +133,9 @@ func StartGenericAppleVM(mc *vmconfigs.MachineConfig, cmdBinary string, bootload
 	// machineconfig if possible.  the preference was to derive this stuff
 	vm := vfConfig.NewVirtualMachine(uint(mc.Resources.CPUs), uint64(mc.Resources.Memory), bootloader)
 	defaultDevices, readySocket, err := GetDefaultDevices(mc)
+	if err != nil {
+		return nil, nil, err
+	}
 	vm.Devices = append(vm.Devices, defaultDevices...)
 	vm.Devices = append(vm.Devices, netDevice)
 
@@ -258,13 +264,10 @@ func StartGenericAppleVM(mc *vmconfigs.MachineConfig, cmdBinary string, bootload
 
 	returnFunc := func() error {
 		// wait for either socket or to be ready or process to have exited
-		select {
-		case err := <-readyChan:
-			if err != nil {
-				return err
-			}
-			logrus.Infof("machine ready notification received")
+		if err := <-readyChan; err != nil {
+			return err
 		}
+		logrus.Infof("machine ready notification received")
 		return nil
 	}
 	return krunCmd, returnFunc, nil

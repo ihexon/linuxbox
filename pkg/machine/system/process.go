@@ -10,7 +10,7 @@ import (
 )
 
 func GetPPID(pid int32) (int32, error) {
-	proc, err := process.NewProcess(int32(pid))
+	proc, err := process.NewProcess(pid)
 	if err != nil {
 		return -1, err
 	}

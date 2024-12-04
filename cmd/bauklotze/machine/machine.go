@@ -19,12 +19,11 @@ var machineCmd = &cobra.Command{
 	Short: "Manage a virtual machine",
 	Long:  "Manage a virtual machine. Virtual machines are used to run OVM.",
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-		BAUKLOTZE_HOME := cmd.Flag(cmdflags.WorkspaceFlag).Value.String()
-		logrus.Infof("Set env %s: %s", cmdflags.BAUKLOTZE_HOME, BAUKLOTZE_HOME)
-		_ = os.Setenv(cmdflags.BAUKLOTZE_HOME, BAUKLOTZE_HOME)
+		v := cmd.Flag(cmdflags.WorkspaceFlag).Value.String()
+		logrus.Infof("Set env %s: %s", cmdflags.BauklotzeHome, v)
+		_ = os.Setenv(cmdflags.BauklotzeHome, v)
 		return nil
 	},
-	// PersistentPostRunE: closeMachineEvents,
 	RunE: validata.SubCommandExists,
 }
 

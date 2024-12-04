@@ -6,7 +6,6 @@
 package hvhelper
 
 import (
-	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -96,15 +95,6 @@ func (vf *Helper) get(endpoint string, payload io.Reader) (*http.Response, error
 	return client.Do(req)
 }
 
-func (vf *Helper) post(endpoint string, payload io.Reader) (*http.Response, error) {
-	client := &http.Client{}
-	req, err := http.NewRequest(http.MethodPost, endpoint, payload)
-	if err != nil {
-		return nil, err
-	}
-	return client.Do(req)
-}
-
 func ToMachineStatus(val string) (define.Status, error) {
 	switch val {
 	case string(VZMachineStateRunning), string(VZMachineStatePausing), string(VZMachineStateResuming), string(VZMachineStateStopping), string(VZMachineStatePaused):
@@ -117,15 +107,4 @@ func ToMachineStatus(val string) (define.Status, error) {
 		return "", errors.New("machine is in error state")
 	}
 	return "", fmt.Errorf("unknown machine state: %s", val)
-}
-
-func (vf *Helper) stateChange(newState rest.StateChange) error {
-	b, err := json.Marshal(rest.VMState{State: string(newState)})
-	if err != nil {
-		return err
-	}
-	payload := bytes.NewReader(b)
-	serverResponse, err := vf.post(vf.Endpoint+state, payload)
-	_ = serverResponse.Body.Close()
-	return err
 }

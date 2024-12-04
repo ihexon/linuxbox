@@ -17,7 +17,7 @@ import (
 func WaitForSocketWithBackoffs(maxBackoffs int, backoff time.Duration, socketPath string, name string) error {
 	backoffWait := backoff
 	logrus.Debugf("checking that %q socket is ready", name)
-	for i := 0; i < maxBackoffs; i++ {
+	for range maxBackoffs {
 		err := fileutils.Exists(socketPath)
 		if err == nil {
 			return nil

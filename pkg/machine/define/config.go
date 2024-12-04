@@ -41,8 +41,8 @@ type MachineDirs struct {
 }
 
 const (
-	DefaultMachineName string = "bugbox-machine-default"
-	DefaultUserInGuest        = "root"
+	DefaultMachineName = "bugbox-machine-default"
+	DefaultUserInGuest = "root"
 )
 
 var (
@@ -72,7 +72,7 @@ type StartOptions struct {
 }
 
 type CommonOptions struct {
-	ReportUrl string
+	ReportURL string
 	PPID      int32
 }
 

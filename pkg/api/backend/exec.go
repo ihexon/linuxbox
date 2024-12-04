@@ -127,7 +127,7 @@ func DoExec(w http.ResponseWriter, r *http.Request) {
 
 	go func() {
 		if err := exec(r.Context(), mc, body.Command, outCh, errCh); err != nil {
-			logrus.Warnf(err.Error())
+			logrus.Warn(err.Error())
 		}
 
 		doneCh <- struct{}{}

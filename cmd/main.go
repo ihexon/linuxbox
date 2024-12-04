@@ -101,7 +101,7 @@ func init() {
 	pFlags := rootCmd.PersistentFlags()
 
 	logLevelFlagName := cmdflags.LogLevelFlag
-	pFlags.StringVar(&logLevel, logLevelFlagName, cmdflags.DefaultLogLevel, fmt.Sprintf("Log messages above specified level,by default is info"))
+	pFlags.StringVar(&logLevel, logLevelFlagName, cmdflags.DefaultLogLevel, "Log messages above specified level,by default is info")
 
 	outFlagName := cmdflags.LogOutFlag
 	pFlags.StringVar(&logOut, outFlagName, cmdflags.FileBased, "If set --log-out console, send output to terminal, if set --log-out file, send output to ${workspace}/logs/ovm.log")
@@ -110,8 +110,8 @@ func init() {
 	pFlags.StringVar(&homeDir, ovmHomedir, "", "Bauklotze's HOME directory, this flag is mandatory required")
 	_ = rootCmd.MarkPersistentFlagRequired(ovmHomedir)
 
-	ReportUrlFlag := cmdflags.ReportUrlFlag
-	pFlags.StringVar(&commonOpts.ReportUrl, ReportUrlFlag, "", "Report events to the url")
+	ReportURLFlag := cmdflags.ReportURLFlag
+	pFlags.StringVar(&commonOpts.ReportURL, ReportURLFlag, "", "Report events to the url")
 
 	ppidFlagName := cmdflags.PpidFlag
 	defaultPPID, _ := system.GetPPID(int32(os.Getpid()))
@@ -124,9 +124,9 @@ func main() {
 }
 
 func ReportHook() {
-	if commonOpts.ReportUrl != "" {
-		logrus.Infof("ReportHook(): Report events to the url: %s\n", commonOpts.ReportUrl)
-		network.NewReporter(commonOpts.ReportUrl)
+	if commonOpts.ReportURL != "" {
+		logrus.Infof("ReportHook(): Report events to the url: %s\n", commonOpts.ReportURL)
+		network.NewReporter(commonOpts.ReportURL)
 	} else {
 		logrus.Infof("No report url provided, skip report events\n")
 	}
@@ -160,13 +160,13 @@ func stdOutHook() {
 				// If the logFile large then 10*1024*1024 (10MB)
 				file, _ := os.Open(logFile)
 				defer file.Close()
-				file.Seek(5*1024*1024, io.SeekStart) // 5MB
+				_, _ = file.Seek(5*1024*1024, io.SeekStart) // 5MB
 				tempFile, _ := os.CreateTemp("", "trimmed-ovm-log.txt")
 				defer tempFile.Close()
-				io.Copy(tempFile, file)
+				_, _ = io.Copy(tempFile, file)
 				file.Close()
 				tempFile.Close()
-				os.Rename(tempFile.Name(), logFile)
+				_ = os.Rename(tempFile.Name(), logFile)
 				logrus.Infof("Successfully trimmed the file.")
 			}
 		}
@@ -190,7 +190,7 @@ func parseCommands() *cobra.Command {
 	}
 
 	if err := terminal.SetConsole(); err != nil {
-		logrus.Warnf(err.Error())
+		logrus.Warn(err.Error())
 	}
 
 	rootCmd.SetFlagErrorFunc(flagErrorFunc)
@@ -215,10 +215,7 @@ func formatError(err error) string {
 }
 
 func RootCmdExecute() {
-	var err error
-	// NOTE: commonOpts will be initialize after rootCmd.ExecuteContext(ctx)
-	ctx := context.WithValue(context.Background(), "commonOpts", commonOpts)
-	err = rootCmd.ExecuteContext(ctx)
+	err := rootCmd.ExecuteContext(context.Background())
 	if err != nil {
 		_, _ = fmt.Fprintln(os.Stderr, formatError(err))
 		network.Reporter.SendEventToOvmJs("error", fmt.Sprintf("Error: %v", err))

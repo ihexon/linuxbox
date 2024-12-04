@@ -16,7 +16,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
-	"github.com/json-iterator/go"
+	jsoniter "github.com/json-iterator/go"
 	"github.com/sirupsen/logrus"
 )
 
@@ -88,10 +88,6 @@ func WriteJSON(w http.ResponseWriter, code int, value interface{}) {
 	if err := coder.Encode(value); err != nil {
 		logrus.Errorf("Unable to write json: %q", err)
 	}
-}
-
-func notFoundHandler(w http.ResponseWriter, r *http.Request) {
-	http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 }
 
 func Error(w http.ResponseWriter, code int, err error) {

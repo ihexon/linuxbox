@@ -44,11 +44,11 @@ func init() {
 }
 
 func service(cmd *cobra.Command, args []string) error {
-	listenUrl, err := resolveAPIURI(args)
+	listenURL, err := resolveAPIURI(args)
 	if err != nil {
 		return fmt.Errorf("%s is an invalid socket destination", args[0])
 	}
-	return server.RestService(context.Background(), listenUrl)
+	return server.RestService(context.Background(), listenURL)
 }
 
 // resolveAPIURI resolves the API URI from the given arguments, if no arguments are given, it tries to get the URI from the env.DefaultRootAPIAddress

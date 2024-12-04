@@ -8,5 +8,5 @@ const (
 )
 
 type OvmJSListener struct {
-	ReportUrl string
+	ReportURL string
 }

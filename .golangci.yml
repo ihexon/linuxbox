@@ -1,0 +1,89 @@
+---
+run:
+  concurrency: 6
+  timeout: 5m
+  modules-download-mode: readonly
+
+linters:
+  enable-all: true
+  disable:
+    # too many reports but requires attention
+    - depguard
+    - tagalign
+    - perfsprint
+    - typecheck
+    # useful hints that should be addressed
+    - testifylint # all of reports that should be fixed
+    - nakedret
+    - gosmopolitan # usage of time.Local in pkg/k8s.io
+    - tagliatelle # too many JSON keys cannot be changed due to compat
+    - dupword # too many false positives (e.g., in tests)
+    - gocognit
+    - testpackage
+    - err113
+    - errorlint
+    - wrapcheck
+    - paralleltest
+    - wsl
+    - godox
+    - tparallel
+    - nlreturn
+    - noctx
+    - nestif
+    - predeclared
+    - thelper
+    - forbidigo
+    - exhaustive
+    - gofumpt
+    - gci
+    - godot
+    - dupl
+    - funlen
+    - gochecknoglobals
+    - gochecknoinits
+    - goconst
+    - gocyclo
+    - lll
+    - gosec
+    - musttag # way to many warnings to fix for now, also some false positives
+    - mnd # way to many false positives
+    - gomoddirectives
+    - containedctx
+    - contextcheck
+    - cyclop
+    - canonicalheader # our current header values are fixed and should not be changed
+    - errname
+    - forcetypeassert
+    - ireturn
+    - varnamelen
+    - maintidx
+    - nilnil
+    - nonamedreturns
+    - exhaustruct
+    # deprecated linters
+    - exportloopref
+
+linters-settings:
+  errcheck:
+    check-blank: false
+  nolintlint:
+    allow-unused: true
+    require-specific: true
+  revive:
+    rules:
+      - name: unused-parameter
+        disabled: true
+
+issues:
+  # Maximum issues count per one linter.
+  # Set to 0 to disable.
+  # Default: 50
+  max-issues-per-linter: 0
+  # Maximum count of issues with the same text.
+  # Set to 0 to disable.
+  # Default: 3
+  max-same-issues: 0
+  exclude-dirs-use-default: true
+  fix: true
+
+

@@ -13,11 +13,11 @@ import (
 
 // GetBauklotzeHomePath return ${BauklotzeHomePath}/tmp/
 func GetBauklotzeHomePath() (string, error) {
-	home := os.Getenv(BAUKLOTZE_HOME)
+	home := os.Getenv(BauklotzeHome)
 	if home == "" {
-		return "", fmt.Errorf("%s is not set", BAUKLOTZE_HOME)
+		return "", fmt.Errorf("%s is not set", BauklotzeHome)
 	}
-	return filepath.Join(home), nil
+	return home, nil
 }
 
 // ConfDirPrefix return ${BauklotzeHomePath}/config,

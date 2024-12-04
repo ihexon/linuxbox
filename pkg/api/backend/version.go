@@ -22,21 +22,17 @@ type Version struct {
 	Os         string
 }
 
-func getVersion() (Version, error) {
+func getVersion() Version {
 	return Version{
 		APIVersion: unstable,
 		Version:    unstable,
 		GoVersion:  runtime.Version(),
 		OsArch:     runtime.GOOS + "/" + runtime.GOARCH,
 		Os:         runtime.GOOS,
-	}, nil
+	}
 }
 
-func VersionHandler(w http.ResponseWriter, r *http.Request) {
-	running, err := getVersion()
-	if err != nil {
-		utils.Error(w, http.StatusInternalServerError, err)
-		return
-	}
+func VersionHandler(w http.ResponseWriter, _r *http.Request) {
+	running := getVersion()
 	utils.WriteResponse(w, http.StatusOK, running)
 }

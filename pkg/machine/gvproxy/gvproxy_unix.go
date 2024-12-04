@@ -9,17 +9,11 @@ import (
 	"errors"
 	"fmt"
 	"syscall"
-	"time"
 
 	"bauklotze/pkg/machine/define"
 
 	psutil "github.com/shirou/gopsutil/v3/process"
 	"github.com/sirupsen/logrus"
-)
-
-const (
-	loops     = 8
-	sleepTime = time.Millisecond * 1
 )
 
 func waitOnProcess(processID int) error {

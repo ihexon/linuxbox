@@ -20,9 +20,9 @@ import (
 
 type Connection struct {
 	URI          *url.URL
-	TcpClient    *http.Client
+	TCPClient    *http.Client
 	UnixClient   *http.Client
-	UrlParameter url.Values
+	URLParameter url.Values
 	Headers      http.Header
 	Body         io.Reader
 }
@@ -60,7 +60,7 @@ func NewConnection(uri string) (*Connection, error) {
 			return myConnection, errors.New("tcp URIs should begin with tcp://")
 		}
 		myConnection.URI = _url
-		myConnection.TcpClient, err = tcpClient(myConnection)
+		myConnection.TCPClient, err = tcpClient(myConnection)
 		if err != nil {
 			return nil, err
 		}
@@ -81,7 +81,7 @@ func (c *Connection) DoRequest(httpMethod, endpoint string) (*APIResponse, error
 	if c.URI.Scheme == "tcp" || c.URI.Scheme == "http" {
 		// Allow path prefixes for tcp connections to match Docker behavior
 		baseURL = "http://" + c.URI.Host + c.URI.Path
-		client = c.TcpClient
+		client = c.TCPClient
 	}
 
 	if c.URI.Scheme == "unix" {
@@ -90,7 +90,7 @@ func (c *Connection) DoRequest(httpMethod, endpoint string) (*APIResponse, error
 		client = c.UnixClient
 	}
 
-	uri := fmt.Sprintf(baseURL + "/" + endpoint)
+	uri := fmt.Sprintf("%s/%s", baseURL, endpoint)
 	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
 	defer cancel()
 
@@ -98,8 +98,8 @@ func (c *Connection) DoRequest(httpMethod, endpoint string) (*APIResponse, error
 	if err != nil {
 		return nil, err
 	}
-	if len(c.UrlParameter) > 0 {
-		req.URL.RawQuery = c.UrlParameter.Encode()
+	if len(c.URLParameter) > 0 {
+		req.URL.RawQuery = c.URLParameter.Encode()
 	}
 
 	for key, val := range c.Headers {
@@ -108,15 +108,15 @@ func (c *Connection) DoRequest(httpMethod, endpoint string) (*APIResponse, error
 		}
 	}
 
-	response, err = client.Do(req)
+	response, err = client.Do(req) //nolint:bodyclose
 	return &APIResponse{response, req}, err
 }
 
 func (o *OvmJSListener) SendEventToOvmJs(event, message string) {
-	if o.ReportUrl == "" {
+	if o.ReportURL == "" {
 		return
 	}
-	connCtx, err := NewConnection(o.ReportUrl)
+	connCtx, err := NewConnection(o.ReportURL)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "report url not valid, only support unix:/// or tcp:// proto\n")
 		return
@@ -125,14 +125,14 @@ func (o *OvmJSListener) SendEventToOvmJs(event, message string) {
 	connCtx.Headers = http.Header{
 		"Content-Type": []string{PlainTextContentType},
 	}
-	connCtx.UrlParameter = url.Values{
+	connCtx.URLParameter = url.Values{
 		"event":   []string{event},
 		"message": []string{message},
 	}
-	logrus.Infof("Send Event to %s , %s", connCtx.URI, connCtx.UrlParameter)
+	logrus.Infof("Send Event to %s , %s", connCtx.URI, connCtx.URLParameter)
 	req, err := connCtx.DoRequest("GET", "notify")
 	if err != nil {
-		logrus.Warnf("Failed to notify %q: %v\n", o.ReportUrl, err)
+		logrus.Warnf("Failed to notify %q: %v\n", o.ReportURL, err)
 	} else {
 		req.Body.Close()
 	}
@@ -146,7 +146,7 @@ var (
 func NewReporter(url string) *OvmJSListener {
 	once.Do(func() {
 		Reporter = OvmJSListener{
-			ReportUrl: url,
+			ReportURL: url,
 		}
 	})
 	return &Reporter

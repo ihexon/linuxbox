@@ -119,7 +119,7 @@ func (ign *DynamicIgnitionV2) getUsers() []ignition.PasswdUser {
 	return users
 }
 
-func (ign *DynamicIgnitionV2) getFiles(usrName string, uid int, vmtype define.VMType) []ignition.File {
+func (ign *DynamicIgnitionV2) getFiles(usrName string, _uid int, vmtype define.VMType) []ignition.File {
 	files := make([]ignition.File, 0)
 
 	testConfigure := `# Test configures for root user`
@@ -185,11 +185,8 @@ func (ign *DynamicIgnitionV2) getFiles(usrName string, uid int, vmtype define.VM
 	return files
 }
 
-func (ign *DynamicIgnitionV2) getLinks(usrName string) []ignition.Link {
-
-	links := make([]ignition.Link, 0)
-
-	links = []ignition.Link{
+func (ign *DynamicIgnitionV2) getLinks(_usrName string) []ignition.Link {
+	links := []ignition.Link{
 		{
 			Node: ignition.Node{
 				Group:     GetNodeGrp(DefaultIgnitionUserName),

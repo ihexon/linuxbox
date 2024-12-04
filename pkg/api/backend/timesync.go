@@ -64,5 +64,4 @@ func TimeSync(w http.ResponseWriter, r *http.Request) {
 	}
 
 	utils.WriteResponse(w, http.StatusOK, timeSt)
-
 }

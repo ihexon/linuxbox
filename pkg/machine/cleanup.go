@@ -52,9 +52,9 @@ func (c *CleanupCallback) clean() {
 	}
 
 	// Cleanup functions can now exclusively be run
-	for _, cleanfunc := range funcs {
-		if err := cleanfunc(); err != nil {
-			logrus.Error("--> Callback cleanfunc() failed: %v", err.Error())
+	for _, fn := range funcs {
+		if err := fn(); err != nil {
+			logrus.Errorf("callback fn() failed: %v", err.Error())
 		}
 	}
 }

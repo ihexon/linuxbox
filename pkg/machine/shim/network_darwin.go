@@ -25,16 +25,16 @@ const (
 	podmanGuestSocks = "/run/podman/podman.sock"
 )
 
-func setupMachineSockets(mc *vmconfigs.MachineConfig, dirs *define.MachineDirs) (string, string, error) {
-	podmanApiSocketOnHost, err := mc.PodmanApiSocketHost()
+func setupMachineSockets(mc *vmconfigs.MachineConfig, _dirs *define.MachineDirs) (string, string, error) {
+	host, err := mc.PodmanAPISocketHost()
 	if err != nil {
 		return "", "", err
 	}
-	err = podmanApiSocketOnHost.Delete()
+	err = host.Delete()
 	if err != nil {
 		return "", "", err
 	}
-	return podmanApiSocketOnHost.GetPath(), podmanGuestSocks, nil
+	return host.GetPath(), podmanGuestSocks, nil
 }
 
 func startHostForwarder(mc *vmconfigs.MachineConfig, provider vmconfigs.VMProvider, dirs *define.MachineDirs, socksInHost string, socksInGuest string) (*exec.Cmd, error) {

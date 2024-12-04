@@ -15,8 +15,8 @@ import (
 )
 
 const (
-	BAUK_LOG_LEVEL = "BAUK_LOG_LEVEL"
-	BAUK_HOST      = "BAUK_HOST"
+	level = "BAUK_LOG_LEVEL"
+	host  = "BAUK_HOST"
 )
 
 var (
@@ -24,12 +24,12 @@ var (
 )
 
 func init() {
-	if host := os.Getenv(BAUK_HOST); host != "" {
-		defaultHost = host
+	if h := os.Getenv(host); h != "" {
+		defaultHost = h
 	}
 
-	if level := os.Getenv(BAUK_LOG_LEVEL); level != "" {
-		switch level {
+	if l := os.Getenv(level); l != "" {
+		switch l {
 		case "DEBUG":
 			logrus.SetLevel(logrus.DebugLevel)
 		case "INFO":
@@ -83,7 +83,8 @@ func main() {
 	// 创建会话
 	session, err := client.NewSession()
 	if err != nil {
-		log.Fatalf("Failed to create session: %s", err)
+		// TODO: @ihexon 这里会退出整个程序，确定么？
+		log.Fatalf("Failed to create session: %s", err.Error())
 	}
 	defer session.Close()
 
@@ -105,8 +106,12 @@ func main() {
 	}
 
 	// 实时输出命令执行结果
-	go io.Copy(os.Stdout, stdout)
-	go io.Copy(os.Stderr, stderr)
+	go func() {
+		_, _ = io.Copy(os.Stdout, stdout)
+	}()
+	go func() {
+		_, _ = io.Copy(os.Stderr, stderr)
+	}()
 
 	// 等待命令执行完成
 	if err := session.Wait(); err != nil {

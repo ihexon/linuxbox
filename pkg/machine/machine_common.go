@@ -57,7 +57,7 @@ func (p *AllCmds) GetGvproxyCmd() *exec.Cmd {
 // DO NOT BLOCK THIS FUNCTION FOR LONG TIME
 func WaitAPIAndPrintInfo(sockInHost string, forwardState APIForwardingState, name string) error {
 	if forwardState == NoForwarding {
-		return fmt.Errorf("Podman Rest API No forwarding....")
+		return fmt.Errorf("podman Rest API No forwarding")
 	}
 	err := WaitAndPingAPI("unix:///" + sockInHost)
 	if err != nil {
@@ -75,11 +75,10 @@ func WaitAndPingAPI(sock string) error {
 	if err != nil {
 		return err
 	}
-	connCtx.UrlParameter = url.Values{}
+	connCtx.URLParameter = url.Values{}
 	connCtx.Headers = http.Header{}
 
 	timeout := time.After(5 * time.Second)
-	res := &network.APIResponse{}
 pingLoop:
 	for {
 		select {
@@ -88,7 +87,7 @@ pingLoop:
 		default:
 			logrus.Info("Ping Podman API....")
 			time.Sleep(100 * time.Microsecond)
-			res, err = connCtx.DoRequest("GET", "_ping")
+			res, err := connCtx.DoRequest("GET", "_ping")
 			if err == nil {
 				_ = res.Response.Body.Close()
 				logrus.Infof("Podman ping test success")
