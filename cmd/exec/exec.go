@@ -6,7 +6,6 @@ package main
 import (
 	"fmt"
 	"io"
-	"log"
 	"os"
 	"strings"
 
@@ -51,7 +50,7 @@ func init() {
 func main() {
 	// SSH server information
 	user := "ovm"
-	logrus.Infof("Host:%s", defaultHost)
+	logrus.Infof("Host:%s\n", defaultHost)
 
 	password := "none"
 	command := os.Args[1:]
@@ -72,40 +71,40 @@ func main() {
 		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
 	}
 
-	// 连接 SSH 服务器
-	logrus.Infof("Connecting to server %s", defaultHost)
+	// Connecting to an SSH Server
+	logrus.Infof("Connecting to server %s\n", defaultHost)
 	client, err := ssh.Dial("tcp", defaultHost, config)
 	if err != nil {
-		logrus.Fatalf("Failed to dial: %s", err)
+		logrus.Fatalf("Failed to dial: %s\n", err)
 	}
 	defer client.Close()
 
-	// 创建会话
+	// Creating a Session
 	session, err := client.NewSession()
 	if err != nil {
-		// TODO: @ihexon 这里会退出整个程序，确定么？
-		log.Fatalf("Failed to create session: %s", err.Error())
+		logrus.Fatalf("Failed to create session: %s\n", err.Error())
 	}
 	defer session.Close()
 
-	// 获取命令的输出
+	// Wait for the command to complete
 	stdout, err := session.StdoutPipe()
 	if err != nil {
-		log.Fatalf("Failed to get stdout: %s", err)
+		logrus.Fatalf("Failed to get stdout: %s\n", err)
 	}
 
 	stderr, err := session.StderrPipe()
 	if err != nil {
-		log.Fatalf("Failed to get stderr: %s", err)
+		logrus.Fatalf("Failed to get stderr: %s\n", err)
 	}
 
-	// 开始执行命令
+	// Start executing commands
 	if err := session.Start(str); err != nil {
-		logrus.Fatalf("Failed to start command: %s", err)
+		// Fatalf will call os.Exit to end the process ut we need to get the return value of the str(cmdline)
+		logrus.Errorf("Failed to start command: %s\n", err)
 		os.Exit(err.(*ssh.ExitError).ExitStatus())
 	}
 
-	// 实时输出命令执行结果
+	// Output command execution results in real time
 	go func() {
 		_, _ = io.Copy(os.Stdout, stdout)
 	}()
@@ -113,9 +112,9 @@ func main() {
 		_, _ = io.Copy(os.Stderr, stderr)
 	}()
 
-	// 等待命令执行完成
+	// Wait for the command to complete
 	if err := session.Wait(); err != nil {
-		logrus.Fatalf("Command finished with error: %s", err)
+		logrus.Errorf("Command finished with error: %s\n", err)
 		os.Exit(err.(*ssh.ExitError).ExitStatus())
 	}
 	fmt.Println("Command executed successfully")
