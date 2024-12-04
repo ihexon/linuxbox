@@ -112,15 +112,3 @@ func (c *Config) FindHelperBinary(name string) (string, error) {
 
 	return "", fmt.Errorf("could not find %q in one of %v", name, dirList)
 }
-
-// ProxyEnv is a list of Proxy Environment variables
-var ProxyEnv = []string{
-	"http_proxy",
-	"https_proxy",
-	"ftp_proxy",
-	"no_proxy",
-	"HTTP_PROXY",
-	"HTTPS_PROXY",
-	"FTP_PROXY",
-	"NO_PROXY",
-}

@@ -5,7 +5,6 @@ package network
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -20,7 +19,6 @@ import (
 
 type Connection struct {
 	URI          *url.URL
-	TCPClient    *http.Client
 	UnixClient   *http.Client
 	URLParameter url.Values
 	Headers      http.Header
@@ -55,15 +53,6 @@ func NewConnection(uri string) (*Connection, error) {
 		}
 		myConnection.URI = _url
 		myConnection.UnixClient = unixClient(myConnection)
-	case "tcp":
-		if !strings.HasPrefix(uri, "tcp://") {
-			return myConnection, errors.New("tcp URIs should begin with tcp://")
-		}
-		myConnection.URI = _url
-		myConnection.TCPClient, err = tcpClient(myConnection)
-		if err != nil {
-			return nil, err
-		}
 	default:
 		return nil, fmt.Errorf("unable to create connection. %q is not a supported schema", _url.Scheme)
 	}
@@ -75,14 +64,8 @@ func (c *Connection) DoRequest(httpMethod, endpoint string) (*APIResponse, error
 		err      error
 		response *http.Response
 		client   *http.Client
+		baseURL  string
 	)
-
-	baseURL := ""
-	if c.URI.Scheme == "tcp" || c.URI.Scheme == "http" {
-		// Allow path prefixes for tcp connections to match Docker behavior
-		baseURL = "http://" + c.URI.Host + c.URI.Path
-		client = c.TCPClient
-	}
 
 	if c.URI.Scheme == "unix" {
 		// Allow path prefixes for tcp connections to match Docker behavior

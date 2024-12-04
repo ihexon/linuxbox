@@ -11,10 +11,7 @@ import (
 type VolumeMountType int
 
 const (
-	// 9pfs
 	VirtIOFS VolumeMountType = iota
-	RawDisk
-	Unknown
 )
 
 func extractSourcePath(paths []string) string {

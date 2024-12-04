@@ -10,7 +10,7 @@ import (
 	"github.com/shirou/gopsutil/v3/mem"
 )
 
-// checkMaxMemory gets the total system memory and compares it to the variable.  if the variable
+// CheckMaxMemory gets the total system memory and compares it to the variable.  if the variable
 // is larger than the total memory, it returns an error
 func CheckMaxMemory(newMem strongunits.MiB) error {
 	memStat, err := mem.VirtualMemory()
