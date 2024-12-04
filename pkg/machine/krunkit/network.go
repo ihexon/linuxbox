@@ -1,10 +1,15 @@
+//  SPDX-FileCopyrightText: 2024-2024 OOMOL, Inc. <https://www.oomol.com>
+//  SPDX-License-Identifier: MPL-2.0
+
 //go:build darwin && arm64
 
 package krunkit
 
 import (
-	"bauklotze/pkg/machine/vmconfigs"
 	"fmt"
+
+	"bauklotze/pkg/machine/vmconfigs"
+
 	gvproxy "github.com/containers/gvisor-tap-vsock/pkg/types"
 	"github.com/sirupsen/logrus"
 )

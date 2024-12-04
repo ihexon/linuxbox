@@ -1,10 +1,15 @@
+//  SPDX-FileCopyrightText: 2024-2024 OOMOL, Inc. <https://www.oomol.com>
+//  SPDX-License-Identifier: MPL-2.0
+
 package lock
 
 import (
-	"bauklotze/pkg/machine/env"
 	"fmt"
-	"github.com/containers/storage/pkg/lockfile"
 	"path/filepath"
+
+	"bauklotze/pkg/machine/env"
+
+	"github.com/containers/storage/pkg/lockfile"
 )
 
 func GetMachineLock(name string, machineConfigDir string) (*lockfile.LockFile, error) {

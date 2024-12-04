@@ -1,15 +1,20 @@
+//  SPDX-FileCopyrightText: 2024-2024 OOMOL, Inc. <https://www.oomol.com>
+//  SPDX-License-Identifier: MPL-2.0
+
 //go:build (darwin || linux) && (amd64 || arm64)
 
 package gvproxy
 
 import (
-	"bauklotze/pkg/machine/define"
 	"errors"
 	"fmt"
-	psutil "github.com/shirou/gopsutil/v3/process"
-	"github.com/sirupsen/logrus"
 	"syscall"
 	"time"
+
+	"bauklotze/pkg/machine/define"
+
+	psutil "github.com/shirou/gopsutil/v3/process"
+	"github.com/sirupsen/logrus"
 )
 
 const (

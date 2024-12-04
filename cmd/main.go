@@ -1,6 +1,16 @@
+//  SPDX-FileCopyrightText: 2024-2024 OOMOL, Inc. <https://www.oomol.com>
+//  SPDX-License-Identifier: MPL-2.0
+
 package main
 
 import (
+	"context"
+	"fmt"
+	"io"
+	"os"
+	"path/filepath"
+	"strings"
+
 	cmdflags "bauklotze/cmd/bauklotze/flags"
 	_ "bauklotze/cmd/bauklotze/machine"
 	"bauklotze/cmd/bauklotze/validata"
@@ -10,14 +20,9 @@ import (
 	"bauklotze/pkg/network"
 	"bauklotze/pkg/notifyexit"
 	"bauklotze/pkg/terminal"
-	"context"
-	"fmt"
+
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	"io"
-	"os"
-	"path/filepath"
-	"strings"
 )
 
 const helpTemplate = `{{.Short}}

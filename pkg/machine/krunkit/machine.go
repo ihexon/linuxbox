@@ -1,8 +1,17 @@
+//  SPDX-FileCopyrightText: 2024-2024 OOMOL, Inc. <https://www.oomol.com>
+//  SPDX-License-Identifier: MPL-2.0
+
 //go:build darwin && arm64
 
 package krunkit
 
 import (
+	"errors"
+	"net"
+	"os"
+	"os/exec"
+	"time"
+
 	"bauklotze/pkg/config"
 	"bauklotze/pkg/machine"
 	"bauklotze/pkg/machine/define"
@@ -10,15 +19,11 @@ import (
 	"bauklotze/pkg/machine/sockets"
 	"bauklotze/pkg/machine/vmconfigs"
 	"bauklotze/pkg/system"
-	"errors"
+
 	"github.com/containers/storage/pkg/fileutils"
 	vfConfig "github.com/crc-org/vfkit/pkg/config"
 	"github.com/crc-org/vfkit/pkg/rest"
 	"github.com/sirupsen/logrus"
-	"net"
-	"os"
-	"os/exec"
-	"time"
 )
 
 func GetDefaultDevices(mc *vmconfigs.MachineConfig) ([]vfConfig.VirtioDevice, *define.VMFile, error) {

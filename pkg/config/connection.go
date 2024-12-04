@@ -1,15 +1,20 @@
+//  SPDX-FileCopyrightText: 2024-2024 OOMOL, Inc. <https://www.oomol.com>
+//  SPDX-License-Identifier: MPL-2.0
+
 package config
 
 import (
-	"bauklotze/pkg/machine/env"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/containers/storage/pkg/ioutils"
-	"github.com/containers/storage/pkg/lockfile"
 	"io/fs"
 	"os"
 	"path/filepath"
+
+	"bauklotze/pkg/machine/env"
+
+	"github.com/containers/storage/pkg/ioutils"
+	"github.com/containers/storage/pkg/lockfile"
 )
 
 const connectionsFile = "connections.json"

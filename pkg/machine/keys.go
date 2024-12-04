@@ -1,13 +1,17 @@
+//  SPDX-FileCopyrightText: 2024-2024 OOMOL, Inc. <https://www.oomol.com>
+//  SPDX-License-Identifier: MPL-2.0
+
 package machine
 
 import (
 	"bytes"
 	"fmt"
-	"github.com/containers/storage/pkg/fileutils"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
+
+	"github.com/containers/storage/pkg/fileutils"
 )
 
 var sshCommand = []string{"ssh-keygen", "-N", "", "-t", "ed25519", "-f"}

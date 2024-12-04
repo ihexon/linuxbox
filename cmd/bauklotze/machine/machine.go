@@ -1,12 +1,17 @@
+//  SPDX-FileCopyrightText: 2024-2024 OOMOL, Inc. <https://www.oomol.com>
+//  SPDX-License-Identifier: MPL-2.0
+
 package machine
 
 import (
+	"os"
+
 	cmdflags "bauklotze/cmd/bauklotze/flags"
 	"bauklotze/cmd/bauklotze/validata"
 	"bauklotze/cmd/registry"
+
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	"os"
 )
 
 var machineCmd = &cobra.Command{
@@ -19,7 +24,7 @@ var machineCmd = &cobra.Command{
 		_ = os.Setenv(cmdflags.BAUKLOTZE_HOME, BAUKLOTZE_HOME)
 		return nil
 	},
-	//PersistentPostRunE: closeMachineEvents,
+	// PersistentPostRunE: closeMachineEvents,
 	RunE: validata.SubCommandExists,
 }
 

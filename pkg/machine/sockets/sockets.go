@@ -1,12 +1,16 @@
+//  SPDX-FileCopyrightText: 2024-2024 OOMOL, Inc. <https://www.oomol.com>
+//  SPDX-License-Identifier: MPL-2.0
+
 package sockets
 
 import (
 	"bufio"
 	"fmt"
-	"github.com/containers/storage/pkg/fileutils"
-	"github.com/sirupsen/logrus"
 	"net"
 	"time"
+
+	"github.com/containers/storage/pkg/fileutils"
+	"github.com/sirupsen/logrus"
 )
 
 // WaitForSocketWithBackoffs attempts to discover listening socket in maxBackoffs attempts

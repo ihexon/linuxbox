@@ -1,0 +1,11 @@
+<component name="CopyrightManager">
+  <settings default="MPL-2">
+    <module2copyright>
+      <element module="project_go" copyright="MPL-2" />
+    </module2copyright>
+    <LanguageOptions name="Go">
+      <option name="fileTypeOverride" value="3" />
+      <option name="block" value="false" />
+    </LanguageOptions>
+  </settings>
+</component>

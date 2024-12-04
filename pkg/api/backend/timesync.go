@@ -1,14 +1,18 @@
+//  SPDX-FileCopyrightText: 2024-2024 OOMOL, Inc. <https://www.oomol.com>
+//  SPDX-License-Identifier: MPL-2.0
+
 package backend
 
 import (
+	"errors"
+	"net/http"
+	"time"
+
 	"bauklotze/pkg/api/utils"
 	"bauklotze/pkg/machine"
 	"bauklotze/pkg/machine/env"
 	provider2 "bauklotze/pkg/machine/provider"
 	"bauklotze/pkg/machine/vmconfigs"
-	"errors"
-	"net/http"
-	"time"
 )
 
 type timeStruct struct {

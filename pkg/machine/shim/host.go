@@ -1,6 +1,16 @@
+//  SPDX-FileCopyrightText: 2024-2024 OOMOL, Inc. <https://www.oomol.com>
+//  SPDX-License-Identifier: MPL-2.0
+
 package shim
 
 import (
+	"context"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"runtime"
+	"time"
+
 	"bauklotze/pkg/machine"
 	"bauklotze/pkg/machine/connection"
 	"bauklotze/pkg/machine/define"
@@ -9,13 +19,8 @@ import (
 	"bauklotze/pkg/machine/system"
 	"bauklotze/pkg/machine/vmconfigs"
 	"bauklotze/pkg/network"
-	"context"
-	"encoding/json"
-	"errors"
-	"fmt"
+
 	"github.com/sirupsen/logrus"
-	"runtime"
-	"time"
 )
 
 // VMExists looks old machine for a machine's existence.  returns the actual config and found bool
@@ -170,13 +175,13 @@ func Init(opts define.InitOptions, mp vmconfigs.VMProvider) error {
 		return err
 	} else {
 		network.Reporter.SendEventToOvmJs("writeConfig", "success")
-		//callbackFuncs.Add(mc.ConfigPath.Delete)
+		// callbackFuncs.Add(mc.ConfigPath.Delete)
 		callbackFuncs.Add(func() error {
 			logrus.Infof("--> Callback: Removing Machine config %s", mc.ConfigPath.GetPath())
 			return mc.ConfigPath.Delete()
 		})
 	}
-	//err = fmt.Errorf("Test Error happend")
+	// err = fmt.Errorf("Test Error happend")
 	return err
 }
 
@@ -265,7 +270,7 @@ func Start(ctx context.Context, mc *vmconfigs.MachineConfig, mp vmconfigs.VMProv
 		return err
 	}
 
-	//Update state
+	// Update state
 	stateF := func() (define.Status, error) {
 		return mp.State(mc)
 	}

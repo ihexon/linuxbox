@@ -1,10 +1,14 @@
+//  SPDX-FileCopyrightText: 2024-2024 OOMOL, Inc. <https://www.oomol.com>
+//  SPDX-License-Identifier: MPL-2.0
+
 package vmconfigs
 
 import (
-	"bauklotze/pkg/machine/define"
 	"encoding/json"
 	"errors"
 	"os"
+
+	"bauklotze/pkg/machine/define"
 )
 
 func (mc *MachineConfig) GVProxySocket() (*define.VMFile, error) {

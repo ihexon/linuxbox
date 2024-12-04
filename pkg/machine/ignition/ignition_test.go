@@ -1,12 +1,16 @@
+//  SPDX-FileCopyrightText: 2024-2024 OOMOL, Inc. <https://www.oomol.com>
+//  SPDX-License-Identifier: MPL-2.0
+
 package ignition
 
 import (
-	"bauklotze/pkg/machine/define"
-	"bauklotze/pkg/machine/vmconfigs"
 	"encoding/json"
 	"net/url"
 	"os"
 	"testing"
+
+	"bauklotze/pkg/machine/define"
+	"bauklotze/pkg/machine/vmconfigs"
 )
 
 func TestGetDirs(t *testing.T) {

@@ -1,13 +1,11 @@
+//  SPDX-FileCopyrightText: 2024-2024 OOMOL, Inc. <https://www.oomol.com>
+//  SPDX-License-Identifier: MPL-2.0
+
 package server
 
 import (
-	"bauklotze/pkg/api/backend"
-	"bauklotze/pkg/api/internal"
-	"bauklotze/pkg/api/types"
 	"context"
 	"fmt"
-	"github.com/gorilla/mux"
-	"github.com/sirupsen/logrus"
 	"net"
 	"net/http"
 	"net/url"
@@ -15,6 +13,13 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+
+	"bauklotze/pkg/api/backend"
+	"bauklotze/pkg/api/internal"
+	"bauklotze/pkg/api/types"
+
+	"github.com/gorilla/mux"
+	"github.com/sirupsen/logrus"
 )
 
 type APIServer struct {

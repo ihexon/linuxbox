@@ -1,6 +1,17 @@
+//  SPDX-FileCopyrightText: 2024-2024 OOMOL, Inc. <https://www.oomol.com>
+//  SPDX-License-Identifier: MPL-2.0
+
 package machine
 
 import (
+	"context"
+	"fmt"
+	"net/url"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
+
 	cmdflags "bauklotze/cmd/bauklotze/flags"
 	"bauklotze/cmd/registry"
 	"bauklotze/pkg/api/server"
@@ -13,17 +24,10 @@ import (
 	"bauklotze/pkg/machine/vmconfigs"
 	"bauklotze/pkg/network"
 	system2 "bauklotze/pkg/system"
-	"fmt"
-	"net/url"
-	"os/signal"
-	"syscall"
-	"time"
 
-	"context"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"golang.org/x/sync/errgroup"
-	"os"
 )
 
 var (

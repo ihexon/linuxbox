@@ -1,13 +1,18 @@
+//  SPDX-FileCopyrightText: 2024-2024 OOMOL, Inc. <https://www.oomol.com>
+//  SPDX-License-Identifier: MPL-2.0
+
 //go:build darwin && (arm64 || amd64)
 
 package watcher
 
 import (
-	"bauklotze/pkg/machine/system"
 	"context"
+	"time"
+
+	"bauklotze/pkg/machine/system"
+
 	"github.com/sirupsen/logrus"
 	"golang.org/x/sync/errgroup"
-	"time"
 )
 
 // WaitProcessAndStopMachine is Non block function

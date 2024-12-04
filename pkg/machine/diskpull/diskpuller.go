@@ -1,10 +1,14 @@
+//  SPDX-FileCopyrightText: 2024-2024 OOMOL, Inc. <https://www.oomol.com>
+//  SPDX-License-Identifier: MPL-2.0
+
 package diskpull
 
 import (
+	"fmt"
+
 	"bauklotze/pkg/machine/define"
 	"bauklotze/pkg/machine/diskpull/internal/provider"
 	"bauklotze/pkg/machine/diskpull/stdpull"
-	"fmt"
 )
 
 // GetDisk For now we don't need dirs *define.MachineDirs,vmType define.VMType, name string

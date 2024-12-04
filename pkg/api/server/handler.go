@@ -1,18 +1,23 @@
+//  SPDX-FileCopyrightText: 2024-2024 OOMOL, Inc. <https://www.oomol.com>
+//  SPDX-License-Identifier: MPL-2.0
+
 package server
 
 import (
-	"bauklotze/pkg/api/types"
 	"bufio"
 	"fmt"
+	"io"
+	"net/http"
+	"runtime"
+
+	"bauklotze/pkg/api/types"
+
 	"github.com/containers/podman/v5/pkg/errorhandling"
 	"github.com/google/uuid"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"github.com/json-iterator/go"
 	"github.com/sirupsen/logrus"
-	"io"
-	"net/http"
-	"runtime"
 )
 
 type APIContextKey int

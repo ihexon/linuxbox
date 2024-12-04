@@ -1,11 +1,15 @@
+//  SPDX-FileCopyrightText: 2024-2024 OOMOL, Inc. <https://www.oomol.com>
+//  SPDX-License-Identifier: MPL-2.0
+
 package gvproxy
 
 import (
-	"bauklotze/pkg/machine/define"
 	"errors"
 	"fmt"
 	"io/fs"
 	"strconv"
+
+	"bauklotze/pkg/machine/define"
 )
 
 // CleanupGVProxy reads the --pid-file for gvproxy attempts to stop it

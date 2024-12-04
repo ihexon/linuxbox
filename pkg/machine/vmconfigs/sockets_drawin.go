@@ -1,8 +1,12 @@
+//  SPDX-FileCopyrightText: 2024-2024 OOMOL, Inc. <https://www.oomol.com>
+//  SPDX-License-Identifier: MPL-2.0
+
 package vmconfigs
 
 import (
-	"bauklotze/pkg/machine/define"
 	"fmt"
+
+	"bauklotze/pkg/machine/define"
 )
 
 func readySocket(name string, machineRuntimeDir *define.VMFile) (*define.VMFile, error) {

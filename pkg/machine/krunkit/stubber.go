@@ -1,20 +1,25 @@
+//  SPDX-FileCopyrightText: 2024-2024 OOMOL, Inc. <https://www.oomol.com>
+//  SPDX-License-Identifier: MPL-2.0
+
 //go:build darwin && arm64
 
 package krunkit
 
 import (
+	"fmt"
+	"os/exec"
+	"strconv"
+
 	"bauklotze/pkg/machine"
 	"bauklotze/pkg/machine/apple/hvhelper"
 	"bauklotze/pkg/machine/define"
 	"bauklotze/pkg/machine/diskpull"
 	"bauklotze/pkg/machine/vmconfigs"
 	"bauklotze/pkg/system"
-	"fmt"
+
 	gvproxy "github.com/containers/gvisor-tap-vsock/pkg/types"
 	vfConfig "github.com/crc-org/vfkit/pkg/config"
 	"github.com/sirupsen/logrus"
-	"os/exec"
-	"strconv"
 )
 
 type LibKrunStubber struct {

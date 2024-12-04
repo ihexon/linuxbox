@@ -1,10 +1,14 @@
+//  SPDX-FileCopyrightText: 2024-2024 OOMOL, Inc. <https://www.oomol.com>
+//  SPDX-License-Identifier: MPL-2.0
+
 package system
 
 import (
 	"errors"
-	"github.com/containers/common/pkg/strongunits"
 	"os"
 	"path/filepath"
+
+	"github.com/containers/common/pkg/strongunits"
 )
 
 func CreateAndResizeDisk(diskPath string, newSize strongunits.GiB) error {
@@ -15,7 +19,7 @@ func CreateAndResizeDisk(diskPath string, newSize strongunits.GiB) error {
 	if err := os.MkdirAll(filepath.Dir(diskPath), 0755); err != nil {
 		return err
 	}
-	
+
 	file, err := os.Create(diskPath)
 	if err != nil {
 		return err

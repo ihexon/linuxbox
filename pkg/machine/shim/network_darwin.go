@@ -1,19 +1,24 @@
+//  SPDX-FileCopyrightText: 2024-2024 OOMOL, Inc. <https://www.oomol.com>
+//  SPDX-License-Identifier: MPL-2.0
+
 //go:build darwin && (arm64 || amd64)
 
 package shim
 
 import (
-	"bauklotze/pkg/config"
-	"bauklotze/pkg/machine"
-	"bauklotze/pkg/machine/define"
-	"bauklotze/pkg/machine/vmconfigs"
 	"fmt"
-	gvproxy "github.com/containers/gvisor-tap-vsock/pkg/types"
-	"github.com/sirupsen/logrus"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
+
+	"bauklotze/pkg/config"
+	"bauklotze/pkg/machine"
+	"bauklotze/pkg/machine/define"
+	"bauklotze/pkg/machine/vmconfigs"
+
+	gvproxy "github.com/containers/gvisor-tap-vsock/pkg/types"
+	"github.com/sirupsen/logrus"
 )
 
 const (

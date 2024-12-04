@@ -1,0 +1,3 @@
+<component name="DependencyValidationManager">
+  <scope name="project_go" pattern="file:cmd/*.go||file:pkg/*.go" />
+</component>

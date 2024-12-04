@@ -1,19 +1,24 @@
+//  SPDX-FileCopyrightText: 2024-2024 OOMOL, Inc. <https://www.oomol.com>
+//  SPDX-License-Identifier: MPL-2.0
+
 package ports
 
 import (
-	"bauklotze/pkg/machine/env"
 	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/containers/storage/pkg/ioutils"
-	"github.com/containers/storage/pkg/lockfile"
-	"github.com/sirupsen/logrus"
 	"io"
 	"net"
 	"os"
 	"path/filepath"
 	"strconv"
+
+	"bauklotze/pkg/machine/env"
+
+	"github.com/containers/storage/pkg/ioutils"
+	"github.com/containers/storage/pkg/lockfile"
+	"github.com/sirupsen/logrus"
 )
 
 const (

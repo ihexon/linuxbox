@@ -1,3 +1,6 @@
+//  SPDX-FileCopyrightText: 2024-2024 OOMOL, Inc. <https://www.oomol.com>
+//  SPDX-License-Identifier: MPL-2.0
+
 package network
 
 import (
@@ -16,7 +19,7 @@ func TestHttpClient(t *testing.T) {
 		"key": []string{"value"},
 	}
 
-	//connCtx.Body = strings.NewReader("Hello, World!")
+	// connCtx.Body = strings.NewReader("Hello, World!")
 	response, err := connCtx.DoRequest("GET", "notify")
 	if err != nil {
 		t.Errorf(err.Error())

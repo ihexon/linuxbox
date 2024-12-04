@@ -1,13 +1,18 @@
+//  SPDX-FileCopyrightText: 2024-2024 OOMOL, Inc. <https://www.oomol.com>
+//  SPDX-License-Identifier: MPL-2.0
+
 package config
 
 import (
-	"bauklotze/pkg/machine/env"
 	"fmt"
-	"github.com/sirupsen/logrus"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
+
+	"bauklotze/pkg/machine/env"
+
+	"github.com/sirupsen/logrus"
 )
 
 // Destination represents destination for remote service

@@ -1,23 +1,28 @@
+//  SPDX-FileCopyrightText: 2024-2024 OOMOL, Inc. <https://www.oomol.com>
+//  SPDX-License-Identifier: MPL-2.0
+
 package backend
 
 import (
-	"bauklotze/pkg/api/utils"
-	"bauklotze/pkg/machine/env"
-	provider2 "bauklotze/pkg/machine/provider"
-	"bauklotze/pkg/machine/vmconfigs"
 	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/Code-Hex/go-infinity-channel"
-	"github.com/sirupsen/logrus"
-	"golang.org/x/crypto/ssh"
 	"io"
 	"net/http"
 	"os"
 	"strings"
 	"sync"
 	"time"
+
+	"bauklotze/pkg/api/utils"
+	"bauklotze/pkg/machine/env"
+	provider2 "bauklotze/pkg/machine/provider"
+	"bauklotze/pkg/machine/vmconfigs"
+
+	"github.com/Code-Hex/go-infinity-channel"
+	"github.com/sirupsen/logrus"
+	"golang.org/x/crypto/ssh"
 )
 
 func getVM(vmName string) (*vmconfigs.MachineConfig, error) {

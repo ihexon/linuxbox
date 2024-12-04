@@ -1,10 +1,14 @@
+//  SPDX-FileCopyrightText: 2024-2024 OOMOL, Inc. <https://www.oomol.com>
+//  SPDX-License-Identifier: MPL-2.0
+
 //go:build amd64 || arm64
 
 package connection
 
 import (
-	"bauklotze/pkg/machine/define"
 	"strconv"
+
+	"bauklotze/pkg/machine/define"
 )
 
 // AddSSHConnectionsToPodmanSocket adds SSH connections to the podman socket if

@@ -1,17 +1,22 @@
+//  SPDX-FileCopyrightText: 2024-2024 OOMOL, Inc. <https://www.oomol.com>
+//  SPDX-License-Identifier: MPL-2.0
+
 package ignition
 
 import (
-	"bauklotze/pkg/machine/define"
-	"bauklotze/pkg/machine/vmconfigs"
 	"bytes"
 	"encoding/json"
 	"fmt"
-	ignition "github.com/coreos/ignition/v2/config/v3_4/types"
-	"github.com/sirupsen/logrus"
 	"net/url"
 	"os"
 	"path/filepath"
 	"text/template"
+
+	"bauklotze/pkg/machine/define"
+	"bauklotze/pkg/machine/vmconfigs"
+
+	ignition "github.com/coreos/ignition/v2/config/v3_4/types"
+	"github.com/sirupsen/logrus"
 )
 
 const (

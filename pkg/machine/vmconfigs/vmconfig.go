@@ -1,16 +1,12 @@
+//  SPDX-FileCopyrightText: 2024-2024 OOMOL, Inc. <https://www.oomol.com>
+//  SPDX-License-Identifier: MPL-2.0
+
 package vmconfigs
 
 import (
-	"bauklotze/pkg/machine/define"
-	"bauklotze/pkg/machine/lock"
-	"bauklotze/pkg/machine/ports"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/containers/common/pkg/strongunits"
-	gvproxy "github.com/containers/gvisor-tap-vsock/pkg/types"
-	"github.com/containers/storage/pkg/lockfile"
-	"github.com/sirupsen/logrus"
 	"io/fs"
 	"net"
 	"os"
@@ -19,6 +15,15 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"bauklotze/pkg/machine/define"
+	"bauklotze/pkg/machine/lock"
+	"bauklotze/pkg/machine/ports"
+
+	"github.com/containers/common/pkg/strongunits"
+	gvproxy "github.com/containers/gvisor-tap-vsock/pkg/types"
+	"github.com/containers/storage/pkg/lockfile"
+	"github.com/sirupsen/logrus"
 )
 
 type VMProvider interface { //nolint:interfacebloat
@@ -157,7 +162,7 @@ func NewMachineConfig(opts define.InitOptions, dirs *define.MachineDirs, sshIden
 	// System Resources
 	mrc := define.ResourceConfig{
 		CPUs: opts.CPUS,
-		//DiskSize: strongunits.GiB(opts.DiskSize),
+		// DiskSize: strongunits.GiB(opts.DiskSize),
 		Memory: strongunits.MiB(opts.Memory),
 	}
 	mc.Resources = mrc

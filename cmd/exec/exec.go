@@ -1,13 +1,17 @@
+//  SPDX-FileCopyrightText: 2024-2024 OOMOL, Inc. <https://www.oomol.com>
+//  SPDX-License-Identifier: MPL-2.0
+
 package main
 
 import (
 	"fmt"
-	"github.com/sirupsen/logrus"
-	"golang.org/x/crypto/ssh"
 	"io"
 	"log"
 	"os"
 	"strings"
+
+	"github.com/sirupsen/logrus"
+	"golang.org/x/crypto/ssh"
 )
 
 const (

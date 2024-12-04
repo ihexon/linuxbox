@@ -1,9 +1,13 @@
+//  SPDX-FileCopyrightText: 2024-2024 OOMOL, Inc. <https://www.oomol.com>
+//  SPDX-License-Identifier: MPL-2.0
+
 package machine
 
 import (
-	"bauklotze/pkg/machine/vmconfigs"
 	"crypto/sha256"
 	"encoding/hex"
+
+	"bauklotze/pkg/machine/vmconfigs"
 )
 
 type VolumeKind string

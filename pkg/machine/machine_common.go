@@ -1,14 +1,19 @@
+//  SPDX-FileCopyrightText: 2024-2024 OOMOL, Inc. <https://www.oomol.com>
+//  SPDX-License-Identifier: MPL-2.0
+
 package machine
 
 import (
-	"bauklotze/pkg/network"
 	"fmt"
-	"github.com/sirupsen/logrus"
 	"net/http"
 	"net/url"
 	"os/exec"
 	"sync"
 	"time"
+
+	"bauklotze/pkg/network"
+
+	"github.com/sirupsen/logrus"
 )
 
 type AllCmds struct {

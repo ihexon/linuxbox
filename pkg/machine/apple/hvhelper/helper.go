@@ -1,19 +1,24 @@
+//  SPDX-FileCopyrightText: 2024-2024 OOMOL, Inc. <https://www.oomol.com>
+//  SPDX-License-Identifier: MPL-2.0
+
 //go:build darwin && arm64
 
 package hvhelper
 
 import (
-	"bauklotze/pkg/machine/define"
 	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
+	"net/http"
+
+	"bauklotze/pkg/machine/define"
+
 	vfkit_config "github.com/crc-org/vfkit/pkg/config"
 	rest "github.com/crc-org/vfkit/pkg/rest/define"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/sys/unix"
-	"io"
-	"net/http"
 )
 
 const (

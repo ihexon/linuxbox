@@ -1,10 +1,12 @@
+//  SPDX-FileCopyrightText: 2024-2024 OOMOL, Inc. <https://www.oomol.com>
+//  SPDX-License-Identifier: MPL-2.0
+
 package ignition
 
 import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/sirupsen/logrus"
 	"io"
 	"io/fs"
 	"net"
@@ -12,6 +14,8 @@ import (
 	"net/url"
 	"path/filepath"
 	"time"
+
+	"github.com/sirupsen/logrus"
 )
 
 // ServeIgnitionOverSocketCommon Is A block function, design to be running in go routine

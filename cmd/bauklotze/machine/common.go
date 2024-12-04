@@ -1,3 +1,6 @@
+//  SPDX-FileCopyrightText: 2024-2024 OOMOL, Inc. <https://www.oomol.com>
+//  SPDX-License-Identifier: MPL-2.0
+
 //go:build amd64 || arm64
 
 package machine
@@ -5,6 +8,7 @@ package machine
 import (
 	whatProvider "bauklotze/pkg/machine/provider"
 	"bauklotze/pkg/machine/vmconfigs"
+
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
@@ -22,6 +26,6 @@ func machinePreRunE(cmd *cobra.Command, args []string) error {
 	return err
 }
 
-//func closeMachineEvents(cmd *cobra.Command, _ []string) error {
+// func closeMachineEvents(cmd *cobra.Command, _ []string) error {
 //	return nil
-//}
+// }

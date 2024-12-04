@@ -1,6 +1,14 @@
+//  SPDX-FileCopyrightText: 2024-2024 OOMOL, Inc. <https://www.oomol.com>
+//  SPDX-License-Identifier: MPL-2.0
+
 package machine
 
 import (
+	"errors"
+	"fmt"
+	"os"
+	"path/filepath"
+
 	cmdflags "bauklotze/cmd/bauklotze/flags"
 	"bauklotze/cmd/registry"
 	"bauklotze/pkg/machine/define"
@@ -9,14 +17,11 @@ import (
 	"bauklotze/pkg/machine/system"
 	"bauklotze/pkg/machine/vmconfigs"
 	system2 "bauklotze/pkg/system"
-	"errors"
-	"fmt"
+
 	"github.com/containers/common/pkg/strongunits"
 	"github.com/containers/storage/pkg/regexp"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	"os"
-	"path/filepath"
 )
 
 var (
@@ -91,9 +96,9 @@ func init() {
 func initMachine(cmd *cobra.Command, args []string) error {
 	var err error
 	// TODO Use ctx to get some parameters would be nice, also using ctx to control the lifecycle init()
-	//ctx := cmd.Context()
-	//ctx, cancel := context.WithCancelCause(ctx)
-	//logrus.Infof("cmd.Context().Value(\"commonOpts\") --> %v", ctx.Value("commonOpts"))
+	// ctx := cmd.Context()
+	// ctx, cancel := context.WithCancelCause(ctx)
+	// logrus.Infof("cmd.Context().Value(\"commonOpts\") --> %v", ctx.Value("commonOpts"))
 
 	ppid, _ := cmd.Flags().GetInt32(cmdflags.PpidFlag) // Get PPID from
 	logrus.Infof("PID is [ %d ], watching PPID: [ %d ]", os.Getpid(), ppid)

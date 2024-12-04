@@ -1,9 +1,14 @@
+//  SPDX-FileCopyrightText: 2024-2024 OOMOL, Inc. <https://www.oomol.com>
+//  SPDX-License-Identifier: MPL-2.0
+
 package stdpull
 
 import (
+	"fmt"
+
 	"bauklotze/pkg/archiver/decompress"
 	"bauklotze/pkg/machine/define"
-	"fmt"
+
 	"github.com/containers/storage/pkg/fileutils"
 	"github.com/sirupsen/logrus"
 )

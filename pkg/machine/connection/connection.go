@@ -1,14 +1,19 @@
+//  SPDX-FileCopyrightText: 2024-2024 OOMOL, Inc. <https://www.oomol.com>
+//  SPDX-License-Identifier: MPL-2.0
+
 //go:build amd64 || arm64
 
 package connection
 
 import (
-	"bauklotze/pkg/config"
-	"bauklotze/pkg/machine/define"
 	"errors"
-	"github.com/sirupsen/logrus"
 	"net"
 	"net/url"
+
+	"bauklotze/pkg/config"
+	"bauklotze/pkg/machine/define"
+
+	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -28,10 +33,10 @@ func addConnection(cons []connection, identity string, isDefault bool) error {
 
 	return config.EditConnectionConfig(func(cfg *config.ConnectionsFile) error {
 		for i, con := range cons {
-			//if _, ok := cfg.Connection.Connections[con.name]; ok {
+			// if _, ok := cfg.Connection.Connections[con.name]; ok {
 			//	return fmt.Errorf("cannot overwrite connection %q", con.name)
-			//}
-			
+			// }
+
 			dst := config.Destination{
 				URI:      con.uri.String(),
 				Identity: identity,

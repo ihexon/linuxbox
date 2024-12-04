@@ -1,10 +1,15 @@
+//  SPDX-FileCopyrightText: 2024-2024 OOMOL, Inc. <https://www.oomol.com>
+//  SPDX-License-Identifier: MPL-2.0
+
 package registry
 
 import (
+	"sync"
+
 	defconfig "bauklotze/pkg/config"
+
 	jsoniter "github.com/json-iterator/go"
 	"github.com/spf13/cobra"
-	"sync"
 )
 
 type CliCommand struct {

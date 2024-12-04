@@ -1,17 +1,22 @@
+//  SPDX-FileCopyrightText: 2024-2024 OOMOL, Inc. <https://www.oomol.com>
+//  SPDX-License-Identifier: MPL-2.0
+
 package shim
 
 import (
+	"errors"
+	"fmt"
+	"net"
+	"os/exec"
+	"time"
+
 	"bauklotze/pkg/machine"
 	"bauklotze/pkg/machine/connection"
 	"bauklotze/pkg/machine/define"
 	"bauklotze/pkg/machine/ports"
 	"bauklotze/pkg/machine/vmconfigs"
-	"errors"
-	"fmt"
+
 	"github.com/sirupsen/logrus"
-	"net"
-	"os/exec"
-	"time"
 )
 
 var (

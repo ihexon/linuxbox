@@ -1,10 +1,14 @@
+//  SPDX-FileCopyrightText: 2024-2024 OOMOL, Inc. <https://www.oomol.com>
+//  SPDX-License-Identifier: MPL-2.0
+
 package env
 
 import (
-	"bauklotze/pkg/machine/define"
 	"fmt"
 	"os"
 	"path/filepath"
+
+	"bauklotze/pkg/machine/define"
 )
 
 // GetBauklotzeHomePath return ${BauklotzeHomePath}/tmp/
