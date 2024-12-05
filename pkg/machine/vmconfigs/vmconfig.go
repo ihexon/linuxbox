@@ -209,7 +209,7 @@ func LoadMachineByName(name string, dirs *define.MachineDirs) (*MachineConfig, e
 	mc, err := loadMachineFromFQPath(fullPath)
 	if err != nil {
 		if errors.Is(err, fs.ErrNotExist) {
-			return nil, &define.ErrVMDoesNotExist{Name: name}
+			return nil, &define.VMDoesNotExistError{Name: name}
 		}
 		return nil, fmt.Errorf("failed to load machine config: %w", err)
 	}
@@ -220,7 +220,7 @@ func LoadMachineByName(name string, dirs *define.MachineDirs) (*MachineConfig, e
 	// error because the user wants to deal directly with this
 	// machine
 	if mc.Version == 0 {
-		return mc, &define.ErrIncompatibleMachineConfig{
+		return mc, &define.IncompatibleMachineConfigError{
 			Name: name,
 			Path: fullPath.GetPath(),
 		}
@@ -242,7 +242,7 @@ func LoadMachinesInDir(dirs *define.MachineDirs) (map[string]*MachineConfig, err
 			}
 			// if we find an incompatible machine configuration file, we emit and error
 			if mc.Version == 0 {
-				tmpErr := &define.ErrIncompatibleMachineConfig{
+				tmpErr := &define.IncompatibleMachineConfigError{
 					Name: mc.Name,
 					Path: fullPath.GetPath(),
 				}

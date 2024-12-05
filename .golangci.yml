@@ -46,7 +46,6 @@ linters:
     - contextcheck
     - cyclop
     - canonicalheader # our current header values are fixed and should not be changed
-    - errname
     - forcetypeassert
     - ireturn
     - varnamelen

@@ -16,7 +16,7 @@ type Options struct {
 }
 
 var (
-	cachedConfigError error
+	errCachedConfig   error
 	cachedConfigMutex sync.Mutex
 	cachedConfig      *Config
 )
@@ -37,7 +37,7 @@ func newLocked(options *Options) *Config {
 
 	if options.SetDefault {
 		cachedConfig = config
-		cachedConfigError = nil
+		errCachedConfig = nil
 	}
 	return config
 }
@@ -45,7 +45,7 @@ func newLocked(options *Options) *Config {
 func Default() *Config {
 	cachedConfigMutex.Lock()
 	defer cachedConfigMutex.Unlock()
-	if cachedConfig != nil || cachedConfigError != nil {
+	if cachedConfig != nil || errCachedConfig != nil {
 		return cachedConfig
 	}
 	cachedConfig = newLocked(&Options{SetDefault: true})
