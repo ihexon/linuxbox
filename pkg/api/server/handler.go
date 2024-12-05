@@ -32,7 +32,7 @@ func PanicHandler() mux.MiddlewareFunc {
 			defer func() {
 				err := recover()
 				if err != nil {
-					buf := make([]byte, 1<<20)
+					buf := make([]byte, 1<<20) //nolint:mnd
 					n := runtime.Stack(buf, true)
 					logrus.Warnf("Recovering from API service endpoint handler panic: %v, %s", err, buf[:n])
 					// Try to inform client things went south... won't work if handler already started writing response body
@@ -130,9 +130,11 @@ type BufferedResponseWriter struct {
 	w http.ResponseWriter
 }
 
+const defaultBufferSize = 8192
+
 func newBufferedResponseWriter(rw http.ResponseWriter) *BufferedResponseWriter {
 	return &BufferedResponseWriter{
-		bufio.NewWriterSize(rw, 8192),
+		bufio.NewWriterSize(rw, defaultBufferSize),
 		rw,
 	}
 }

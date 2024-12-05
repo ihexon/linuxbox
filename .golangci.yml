@@ -41,7 +41,6 @@ linters:
     - gocyclo
     - lll
     - gosec
-    - mnd # way to many false positives
     - gomoddirectives
     - containedctx
     - contextcheck
@@ -70,6 +69,14 @@ linters-settings:
         disabled: true
   testifylint:
     enable-all: true
+  mnd:
+    ignored-numbers:
+      - '0755'
+      - '0644'
+      - '0744'
+      - '0700'
+      - '0o755'
+      - '0o644'
 #  gocognit: # temp disabled
 #    min-complexity: 20
 

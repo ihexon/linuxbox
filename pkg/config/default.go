@@ -56,18 +56,24 @@ func getDefaultMachineUser() string {
 	return define.DefaultUserInGuest
 }
 
+const (
+	defaultDiskSize     = 100
+	defaultMemory       = 2048
+	defaultDataDiskSize = 100
+)
+
 // defaultMachineConfig returns the default machine configuration.
 func defaultMachineConfig() MachineConfig {
-	cpus := runtime.NumCPU() / 2
+	cpus := runtime.NumCPU() / 2 //nolint:mnd
 	if cpus == 0 {
 		cpus = 1
 	}
 	return MachineConfig{
 		CPUs:         uint64(cpus),
-		DiskSize:     100,
+		DiskSize:     defaultDiskSize,
 		Image:        "",
-		Memory:       2048,
-		DataDiskSize: 100,
+		Memory:       defaultMemory,
+		DataDiskSize: defaultDataDiskSize,
 		Volumes:      NewSlice(getDefaultMachineVolumes()),
 		User:         getDefaultMachineUser(), // I tell u a joke :)
 	}

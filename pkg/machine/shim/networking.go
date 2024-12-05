@@ -24,9 +24,11 @@ var (
 	ErrSSHNotListening = errors.New("machine is not listening on ssh port")
 )
 
+const defaultDialTimeout = 10 * time.Millisecond
+
 func isListening(port int) bool {
 	// Check if we can dial it
-	conn, err := net.DialTimeout("tcp", fmt.Sprintf("%s:%d", "127.0.0.1", port), 10*time.Millisecond)
+	conn, err := net.DialTimeout("tcp", fmt.Sprintf("%s:%d", "127.0.0.1", port), defaultDialTimeout)
 	if err != nil {
 		return false
 	}

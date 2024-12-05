@@ -68,7 +68,7 @@ func runSessionWithDebug(session *ssh.Session, cmd string) error {
 	if err := session.Start(cmd); err != nil {
 		return fmt.Errorf("failed to start ssh command: %w", err)
 	}
-	completed := make(chan struct{}, 2)
+	completed := make(chan struct{}, 2) //nolint:mnd
 	go logOuput(outPipe, completed)
 	go logOuput(errPipe, completed)
 	<-completed

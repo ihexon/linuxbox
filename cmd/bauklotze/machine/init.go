@@ -157,7 +157,7 @@ func initMachine(cmd *cobra.Command, args []string) error {
 	// Recreate DataDisk first if needed.
 	if updateExternalDisk {
 		logrus.Infof("Recreate data disk: %s", initOpts.ImagesStruct.DataDisk)
-		err = system2.CreateAndResizeDisk(initOpts.ImagesStruct.DataDisk, strongunits.GiB(100))
+		err = system2.CreateAndResizeDisk(initOpts.ImagesStruct.DataDisk, strongunits.GiB(100)) //nolint:mnd
 		if err != nil {
 			return fmt.Errorf("failed to create/resize data disk: %w", err)
 		}

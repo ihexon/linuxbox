@@ -70,6 +70,9 @@ func WaitAPIAndPrintInfo(sockInHost string, forwardState APIForwardingState, nam
 	return nil
 }
 
+const defaultPingTimeout = 5 * time.Second
+const defaultPingInterval = 100 * time.Microsecond
+
 func WaitAndPingAPI(sock string) error {
 	connCtx, err := network.NewConnection(sock)
 	if err != nil {
@@ -78,14 +81,14 @@ func WaitAndPingAPI(sock string) error {
 	connCtx.URLParameter = url.Values{}
 	connCtx.Headers = http.Header{}
 
-	timeout := time.After(5 * time.Second)
+	timeout := time.After(defaultPingTimeout)
 	for {
 		select {
 		case <-timeout:
 			return fmt.Errorf("timeout reached while waiting for Podman API")
 		default:
 			logrus.Info("Ping Podman API....")
-			time.Sleep(100 * time.Microsecond)
+			time.Sleep(defaultPingInterval)
 			res, err := connCtx.DoRequest("GET", "_ping")
 			if err == nil {
 				_ = res.Response.Body.Close()

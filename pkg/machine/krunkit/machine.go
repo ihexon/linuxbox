@@ -54,7 +54,7 @@ func GetDefaultDevices(mc *vmconfigs.MachineConfig) ([]vfConfig.VirtioDevice, *d
 	}
 
 	// Note: After Ignition, We send ready to `readySocket.GetPath()`
-	readyDevice, err := vfConfig.VirtioVsockNew(1025, readySocket.GetPath(), true)
+	readyDevice, err := vfConfig.VirtioVsockNew(1025, readySocket.GetPath(), true) //nolint:mnd
 
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to create ready device: %w", err)
@@ -67,7 +67,7 @@ func GetDefaultDevices(mc *vmconfigs.MachineConfig) ([]vfConfig.VirtioDevice, *d
 
 	// DO NOT CHANGE THE 1024 VSOCK PORT
 	// See https://coreos.github.io/ignition/supported-platforms/
-	ignitionDevice, err := vfConfig.VirtioVsockNew(1024, ignitionSocket.GetPath(), true)
+	ignitionDevice, err := vfConfig.VirtioVsockNew(1024, ignitionSocket.GetPath(), true) //nolint:mnd
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to create ignition device: %w", err)
 	}
@@ -143,7 +143,7 @@ func StartGenericAppleVM(mc *vmconfigs.MachineConfig, cmdBinary string, bootload
 	if mc.DataDisk.GetPath() != "" {
 		if err = fileutils.Exists(mc.DataDisk.GetPath()); err != nil {
 			logrus.Warnf("external disk does not exist: %s", mc.DataDisk.GetPath())
-			if err = system.CreateAndResizeDisk(mc.DataDisk.GetPath(), 100); err != nil {
+			if err = system.CreateAndResizeDisk(mc.DataDisk.GetPath(), 100); err != nil { //nolint:mnd
 				return nil, nil, fmt.Errorf("failed to create and resize disk: %w", err)
 			}
 		}

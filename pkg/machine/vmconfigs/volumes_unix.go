@@ -8,7 +8,7 @@ package vmconfigs
 import "strings"
 
 func pathsFromVolume(volume string) []string {
-	return strings.SplitN(volume, ":", 3)
+	return strings.SplitN(volume, ":", 3) //nolint:mnd
 }
 
 func extractTargetPath(paths []string) string {

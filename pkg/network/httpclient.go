@@ -59,6 +59,8 @@ func NewConnection(uri string) (*Connection, error) {
 	return myConnection, nil
 }
 
+const defaultTimeout = 100 * time.Millisecond
+
 func (c *Connection) DoRequest(httpMethod, endpoint string) (*APIResponse, error) {
 	var (
 		err      error
@@ -74,7 +76,7 @@ func (c *Connection) DoRequest(httpMethod, endpoint string) (*APIResponse, error
 	}
 
 	uri := fmt.Sprintf("%s/%s", baseURL, endpoint)
-	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
+	ctx, cancel := context.WithTimeout(context.Background(), defaultTimeout)
 	defer cancel()
 
 	req, err := http.NewRequestWithContext(ctx, httpMethod, uri, c.Body)

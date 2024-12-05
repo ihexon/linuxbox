@@ -50,6 +50,8 @@ func init() {
 	})
 }
 
+const tickerInterval = 300 * time.Millisecond
+
 func start(cmd *cobra.Command, args []string) error {
 	// Killall ovm process before running ovm, this should never happen,
 	// but we still do this to avoid any issue
@@ -100,7 +102,7 @@ func start(cmd *cobra.Command, args []string) error {
 	})
 
 	g.Go(func() error {
-		ticker := time.NewTicker(300 * time.Millisecond)
+		ticker := time.NewTicker(tickerInterval)
 		defer ticker.Stop()
 		for {
 			select {

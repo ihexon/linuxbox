@@ -44,7 +44,7 @@ func SSHD() error {
 
 		handleErr = cmd.Start()
 		if handleErr != nil {
-			_ = s.Exit(127)
+			_ = s.Exit(127) //nolint:mnd
 			_, _ = fmt.Fprintf(s.Stderr(), "Error: %s\n", handleErr)
 		}
 

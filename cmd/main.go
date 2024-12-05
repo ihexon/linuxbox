@@ -132,6 +132,9 @@ func ReportHook() {
 	}
 }
 
+const defaultLogFileSize = 10 * 1024 * 1024 // 10MB
+const defaultSeekSize = 5 * 1024 * 1024     // 5MB
+
 func stdOutHook() {
 	_ = os.Stdin.Close()
 	_logOut, _ := rootCmd.PersistentFlags().GetString(cmdflags.LogOutFlag)
@@ -153,14 +156,14 @@ func stdOutHook() {
 		// discard first 5MB if the logfile larger than 10MB
 		fileInfo, err := os.Stat(logFile)
 		if err == nil {
-			if fileInfo.Size() <= 10*1024*1024 { // 10MB
+			if fileInfo.Size() <= defaultLogFileSize { // 10MB
 				logrus.Infof("File size is within limit, no changes made.")
 			} else {
 				logrus.Infof("File size is %d bytes, trimming the file.", fileInfo.Size())
 				// If the logFile large then 10*1024*1024 (10MB)
 				file, _ := os.Open(logFile)
 				defer file.Close()
-				_, _ = file.Seek(5*1024*1024, io.SeekStart) // 5MB
+				_, _ = file.Seek(defaultSeekSize, io.SeekStart) // 5MB
 				tempFile, _ := os.CreateTemp("", "trimmed-ovm-log.txt")
 				defer tempFile.Close()
 				_, _ = io.Copy(tempFile, file)

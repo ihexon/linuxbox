@@ -30,7 +30,7 @@ func (v VolumeMountType) String() string {
 func extractMountOptions(paths []string) (bool, string) {
 	readonly := false
 	securityModel := "none"
-	if len(paths) > 2 {
+	if len(paths) > 2 { //nolint:mnd
 		options := paths[2]
 		volopts := strings.Split(options, ",")
 		for _, o := range volopts {

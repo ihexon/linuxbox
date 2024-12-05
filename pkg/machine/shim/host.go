@@ -192,6 +192,8 @@ func getMCsOverProviders(vmstubbers []vmconfigs.VMProvider) (map[string]*vmconfi
 	return mcs, nil
 }
 
+const defaultBackoff = 500 * time.Millisecond
+
 func Start(ctx context.Context, mc *vmconfigs.MachineConfig, mp vmconfigs.VMProvider, dirs *define.MachineDirs, opts define.StartOptions) error {
 	var err error
 
@@ -259,7 +261,6 @@ func Start(ctx context.Context, mc *vmconfigs.MachineConfig, mp vmconfigs.VMProv
 		return mp.State(mc)
 	}
 
-	defaultBackoff := 500 * time.Millisecond
 	maxBackoffs := 3
 
 	if mp.VMType() != define.WSLVirt {
