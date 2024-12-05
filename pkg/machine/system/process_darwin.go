@@ -15,11 +15,11 @@ import (
 func IsProcessAliveV3(pid int32) (bool, error) {
 	proc, err := process.NewProcess(pid)
 	if err != nil {
-		return false, err
+		return false, fmt.Errorf("failed to find process: %w", err)
 	}
 	s, err := proc.Status()
 	if err != nil {
-		return false, err
+		return false, fmt.Errorf("failed to get process status: %w", err)
 	}
 
 	for _, v := range s {
@@ -32,13 +32,13 @@ func IsProcessAliveV3(pid int32) (bool, error) {
 			return true, nil
 		}
 	}
-	return false, err
+	return false, nil
 }
 
 func KillProcess(pid int) error {
 	proc, err := process.NewProcess(int32(pid))
 	if err != nil {
-		return fmt.Errorf("failed to find process: %v", err)
+		return fmt.Errorf("failed to find process: %w", err)
 	}
 	_ = proc.Kill()
 

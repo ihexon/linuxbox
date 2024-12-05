@@ -47,9 +47,13 @@ type DynamicIgnitionV2 struct {
 func (ign *DynamicIgnitionV2) Write() error {
 	b, err := json.Marshal(ign.Cfg)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to marshal ignition config: %w", err)
 	}
-	return os.WriteFile(ign.WritePath, b, 0644)
+	if err := os.WriteFile(ign.WritePath, b, 0644); err != nil {
+		return fmt.Errorf("failed to write ignition file: %w", err)
+	}
+
+	return nil
 }
 
 // Convenience function to convert int to ptr
@@ -310,10 +314,14 @@ func (i *IgnitionBuilder) WithFile(files ...ignition.File) {
 func (i *IgnitionBuilder) BuildWithIgnitionFile(ignPath string) error {
 	inputIgnition, err := os.ReadFile(ignPath)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to read ignition file: %w", err)
 	}
 
-	return os.WriteFile(i.dynamicIgnition.WritePath, inputIgnition, 0644)
+	if err := os.WriteFile(i.dynamicIgnition.WritePath, inputIgnition, 0644); err != nil {
+		return fmt.Errorf("failed to write ignition file: %w", err)
+	}
+
+	return nil
 }
 
 func (i *IgnitionBuilder) Build() error {

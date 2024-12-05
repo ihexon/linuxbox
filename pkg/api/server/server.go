@@ -5,6 +5,7 @@ package server
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net"
 	"net/http"
@@ -41,10 +42,10 @@ func RestService(ctx context.Context, apiurl *url.URL) error {
 	case "unix":
 		path, err = filepath.Abs(apiurl.Path)
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to get absolute path: %s, %w", path, err)
 		}
 		if err = os.RemoveAll(path); err != nil {
-			return err
+			return fmt.Errorf("failed to remove all: %s, %w", path, err)
 		}
 		listener, err = net.Listen(apiurl.Scheme, path)
 		if err != nil {
@@ -57,7 +58,7 @@ func RestService(ctx context.Context, apiurl *url.URL) error {
 	// Disable leaking the LISTEN_* into containers
 	for _, val := range []string{"LISTEN_FDS", "LISTEN_PID", "LISTEN_FDNAMES", "BAZ_API_LISTEN_DIR"} {
 		if err := os.Unsetenv(val); err != nil {
-			return fmt.Errorf("unsetting %s: %v", val, err)
+			return fmt.Errorf("unsetting %s: %w", val, err)
 		}
 	}
 
@@ -89,7 +90,7 @@ func (s *APIServer) Serve() error {
 	errChan := make(chan error, 1)
 	go func() {
 		err := s.Server.Serve(s.Listener)
-		if err != nil && err != http.ErrServerClosed {
+		if err != nil && !errors.Is(err, http.ErrServerClosed) {
 			errChan <- fmt.Errorf("failed to start API service: %w", err)
 			return
 		}
@@ -151,7 +152,7 @@ func makeNewServer(listener net.Listener) *APIServer {
 func (s *APIServer) Shutdown() error {
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel()
-	return s.Server.Shutdown(ctx)
+	return s.Server.Shutdown(ctx) //nolint:wrapcheck
 }
 
 func (s *APIServer) setupRouter(r *mux.Router) *mux.Router {
@@ -166,5 +167,5 @@ func (s *APIServer) setupRouter(r *mux.Router) *mux.Router {
 
 // Close immediately stops responding to clients and exits
 func (s *APIServer) Close() error {
-	return s.Server.Close()
+	return s.Server.Close() //nolint:wrapcheck
 }

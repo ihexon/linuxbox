@@ -6,6 +6,7 @@ package provider
 import (
 	"bauklotze/pkg/machine/env"
 	"bauklotze/pkg/machine/vmconfigs"
+	"fmt"
 )
 
 // GetAllMachinesAndRootfulness collects all podman machine configs and returns
@@ -16,11 +17,11 @@ func GetAllMachinesAndRootfulness() (map[string]bool, error) {
 	for _, provider := range providers {
 		dirs, err := env.GetMachineDirs(provider.VMType())
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to get machine dirs: %w", err)
 		}
 		providerMachines, err := vmconfigs.LoadMachinesInDir(dirs)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to load machines in dir: %w", err)
 		}
 
 		for n, m := range providerMachines {

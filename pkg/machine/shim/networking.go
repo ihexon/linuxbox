@@ -70,7 +70,7 @@ func conductVMReadinessCheck(mc *vmconfigs.MachineConfig, maxBackoffs int, backo
 func reassignSSHPort(mc *vmconfigs.MachineConfig, provider vmconfigs.VMProvider) error {
 	newPort, err := ports.AllocateMachinePort()
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to allocate machine port: %w", err)
 	}
 
 	success := false
@@ -86,7 +86,7 @@ func reassignSSHPort(mc *vmconfigs.MachineConfig, provider vmconfigs.VMProvider)
 	oldPort := mc.SSH.Port
 	mc.SSH.Port = 0
 	if err := mc.Write(); err != nil {
-		return err
+		return fmt.Errorf("failed to write updated port: %w", err)
 	}
 
 	if err := ports.ReleaseMachinePort(oldPort); err != nil {
@@ -95,7 +95,7 @@ func reassignSSHPort(mc *vmconfigs.MachineConfig, provider vmconfigs.VMProvider)
 
 	logrus.Infof("Update ssh port for %s, new ssh port: %d", mc.Name, newPort)
 	if err := provider.UpdateSSHPort(mc, newPort); err != nil {
-		return err
+		return fmt.Errorf("failed to update ssh port: %w", err)
 	}
 
 	mc.SSH.Port = newPort
@@ -105,7 +105,7 @@ func reassignSSHPort(mc *vmconfigs.MachineConfig, provider vmconfigs.VMProvider)
 
 	// Write updated port back
 	if err := mc.Write(); err != nil {
-		return err
+		return fmt.Errorf("failed to write updated port: %w", err)
 	}
 
 	// inform defer routine not to release the port

@@ -75,7 +75,7 @@ func start(cmd *cobra.Command, args []string) error {
 	// now we have dirs, and we do not need env.GetMachineDirs again
 	dirs, err := env.GetMachineDirs(provider.VMType())
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to get machine dirs: %w", err)
 	}
 
 	logrus.Infof("ConfigDir:     %s", dirs.ConfigDir.GetPath())
@@ -107,7 +107,7 @@ func start(cmd *cobra.Command, args []string) error {
 			case <-ticker.C:
 				isRunning, err := system.IsProcesSAlive([]int32{ppid})
 				if !isRunning {
-					return fmt.Errorf("check PPID running: %v", err)
+					return fmt.Errorf("check PPID running: %w", err)
 				}
 			case <-ctx.Done():
 				return ctx.Err()
@@ -125,7 +125,7 @@ func start(cmd *cobra.Command, args []string) error {
 		}
 		mc, err = vmconfigs.LoadMachineByName(vmName, dirs)
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to load machine %q: %w", vmName, err)
 		}
 		logrus.Infof("Starting machine %q\n", vmName)
 		go func() {
@@ -182,5 +182,8 @@ func start(cmd *cobra.Command, args []string) error {
 		_ = gvcmd.Wait()
 	}
 
-	return err
+	if err != nil {
+		return fmt.Errorf("machine start failed: %w", err)
+	}
+	return nil
 }

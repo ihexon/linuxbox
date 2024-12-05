@@ -7,6 +7,7 @@ package krunkit
 
 import (
 	"errors"
+	"fmt"
 	"net"
 	"os"
 	"os/exec"
@@ -31,44 +32,44 @@ func GetDefaultDevices(mc *vmconfigs.MachineConfig) ([]vfConfig.VirtioDevice, *d
 
 	disk, err := vfConfig.VirtioBlkNew(mc.ImagePath.GetPath())
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, fmt.Errorf("failed to create disk device: %w", err)
 	}
 	rng, err := vfConfig.VirtioRngNew()
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, fmt.Errorf("failed to create rng device: %w", err)
 	}
 
 	logfile, err := mc.LogFile()
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, fmt.Errorf("failed to get log file: %w", err)
 	}
 	serial, err := vfConfig.VirtioSerialNew(logfile.GetPath())
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, fmt.Errorf("failed to create serial device: %w", err)
 	}
 
 	readySocket, err := mc.ReadySocket()
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, fmt.Errorf("failed to get ready socket: %w", err)
 	}
 
 	// Note: After Ignition, We send ready to `readySocket.GetPath()`
 	readyDevice, err := vfConfig.VirtioVsockNew(1025, readySocket.GetPath(), true)
 
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, fmt.Errorf("failed to create ready device: %w", err)
 	}
 
 	ignitionSocket, err := mc.IgnitionSocket()
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, fmt.Errorf("failed to get ignition socket: %w", err)
 	}
 
 	// DO NOT CHANGE THE 1024 VSOCK PORT
 	// See https://coreos.github.io/ignition/supported-platforms/
 	ignitionDevice, err := vfConfig.VirtioVsockNew(1024, ignitionSocket.GetPath(), true)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, fmt.Errorf("failed to create ignition device: %w", err)
 	}
 	devices = append(devices, disk, rng, readyDevice, ignitionDevice)
 
@@ -88,9 +89,9 @@ func GetVfKitEndpointCMDArgs(endpoint string) ([]string, error) {
 	}
 	restEndpoint, err := rest.NewEndpoint(endpoint)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to create endpoint: %w", err)
 	}
-	return restEndpoint.ToCmdLine()
+	return restEndpoint.ToCmdLine() //nolint:wrapcheck
 }
 
 var (
@@ -113,18 +114,18 @@ func StartGenericAppleVM(mc *vmconfigs.MachineConfig, cmdBinary string, bootload
 	// Add networking
 	netDevice, err := vfConfig.VirtioNetNew(applehvMACAddress)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, fmt.Errorf("failed to create net device: %w", err)
 	}
 	// Set user networking with gvproxy
 	gvproxySocket, err := mc.GVProxySocket() // default-gvproxy.sock
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, fmt.Errorf("failed to get gvproxy socket: %w", err)
 	}
 
 	// Before `netDevice.SetUnixSocketPath(gvproxySocket.GetPath())`, we need to wait on gvproxy to be running and aware,
 	// There is a little chance that the gvproxy is not ready yet, so we need to wait for it.
 	if err := sockets.WaitForSocketWithBackoffs(gvProxyMaxBackoffAttempts, gvProxyWaitBackoff, gvproxySocket.GetPath(), "gvproxy"); err != nil {
-		return nil, nil, err
+		return nil, nil, fmt.Errorf("failed to wait for gvproxy: %w", err)
 	}
 
 	netDevice.SetUnixSocketPath(gvproxySocket.GetPath())
@@ -134,7 +135,7 @@ func StartGenericAppleVM(mc *vmconfigs.MachineConfig, cmdBinary string, bootload
 	vm := vfConfig.NewVirtualMachine(uint(mc.Resources.CPUs), uint64(mc.Resources.Memory), bootloader)
 	defaultDevices, readySocket, err := GetDefaultDevices(mc)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, fmt.Errorf("failed to get default devices: %w", err)
 	}
 	vm.Devices = append(vm.Devices, defaultDevices...)
 	vm.Devices = append(vm.Devices, netDevice)
@@ -143,20 +144,20 @@ func StartGenericAppleVM(mc *vmconfigs.MachineConfig, cmdBinary string, bootload
 		if err = fileutils.Exists(mc.DataDisk.GetPath()); err != nil {
 			logrus.Warnf("external disk does not exist: %s", mc.DataDisk.GetPath())
 			if err = system.CreateAndResizeDisk(mc.DataDisk.GetPath(), 100); err != nil {
-				return nil, nil, err
+				return nil, nil, fmt.Errorf("failed to create and resize disk: %w", err)
 			}
 		}
 
 		externalDisk, err := vfConfig.VirtioBlkNew(mc.DataDisk.GetPath())
 		if err != nil {
-			return nil, nil, err
+			return nil, nil, fmt.Errorf("failed to create external disk: %w", err)
 		}
 		vm.Devices = append(vm.Devices, externalDisk)
 	}
 
 	mounts, err := VirtIOFsToVFKitVirtIODevice(mc.Mounts)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, fmt.Errorf("failed to convert virtio fs to virtio device: %w", err)
 	}
 	vm.Devices = append(vm.Devices, mounts...)
 
@@ -166,13 +167,13 @@ func StartGenericAppleVM(mc *vmconfigs.MachineConfig, cmdBinary string, bootload
 	cmdBinaryPath, err := cfg.FindHelperBinary(cmdBinary)
 
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, fmt.Errorf("failed to find krunkit binary: %w", err)
 	}
 	logrus.Infof("krunkit binary path is: %s", cmdBinaryPath)
 
 	krunCmd, err := vm.Cmd(cmdBinaryPath)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, fmt.Errorf("failed to create krunkit command: %w", err)
 	}
 
 	krunCmd.Stdout = os.Stdout
@@ -181,7 +182,7 @@ func StartGenericAppleVM(mc *vmconfigs.MachineConfig, cmdBinary string, bootload
 	// endpoint is krunkit rest api endpoint
 	endpointArgs, err := GetVfKitEndpointCMDArgs(endpoint)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, fmt.Errorf("failed to get vfkit endpoint args: %w", err)
 	}
 
 	krunCmd.Args = append(krunCmd.Args, endpointArgs...)
@@ -192,12 +193,12 @@ func StartGenericAppleVM(mc *vmconfigs.MachineConfig, cmdBinary string, bootload
 	// Listen ready socket
 	if err := readySocket.Delete(); err != nil {
 		logrus.Warnf("unable to delete previous ready socket: %q", err)
-		return nil, nil, err
+		return nil, nil, fmt.Errorf("failed to delete previous ready socket: %w", err)
 	}
 
 	readyListen, err := net.Listen("unix", readySocket.GetPath())
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, fmt.Errorf("failed to listen ready event: %w", err)
 	} else {
 		logrus.Infof("Listening ready event on: %s", readySocket.GetPath())
 	}
@@ -208,7 +209,7 @@ func StartGenericAppleVM(mc *vmconfigs.MachineConfig, cmdBinary string, bootload
 
 	ignFile, err := mc.IgnitionFile()
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, fmt.Errorf("failed to get ignition file: %w", err)
 	}
 
 	ignBuilder := ignition.NewIgnitionBuilder(ignition.DynamicIgnitionV2{
@@ -225,22 +226,22 @@ func StartGenericAppleVM(mc *vmconfigs.MachineConfig, cmdBinary string, bootload
 
 	err = ignBuilder.GenerateIgnitionConfig()
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, fmt.Errorf("failed to generate ignition config: %w", err)
 	}
 
 	err = ignBuilder.Build()
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, fmt.Errorf("failed to build ignition file: %w", err)
 	}
 
 	ignSocket, err := mc.IgnitionSocket()
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, fmt.Errorf("failed to get ignition socket: %w", err)
 	}
 
 	if err := ignSocket.Delete(); err != nil {
 		logrus.Errorf("failed to delete the %s", ignSocket.GetPath())
-		return nil, nil, err
+		return nil, nil, fmt.Errorf("failed to delete the %s: %w", ignSocket.GetPath(), err)
 	}
 
 	logrus.Infof("Serving the ignition file over the socket: %s", ignSocket.GetPath())
@@ -255,7 +256,7 @@ func StartGenericAppleVM(mc *vmconfigs.MachineConfig, cmdBinary string, bootload
 	logrus.Infof("krunkit command-line: %v", krunCmd.Args)
 
 	if err := krunCmd.Start(); err != nil {
-		return nil, nil, err
+		return nil, nil, fmt.Errorf("failed to start krunkit: %w", err)
 	} else {
 		machine.GlobalCmds.SetKrunCmd(krunCmd)
 	}

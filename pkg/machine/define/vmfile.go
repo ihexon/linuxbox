@@ -5,6 +5,7 @@ package define
 
 import (
 	"errors"
+	"fmt"
 	"io"
 	"os"
 	"path/filepath"
@@ -42,27 +43,27 @@ func (m *VMFile) Delete() error {
 		}
 	}
 	if err := os.RemoveAll(m.Path); err != nil && !errors.Is(err, os.ErrNotExist) {
-		return err
+		return fmt.Errorf("failed to remove symlink: %w", err)
 	}
 	return nil
 }
 
 // Read the contents of a given file and return in []bytes
 func (m *VMFile) Read() ([]byte, error) {
-	return os.ReadFile(m.GetPath())
+	return os.ReadFile(m.GetPath()) //nolint:wrapcheck
 }
 
 // Read the first n bytes of a given file and return in []bytes
 func (m *VMFile) ReadMagicNumber(n int) ([]byte, error) {
 	f, err := os.Open(m.GetPath())
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to open file: %w", err)
 	}
 	defer f.Close()
 	b := make([]byte, n)
 	n, err = io.ReadFull(f, b)
-	if err != nil && err != io.ErrUnexpectedEOF && err != io.EOF {
-		return b[:n], err
+	if err != nil && !errors.Is(err, io.ErrUnexpectedEOF) && !errors.Is(err, io.EOF) {
+		return b[:n], fmt.Errorf("failed to read magic number: %w", err)
 	} else {
 		return b[:n], nil
 	}
@@ -77,7 +78,7 @@ func (m *VMFile) ReadPIDFrom() (int, error) {
 	}
 	pid, err := strconv.Atoi(strings.TrimSpace(string(vmPidString)))
 	if err != nil {
-		return -1, err
+		return -1, fmt.Errorf("unable to convert %q to int: %w", vmPidString, err)
 	}
 
 	// Not returning earlier because -1 means something

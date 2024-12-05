@@ -22,21 +22,21 @@ import (
 func ServeIgnitionOverSocketCommon(url *url.URL, file fs.File) error {
 	listener, err := net.Listen(url.Scheme, url.Path)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to listen on %s: %w", url.Path, err)
 	}
 
 	ignFile, err := io.ReadAll(file) // Ignition json file
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to read ignition file: %w", err)
 	}
 
 	s, err := file.Stat()
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to get file stat: %w", err)
 	}
 	cfgAbsPath, err := filepath.Abs(s.Name())
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to get absolute path: %s, %w", s.Name(), err)
 	}
 
 	errChan := make(chan error, 1)

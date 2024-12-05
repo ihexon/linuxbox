@@ -5,19 +5,16 @@
 
 package env
 
-import "path/filepath"
+import (
+	"fmt"
+	"path/filepath"
+)
 
-// getTmpDir return ${BauklotzeHomePath}/tmp/
-func getTmpDir() (string, error) {
+func getRuntimeDir() (string, error) {
 	p, err := GetBauklotzeHomePath()
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("unable to get home path: %w", err)
 	}
 
-	return filepath.Join(p, "tmp"), nil // ${BauklotzeHomePath}/tmp/
-}
-
-// getRuntimeDir: ${BauklotzeHomePath}/tmp/
-func getRuntimeDir() (string, error) {
-	return getTmpDir() // ${BauklotzeHomePath}/tmp/
+	return filepath.Join(p, "tmp"), nil
 }

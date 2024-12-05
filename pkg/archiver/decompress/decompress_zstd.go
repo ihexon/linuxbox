@@ -4,6 +4,7 @@
 package decompress
 
 import (
+	"fmt"
 	"os"
 
 	"bauklotze/pkg/machine/define"
@@ -11,22 +12,20 @@ import (
 	"github.com/DataDog/zstd"
 )
 
-func DecompressZstd(compressedFilePath *define.VMFile, decompressedFilePath *define.VMFile) error {
-	var err error
+func Zstd(compressedFilePath *define.VMFile, decompressedFilePath *define.VMFile) error {
 	file, err := os.ReadFile(compressedFilePath.GetPath())
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to read compressed file: %w", err)
 	}
 
 	decompressData, err := zstd.Decompress(nil, file)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to decompress file: %w", err)
 	}
 
-	err = os.WriteFile(decompressedFilePath.GetPath(), decompressData, 0644)
-	if err != nil {
-		return err
+	if err = os.WriteFile(decompressedFilePath.GetPath(), decompressData, 0644); err != nil {
+		return fmt.Errorf("failed to write decompressed file: %w", err)
 	}
 
-	return err
+	return nil
 }

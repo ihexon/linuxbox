@@ -141,7 +141,7 @@ func (w *BufferedResponseWriter) Header() http.Header {
 }
 
 func (w *BufferedResponseWriter) Write(b []byte) (int, error) {
-	return w.b.Write(b)
+	return w.b.Write(b) //nolint:wrapcheck
 }
 
 func (w *BufferedResponseWriter) WriteHeader(statusCode int) {

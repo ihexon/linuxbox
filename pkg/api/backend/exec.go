@@ -30,11 +30,11 @@ func getVM(vmName string) (*vmconfigs.MachineConfig, error) {
 	for _, sprovider := range providers {
 		dirs, err := env.GetMachineDirs(sprovider.VMType())
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to get machine dirs: %w", err)
 		}
 		mcs, err := vmconfigs.LoadMachinesInDir(dirs)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to load machines in dir: %w", err)
 		}
 		if mc, exists := mcs[vmName]; exists {
 			return mc, nil
@@ -48,11 +48,11 @@ func exec(ctx context.Context, mc *vmconfigs.MachineConfig, command string, outC
 
 	key, err := os.ReadFile(mc.SSH.IdentityPath)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to read private key: %w", err)
 	}
 	signer, err := ssh.ParsePrivateKey(key)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to parse private key: %w", err)
 	}
 
 	connCfg := &ssh.ClientConfig{
@@ -85,7 +85,7 @@ func exec(ctx context.Context, mc *vmconfigs.MachineConfig, command string, outC
 	session.Stderr = stderr
 
 	if err := session.Run(command); err != nil {
-		newErr := fmt.Errorf("%s\n%s", stderr.LastRecord(), err)
+		newErr := fmt.Errorf("%s\n%s", stderr.LastRecord(), err) //nolint:errorlint
 		errCh <- newErr.Error()
 		return fmt.Errorf("run command error %w", newErr)
 	}
@@ -201,7 +201,7 @@ type writer struct {
 
 func (w *writer) Write(p []byte) (n int, err error) {
 	w.last = p
-	return w.w.Write(p)
+	return w.w.Write(p) //nolint:wrapcheck
 }
 
 func (w *writer) LastRecord() string {

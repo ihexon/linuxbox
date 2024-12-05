@@ -6,6 +6,7 @@
 package internal
 
 import (
+	"fmt"
 	"os"
 
 	"golang.org/x/sys/unix"
@@ -14,12 +15,12 @@ import (
 func RedirectStdin() error {
 	devNullfile, err := os.Open(os.DevNull)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to open /dev/null: %w", err)
 	}
 	defer devNullfile.Close()
 
 	if err := unix.Dup2(int(devNullfile.Fd()), int(os.Stdin.Fd())); err != nil {
-		return err
+		return fmt.Errorf("failed /dev/null to redirect stdin: %w", err)
 	}
 	return nil
 }

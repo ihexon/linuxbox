@@ -7,6 +7,7 @@ package connection
 
 import (
 	"errors"
+	"fmt"
 	"net"
 	"net/url"
 
@@ -31,12 +32,8 @@ func addConnection(cons []connection, identity string, isDefault bool) error {
 		return errors.New("identity must be defined")
 	}
 
-	return config.EditConnectionConfig(func(cfg *config.ConnectionsFile) error {
+	err := config.EditConnectionConfig(func(cfg *config.ConnectionsFile) error {
 		for i, con := range cons {
-			// if _, ok := cfg.Connection.Connections[con.name]; ok {
-			//	return fmt.Errorf("cannot overwrite connection %q", con.name)
-			// }
-
 			dst := config.Destination{
 				URI:      con.uri.String(),
 				Identity: identity,
@@ -58,11 +55,16 @@ func addConnection(cons []connection, identity string, isDefault bool) error {
 
 		return nil
 	})
+	if err != nil {
+		return fmt.Errorf("failed to add connection: %w", err)
+	}
+
+	return nil
 }
 
 func UpdateConnectionPairPort(name string, port, uid int, remoteUsername string, identityPath string) error {
 	cons := createConnections(name, uid, port, remoteUsername)
-	return config.EditConnectionConfig(func(cfg *config.ConnectionsFile) error {
+	err := config.EditConnectionConfig(func(cfg *config.ConnectionsFile) error {
 		for _, con := range cons {
 			dst := config.Destination{
 				URI:      con.uri.String(),
@@ -73,13 +75,17 @@ func UpdateConnectionPairPort(name string, port, uid int, remoteUsername string,
 
 		return nil
 	})
+	if err != nil {
+		return fmt.Errorf("failed to update connection pair port: %w", err)
+	}
+	return nil
 }
 
 func RemoveConnections(machines map[string]bool, names ...string) error {
 	var dest config.Destination
 	var service string
 
-	if err := config.EditConnectionConfig(func(cfg *config.ConnectionsFile) error {
+	err := config.EditConnectionConfig(func(cfg *config.ConnectionsFile) error {
 		err := setNewDefaultConnection(cfg, &dest, &service, names...)
 		if err != nil {
 			return err
@@ -90,8 +96,9 @@ func RemoveConnections(machines map[string]bool, names ...string) error {
 			updateConnection(cfg, rootful, service, service+"-root")
 		}
 		return nil
-	}); err != nil {
-		return err
+	})
+	if err != nil {
+		return fmt.Errorf("failed to remove connections: %w", err)
 	}
 
 	return nil

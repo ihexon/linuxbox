@@ -22,7 +22,7 @@ type StdDiskPull struct {
 func NewStdDiskPull(inputPath string, finalpath *define.VMFile) (*StdDiskPull, error) {
 	inputImage, err := define.NewMachineFile(inputPath, nil)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("could not create new machine file: %s, %w", inputPath, err)
 	}
 	return &StdDiskPull{inputPath: inputImage, finalPath: finalpath}, nil
 }
@@ -35,7 +35,7 @@ func (s *StdDiskPull) Get() error {
 	}
 	logrus.Infof("Try to decompress %s to %s", s.inputPath.GetPath(), s.finalPath.GetPath())
 	// Only support zstd compressed bootable.img
-	err := decompress.DecompressZstd(s.inputPath, s.finalPath)
+	err := decompress.Zstd(s.inputPath, s.finalPath)
 	if err != nil {
 		errors := fmt.Errorf("could not decompress %s to %s, %w", s.inputPath.GetPath(), s.finalPath.GetPath(), err)
 		return errors

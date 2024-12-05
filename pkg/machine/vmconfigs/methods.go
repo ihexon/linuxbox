@@ -19,7 +19,7 @@ func (mc *MachineConfig) Write() error {
 	}
 	b, err := json.Marshal(mc)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to marshal machine config: %w", err)
 	}
-	return ioutils.AtomicWriteFile(mc.ConfigPath.GetPath(), b, define.DefaultFilePerm)
+	return ioutils.AtomicWriteFile(mc.ConfigPath.GetPath(), b, define.DefaultFilePerm) //nolint:wrapcheck
 }

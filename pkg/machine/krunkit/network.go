@@ -18,12 +18,12 @@ import (
 func StartGenericNetworking(mc *vmconfigs.MachineConfig, cmd *gvproxy.GvproxyCommand) error {
 	gvProxySock, err := mc.GVProxySocket()
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to get gvproxy socket: %w", err)
 	}
 	// make sure it does not exist before gvproxy is called
 	if err := gvProxySock.Delete(); err != nil {
 		logrus.Error(err)
-		return err
+		return fmt.Errorf("failed to delete gvproxy socket: %w", err)
 	}
 
 	cmd.AddVfkitSocket(fmt.Sprintf("unixgram://%s", gvProxySock.GetPath()))

@@ -22,14 +22,14 @@ func CreateSSHKeys(writeLocation string) (string, error) {
 		return "", fmt.Errorf("SSH key already exists: %s", writeLocation)
 	}
 	if err := os.MkdirAll(filepath.Dir(writeLocation), 0700); err != nil {
-		return "", err
+		return "", fmt.Errorf("failed to create ssh key directory: %w", err)
 	}
 	if err := generatekeys(writeLocation); err != nil {
-		return "", err
+		return "", fmt.Errorf("failed to generate keys: %w", err)
 	}
 	b, err := os.ReadFile(writeLocation + ".pub")
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("failed to read ssh key: %w", err)
 	}
 	return strings.TrimSuffix(string(b), "\n"), nil
 }
@@ -42,7 +42,7 @@ func generatekeys(writeLocation string) error {
 	cmd.Stderr = stdErr
 
 	if err := cmd.Start(); err != nil {
-		return err
+		return fmt.Errorf("failed to start ssh command: %w", err)
 	}
 	waitErr := cmd.Wait()
 	if waitErr != nil {
@@ -59,7 +59,7 @@ func GetSSHKeys(identityPath string) (string, error) {
 		// If sshkeys generated before, use it
 		b, err := os.ReadFile(identityPath + ".pub")
 		if err != nil {
-			return "", err
+			return "", fmt.Errorf("failed to read ssh key: %w", err)
 		}
 		return strings.TrimSuffix(string(b), "\n"), nil
 	}

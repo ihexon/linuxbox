@@ -73,13 +73,12 @@ func WaitAPIAndPrintInfo(sockInHost string, forwardState APIForwardingState, nam
 func WaitAndPingAPI(sock string) error {
 	connCtx, err := network.NewConnection(sock)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to create connection context: %w", err)
 	}
 	connCtx.URLParameter = url.Values{}
 	connCtx.Headers = http.Header{}
 
 	timeout := time.After(5 * time.Second)
-pingLoop:
 	for {
 		select {
 		case <-timeout:
@@ -91,9 +90,8 @@ pingLoop:
 			if err == nil {
 				_ = res.Response.Body.Close()
 				logrus.Infof("Podman ping test success")
-				break pingLoop
+				return nil
 			}
 		}
 	}
-	return err
 }

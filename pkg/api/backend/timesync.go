@@ -5,6 +5,7 @@ package backend
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -34,11 +35,11 @@ func getVMMc(vmName string) (*vmconfigs.MachineConfig, error) {
 	for _, sprovider := range providers {
 		dirs, err := env.GetMachineDirs(sprovider.VMType())
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to get machine dirs: %w", err)
 		}
 		mcs, err := vmconfigs.LoadMachinesInDir(dirs)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to load machines in dir: %w", err)
 		}
 		if mc, exists := mcs[vmName]; exists {
 			return mc, nil

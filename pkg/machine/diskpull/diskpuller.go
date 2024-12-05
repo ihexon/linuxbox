@@ -7,26 +7,19 @@ import (
 	"fmt"
 
 	"bauklotze/pkg/machine/define"
-	"bauklotze/pkg/machine/diskpull/internal/provider"
 	"bauklotze/pkg/machine/diskpull/stdpull"
 )
 
 // GetDisk For now we don't need dirs *define.MachineDirs,vmType define.VMType, name string
 func GetDisk(userInputPath string, imagePath *define.VMFile) error {
-	var (
-		err    error
-		mydisk provider.Disker
-	)
-	switch {
-	case userInputPath == "":
+	if userInputPath == "" {
 		return fmt.Errorf("please provide a bootable image using --boot [IMAGE_PATH]")
-	default:
-		zstdFile := &userInputPath
-		extractFile := &imagePath
-		mydisk, err = stdpull.NewStdDiskPull(*zstdFile, *extractFile)
 	}
+
+	mydisk, err := stdpull.NewStdDiskPull(userInputPath, imagePath)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to create disk puller: %w", err)
 	}
-	return mydisk.Get()
+
+	return mydisk.Get() //nolint:wrapcheck
 }

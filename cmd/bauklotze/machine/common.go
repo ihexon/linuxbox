@@ -8,6 +8,7 @@ package machine
 import (
 	whatProvider "bauklotze/pkg/machine/provider"
 	"bauklotze/pkg/machine/vmconfigs"
+	"fmt"
 
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -16,16 +17,11 @@ import (
 var provider vmconfigs.VMProvider
 
 func machinePreRunE(cmd *cobra.Command, args []string) error {
-	var err error
 	logrus.Infof("Try to get current hypervisor provider...")
-	provider, err = whatProvider.Get()
+	provider, err := whatProvider.Get()
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to get current hypervisor provider: %w", err)
 	}
 	logrus.Infof("Got current hypervisor provider %s", provider.VMType().String())
-	return err
+	return nil
 }
-
-// func closeMachineEvents(cmd *cobra.Command, _ []string) error {
-//	return nil
-// }

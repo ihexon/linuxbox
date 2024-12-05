@@ -12,7 +12,7 @@ import (
 func RunCMDProxy() error {
 	err := backend.SSHD()
 	if err != nil {
-		return err
+		return err //nolint:wrapcheck
 	}
-	return fmt.Errorf("CMDProxy running failed, %v", err)
+	return fmt.Errorf("CMDProxy running failed, %w", err)
 }

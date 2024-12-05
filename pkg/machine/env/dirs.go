@@ -11,7 +11,6 @@ import (
 	"bauklotze/pkg/machine/define"
 )
 
-// GetBauklotzeHomePath return ${BauklotzeHomePath}/tmp/
 func GetBauklotzeHomePath() (string, error) {
 	home := os.Getenv(BauklotzeHome)
 	if home == "" {
@@ -20,53 +19,55 @@ func GetBauklotzeHomePath() (string, error) {
 	return home, nil
 }
 
-// ConfDirPrefix return ${BauklotzeHomePath}/config,
 func ConfDirPrefix() (string, error) {
 	homeDir, err := GetBauklotzeHomePath()
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("unable to get home path: %w", err)
 	}
-	return filepath.Join(homeDir, "config"), nil // ${BauklotzeHomePath}/config
+	return filepath.Join(homeDir, "config"), nil
 }
 
 func GetLogsDir() (string, error) {
 	homeDir, err := GetBauklotzeHomePath()
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("unable to get home path: %w", err)
 	}
 	return filepath.Join(homeDir, "logs"), nil
 }
 
-// GetConfDir ${BauklotzeHomePath}/config/{wsl,libkrun,qemu,hyper...}
 func GetConfDir(vmType define.VMType) (string, error) {
-	confDirPrefix, err := ConfDirPrefix() // ${BauklotzeHomePath}/config
+	confDirPrefix, err := ConfDirPrefix()
 	if err != nil {
 		return "", err
 	}
 	confDir := filepath.Join(confDirPrefix, vmType.String())
-	mkdirErr := os.MkdirAll(confDir, 0755)
-	return confDir, mkdirErr // ${BauklotzeHomePath}/config/wsl2
+	if err := os.MkdirAll(confDir, 0755); err != nil {
+		return "", fmt.Errorf("unable to create conf dir: %w", err)
+	}
+	return confDir, nil
 }
 
 // DataDirPrefix returns the path prefix for all machine data files
 func DataDirPrefix() (string, error) {
-	d, err := GetBauklotzeHomePath() // ${BauklotzeHomePath}
+	d, err := GetBauklotzeHomePath()
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("unable to get home path: %w", err)
 	}
 	dataDir := filepath.Join(d, "data")
-	return dataDir, nil // ${BauklotzeHomePath}/data
+	return dataDir, nil
 }
 
-// GetDataDir ${BauklotzeHomePath}/data/{wsl2,libkrun,qemu,hyper...}
 func GetDataDir(vmType define.VMType) (string, error) {
-	dataDirPrefix, err := DataDirPrefix() // ${BauklotzeHomePath}/data
+	dataDirPrefix, err := DataDirPrefix()
 	if err != nil {
 		return "", err
 	}
 	dataDir := filepath.Join(dataDirPrefix, vmType.String())
-	mkdirErr := os.MkdirAll(dataDir, 0755)
-	return dataDir, mkdirErr // ${BauklotzeHomePath}/data/{wsl2,libkrun,qemu,hyper...}
+	if err := os.MkdirAll(dataDir, 0755); err != nil {
+		return "", fmt.Errorf("unable to create data dir: %w", err)
+	}
+
+	return dataDir, nil
 }
 
 func GetGlobalDataDir() (string, error) {
@@ -74,7 +75,11 @@ func GetGlobalDataDir() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return dataDir, os.MkdirAll(dataDir, 0755)
+	if err := os.MkdirAll(dataDir, 0755); err != nil {
+		return "", fmt.Errorf("unable to create global data dir: %w", err)
+	}
+
+	return dataDir, nil
 }
 
 func GetMachineDirs(vmType define.VMType) (*define.MachineDirs, error) {
@@ -85,7 +90,7 @@ func GetMachineDirs(vmType define.VMType) (*define.MachineDirs, error) {
 
 	rtDirFile, err := define.NewMachineFile(rtDir, nil)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("unable to new machine file in %s: %w", rtDir, err)
 	}
 
 	dataDir, err := GetDataDir(vmType)
@@ -95,12 +100,12 @@ func GetMachineDirs(vmType define.VMType) (*define.MachineDirs, error) {
 
 	dataDirFile, err := define.NewMachineFile(dataDir, nil)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("unable to new machine file in %s: %w", dataDir, err)
 	}
 
 	imageCacheDir, err := dataDirFile.AppendToNewVMFile("cache", nil)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("unable to append cache to new vm file in %s: %w", dataDir, err)
 	}
 
 	configDir, err := GetConfDir(vmType)
@@ -109,7 +114,7 @@ func GetMachineDirs(vmType define.VMType) (*define.MachineDirs, error) {
 	}
 	configDirFile, err := define.NewMachineFile(configDir, nil)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("unable to new machine file in %s: %w", configDir, err)
 	}
 
 	logsDir, err := GetLogsDir()
@@ -118,7 +123,7 @@ func GetMachineDirs(vmType define.VMType) (*define.MachineDirs, error) {
 	}
 	logsDirVMFile, err := define.NewMachineFile(logsDir, nil)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("unable to new machine file in %s: %w", logsDir, err)
 	}
 
 	dirs := define.MachineDirs{
@@ -129,16 +134,16 @@ func GetMachineDirs(vmType define.VMType) (*define.MachineDirs, error) {
 		LogsDir:       logsDirVMFile, // ${BauklotzeHomePath}/logs
 	}
 	if err = os.MkdirAll(rtDir, 0755); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("unable to create runtime dir: %s: %w", rtDir, err)
 	}
 	if err = os.MkdirAll(configDir, 0755); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("unable to create config dir: %s: %w", configDir, err)
 	}
 	if err = os.MkdirAll(logsDirVMFile.GetPath(), 0755); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("unable to create logs dir: %s: %w", logsDirVMFile.GetPath(), err)
 	}
 	err = os.MkdirAll(imageCacheDir.GetPath(), 0755)
-	return &dirs, err
+	return &dirs, fmt.Errorf("unable to create image cache dir: %s: %w", imageCacheDir.GetPath(), err)
 }
 
 // GetSSHIdentityPath returns the path to the expected SSH private key

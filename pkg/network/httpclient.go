@@ -79,7 +79,7 @@ func (c *Connection) DoRequest(httpMethod, endpoint string) (*APIResponse, error
 
 	req, err := http.NewRequestWithContext(ctx, httpMethod, uri, c.Body)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
 	if len(c.URLParameter) > 0 {
 		req.URL.RawQuery = c.URLParameter.Encode()
@@ -92,7 +92,10 @@ func (c *Connection) DoRequest(httpMethod, endpoint string) (*APIResponse, error
 	}
 
 	response, err = client.Do(req) //nolint:bodyclose
-	return &APIResponse{response, req}, err
+	if err != nil {
+		return nil, fmt.Errorf("failed to do request: %w", err)
+	}
+	return &APIResponse{response, req}, nil
 }
 
 func (o *OvmJSListener) SendEventToOvmJs(event, message string) {

@@ -37,11 +37,16 @@ func waitOnProcess(processID int) error {
 			logrus.Debugf("Gvproxy already dead, exiting cleanly")
 			return nil
 		}
-		return err
+		return fmt.Errorf("killing gvproxy: %w", err)
 	}
+
 	return nil
 }
 
 func removeGVProxyPIDFile(f define.VMFile) error {
-	return f.Delete()
+	if err := f.Delete(); err != nil {
+		return fmt.Errorf("removing GVProxy PID file: %w", err)
+	}
+
+	return nil
 }

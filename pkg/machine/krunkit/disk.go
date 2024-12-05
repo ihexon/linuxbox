@@ -7,6 +7,7 @@ package krunkit
 
 import (
 	"bauklotze/pkg/machine/vmconfigs"
+	"fmt"
 
 	vfConfig "github.com/crc-org/vfkit/pkg/config"
 )
@@ -16,7 +17,7 @@ func VirtIOFsToVFKitVirtIODevice(mounts []*vmconfigs.Mount) ([]vfConfig.VirtioDe
 	for _, vol := range mounts {
 		virtfsDevice, err := vfConfig.VirtioFsNew(vol.Source, vol.Tag)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to create virtio fs device: %w", err)
 		}
 		virtioDevices = append(virtioDevices, virtfsDevice)
 	}

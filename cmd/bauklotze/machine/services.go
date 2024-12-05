@@ -46,9 +46,14 @@ func init() {
 func service(cmd *cobra.Command, args []string) error {
 	listenURL, err := resolveAPIURI(args)
 	if err != nil {
-		return fmt.Errorf("%s is an invalid socket destination", args[0])
+		return fmt.Errorf("%s is an invalid socket destination: %w", args[0], err)
 	}
-	return server.RestService(context.Background(), listenURL)
+
+	if err := server.RestService(context.Background(), listenURL); err != nil {
+		return fmt.Errorf("failed to start API service: %w", err)
+	}
+
+	return nil
 }
 
 // resolveAPIURI resolves the API URI from the given arguments, if no arguments are given, it tries to get the URI from the env.DefaultRootAPIAddress
@@ -59,5 +64,10 @@ func resolveAPIURI(uri []string) (*url.URL, error) {
 		apiuri = uri[0]
 	}
 	logrus.Infof("%s @ try listen URI: %s", runtime.FuncForPC(reflect.ValueOf(resolveAPIURI).Pointer()).Name(), apiuri)
-	return url.Parse(apiuri)
+	url, err := url.Parse(apiuri)
+	if err != nil {
+		return nil, fmt.Errorf("invalid URI: %s, %w", apiuri, err)
+	}
+
+	return url, nil
 }

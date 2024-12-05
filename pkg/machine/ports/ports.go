@@ -44,12 +44,12 @@ func ReleaseMachinePort(port int) error {
 func acquirePortLock() (*lockfile.LockFile, error) {
 	lockDir, err := env.GetGlobalDataDir()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("unable to get global data dir: %w", err)
 	}
 
 	lock, err := lockfile.GetLockFile(filepath.Join(lockDir, portLockFileName))
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("unable to get lock file: %w", err)
 	}
 
 	lock.Lock()
@@ -86,12 +86,12 @@ func getRandomPortHold() (io.Closer, int, error) {
 		l.Close()
 		return nil, 0, fmt.Errorf("unable to convert port to int: %w", err)
 	}
-	return l, port, err
+	return l, port, nil
 }
 func storePortAllocations(ports map[int]struct{}) error {
 	portDir, err := env.GetGlobalDataDir()
 	if err != nil {
-		return err
+		return fmt.Errorf("unable to get global data dir: %w", err)
 	}
 
 	portData := make([]int, 0, len(ports))
@@ -102,23 +102,23 @@ func storePortAllocations(ports map[int]struct{}) error {
 	opts := &ioutils.AtomicFileWriterOptions{ExplicitCommit: true}
 	w, err := ioutils.NewAtomicFileWriterWithOpts(filepath.Join(portDir, portAllocFileName), 0644, opts)
 	if err != nil {
-		return err
+		return fmt.Errorf("unable to create atomic file writer: %w", err)
 	}
 	defer w.Close()
 
 	enc := json.NewEncoder(w)
 	if err := enc.Encode(portData); err != nil {
-		return err
+		return fmt.Errorf("failed to encode port allocations: %w", err)
 	}
 
 	// Commit the changes to disk if no errors
-	return w.Commit()
+	return w.Commit() //nolint:wrapcheck
 }
 
 func loadPortAllocations() (map[int]struct{}, error) {
 	portDir, err := env.GetGlobalDataDir()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("unable to get global data dir: %w", err)
 	}
 
 	var portData []int
@@ -127,7 +127,7 @@ func loadPortAllocations() (map[int]struct{}, error) {
 	if errors.Is(err, os.ErrNotExist) {
 		exists = false
 	} else if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to open port allocation file: %w", err)
 	}
 	defer file.Close()
 

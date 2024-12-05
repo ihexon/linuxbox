@@ -9,20 +9,17 @@ linters:
   disable:
     # too many reports but requires attention
     - depguard
-    - tagalign
     - perfsprint
     - typecheck
     # useful hints that should be addressed
-    - testifylint # all of reports that should be fixed
     - nakedret
     - gosmopolitan # usage of time.Local in pkg/k8s.io
     - tagliatelle # too many JSON keys cannot be changed due to compat
     - dupword # too many false positives (e.g., in tests)
-    - gocognit
+    - gocognit # temp disabled
     - testpackage
     - err113
-    - errorlint
-    - wrapcheck
+#    - wrapcheck
     - paralleltest
     - wsl
     - godox
@@ -73,6 +70,10 @@ linters-settings:
     rules:
       - name: unused-parameter
         disabled: true
+  testifylint:
+    enable-all: true
+#  gocognit: # temp disabled
+#    min-complexity: 20
 
 issues:
   # Maximum issues count per one linter.

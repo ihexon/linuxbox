@@ -10,5 +10,5 @@ func (mc *MachineConfig) LogFile() (*define.VMFile, error) {
 	if err != nil {
 		return nil, err
 	}
-	return logsDir.AppendToNewVMFile(mc.Name+".log", nil)
+	return logsDir.AppendToNewVMFile(mc.Name+".log", nil) //nolint:wrapcheck
 }

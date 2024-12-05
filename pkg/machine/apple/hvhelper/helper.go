@@ -78,7 +78,7 @@ func (vf *Helper) getRawState() (define.Status, error) {
 	}
 	err = json.NewDecoder(serverResponse.Body).Decode(&response)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("failed to decode response in get raw state: %w", err)
 	}
 	if err := serverResponse.Body.Close(); err != nil {
 		logrus.Error(err)
@@ -90,9 +90,10 @@ func (vf *Helper) get(endpoint string, payload io.Reader) (*http.Response, error
 	client := &http.Client{}
 	req, err := http.NewRequest(http.MethodGet, endpoint, payload)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
-	return client.Do(req)
+
+	return client.Do(req) //nolint:wrapcheck
 }
 
 func ToMachineStatus(val string) (define.Status, error) {

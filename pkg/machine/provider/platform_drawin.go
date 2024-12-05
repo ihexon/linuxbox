@@ -26,7 +26,7 @@ func Get() (vmconfigs.VMProvider, error) {
 	}
 	resolvedVMType, err := define.ParseVMType(provider, define.LibKrun)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to parse vm type: %w", err)
 	}
 
 	switch resolvedVMType {

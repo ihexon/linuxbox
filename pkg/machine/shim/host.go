@@ -28,12 +28,12 @@ func VMExists(name string, vmstubbers []vmconfigs.VMProvider) (*vmconfigs.Machin
 	// Look on disk first
 	mcs, err := getMCsOverProviders(vmstubbers)
 	if err != nil {
-		return nil, false, err
+		return nil, false, fmt.Errorf("failed to load machine configs: %w", err)
 	}
 	if mc, found := mcs[name]; found {
 		return mc, true, nil
 	}
-	return nil, false, err
+	return nil, false, nil
 }
 
 func Init(opts define.InitOptions, mp vmconfigs.VMProvider) error {
@@ -49,16 +49,9 @@ func Init(opts define.InitOptions, mp vmconfigs.VMProvider) error {
 
 	dirs, err := env.GetMachineDirs(mp.VMType())
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to get machine dirs: %w", err)
 	}
 
-	//	dirs := define.MachineDirs{
-	//		ConfigDir:     configDirFile, // ${BauklotzeHomePath}/config/{wsl,libkrun,qemu,hyper...}
-	//		DataDir:       dataDirFile,   // ${BauklotzeHomePath}/data/{wsl2,libkrun,qemu,hyper...}
-	//		ImageCacheDir: imageCacheDir, // ${BauklotzeHomePath}/data/{wsl2,libkrun,qemu,hyper...}/cache
-	//		RuntimeDir:    rtDirFile,     // ${BauklotzeHomePath}/tmp/
-	//		LogsDir:       logsDirVMFile, // ${BauklotzeHomePath}/logs
-	//	}
 	logrus.Infof("ConfigDir:     %s", dirs.ConfigDir.GetPath())
 	logrus.Infof("DataDir:       %s", dirs.DataDir.GetPath())
 	logrus.Infof("ImageCacheDir: %s", dirs.ImageCacheDir.GetPath())
@@ -67,20 +60,20 @@ func Init(opts define.InitOptions, mp vmconfigs.VMProvider) error {
 
 	sshIdentityPath, err := env.GetSSHIdentityPath(define.DefaultIdentityName)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to get ssh identity path: %w", err)
 	}
 	logrus.Infof("SSH identity path: %s", sshIdentityPath)
 
 	mySSHKey, err := machine.GetSSHKeys(sshIdentityPath)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to get ssh keys: %w", err)
 	}
 	logrus.Infof("SSH key: %v", mySSHKey)
 
 	// construct a machine configure but not write into disk
 	mc, err := vmconfigs.NewMachineConfig(opts, dirs, sshIdentityPath, mp.VMType())
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to create machine config: %w", err)
 	}
 
 	// machine configure json,version always be as 1
@@ -105,7 +98,7 @@ func Init(opts define.InitOptions, mp vmconfigs.VMProvider) error {
 
 	imagePath, err = dirs.DataDir.AppendToNewVMFile(fmt.Sprintf("%s-%s%s", opts.Name, runtime.GOARCH, imageExtension), nil)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to append image to vm file: %w", err)
 	}
 	logrus.Infof("Bootable Image Path: %s", imagePath.GetPath())
 	mc.ImagePath = imagePath // mc.ImagePath is the bootable copied from user provided image --boot <bootable.img.xz>
@@ -121,42 +114,36 @@ func Init(opts define.InitOptions, mp vmconfigs.VMProvider) error {
 
 	initCmdOpts := opts
 	logrus.Infof("A bootable Image provided: %s", initCmdOpts.ImagesStruct.BootableImage)
-	// Extract the bootable image
 
-	// Jump into Provider's GetDisk implementation, but we can using
-	// if err := diskpull.GetDisk(opts.Image, dirs, mc.ImagePath, mp.VMType(), mc.Name); err != nil {
-	//		return err
-	//	}
-	// for simplify code, but for now keep using Provider's GetDisk implementation
 	network.Reporter.SendEventToOvmJs("decompress", "running")
 	if err = mp.GetDisk(initCmdOpts.ImagesStruct.BootableImage, dirs, mc.ImagePath, mp.VMType(), mc.Name); err != nil {
-		return err
+		return fmt.Errorf("failed to get disk: %w", err)
 	} else {
 		network.Reporter.SendEventToOvmJs("decompress", "success")
 	}
 
 	callbackFuncs.Add(func() error {
-		logrus.Infof("--> Callback: Removing image %s", mc.ImagePath.GetPath())
+		logrus.Infof("callback: Removing image %s", mc.ImagePath.GetPath())
 		return mc.ImagePath.Delete()
 	})
 
 	if err = connection.AddSSHConnectionsToPodmanSocket(0, mc.SSH.Port, mc.SSH.IdentityPath, mc.Name, mc.SSH.RemoteUsername, opts); err != nil {
-		return err
+		return fmt.Errorf("failed to add ssh connections to podman socket: %w", err)
 	}
 
 	cleanup := func() error {
 		machines, err := provider.GetAllMachinesAndRootfulness()
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to get all machines and rootfulness: %w", err)
 		}
-		logrus.Infof("--> Callback: Removing connections for %s", mc.Name)
+		logrus.Infof("callback: Removing connections for %s", mc.Name)
 		return connection.RemoveConnections(machines, mc.Name+"-root")
 	}
 	callbackFuncs.Add(cleanup)
 
 	err = mp.CreateVM(createOpts, mc)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to create vm: %w", err)
 	}
 
 	mc.ReportURL = &define.VMFile{Path: opts.CommonOptions.ReportURL}
@@ -172,17 +159,15 @@ func Init(opts define.InitOptions, mp vmconfigs.VMProvider) error {
 	network.Reporter.SendEventToOvmJs("writeConfig", "running")
 	err = mc.Write()
 	if err != nil {
-		return err
-	} else {
-		network.Reporter.SendEventToOvmJs("writeConfig", "success")
-		// callbackFuncs.Add(mc.ConfigPath.Delete)
-		callbackFuncs.Add(func() error {
-			logrus.Infof("--> Callback: Removing Machine config %s", mc.ConfigPath.GetPath())
-			return mc.ConfigPath.Delete()
-		})
+		return fmt.Errorf("failed to write machine config: %w", err)
 	}
-	// err = fmt.Errorf("Test Error happened")
-	return err
+
+	network.Reporter.SendEventToOvmJs("writeConfig", "success")
+	callbackFuncs.Add(func() error {
+		logrus.Infof("callback: Removing Machine config %s", mc.ConfigPath.GetPath())
+		return mc.ConfigPath.Delete()
+	})
+	return nil
 }
 
 // getMCsOverProviders loads machineconfigs from a config dir derived from the "provider".  it returns only what is known on
@@ -192,11 +177,11 @@ func getMCsOverProviders(vmstubbers []vmconfigs.VMProvider) (map[string]*vmconfi
 	for _, stubber := range vmstubbers {
 		dirs, err := env.GetMachineDirs(stubber.VMType())
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to get machine dirs: %w", err)
 		}
 		stubberMCs, err := vmconfigs.LoadMachinesInDir(dirs)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to load machines in dir: %w", err)
 		}
 		for mcName, mc := range stubberMCs {
 			if _, ok := mcs[mcName]; !ok {
@@ -216,7 +201,7 @@ func Start(ctx context.Context, mc *vmconfigs.MachineConfig, mp vmconfigs.VMProv
 
 	state, err := mp.State(mc)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to get machine state: %w", err)
 	}
 
 	if state == define.Running || state == define.Starting {
@@ -245,48 +230,47 @@ func Start(ctx context.Context, mc *vmconfigs.MachineConfig, mp vmconfigs.VMProv
 
 	gvproxyPidFile, err := dirs.RuntimeDir.AppendToNewVMFile("gvproxy.pid", nil)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to create gvproxy pid file: %w", err)
 	}
 
 	// start gvproxy and set up the API socket forwarding
 	socksInHost, forwardingState, gvcmd, err := startNetworking(mc, mp)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to start networking: %w", err)
 	}
 
 	// Start krunkit now
 	logrus.Infof("Start krunkit....")
 	krunCmd, WaitForReady, err := mp.StartVM(mc)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to start krunkit: %w", err)
 	}
 
 	if WaitForReady == nil {
-		err = errors.New("no valid WaitForReady function returned")
-		return err
+		return fmt.Errorf("no valid WaitForReady function returned")
 	}
 
 	if err = WaitForReady(); err != nil {
-		return err
+		return fmt.Errorf("failed to wait for ready: %w", err)
 	}
 
 	// Update state
 	stateF := func() (define.Status, error) {
 		return mp.State(mc)
 	}
-	//
+
 	defaultBackoff := 500 * time.Millisecond
 	maxBackoffs := 3
 
 	if mp.VMType() != define.WSLVirt {
 		connected, sshError, err := conductVMReadinessCheck(mc, maxBackoffs, defaultBackoff, stateF)
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to conduct vm readiness check: %w", err)
 		}
 		if !connected {
 			msg := "machine did not transition into running state"
 			if sshError != nil {
-				return fmt.Errorf("%s: ssh error: %v", msg, sshError)
+				return fmt.Errorf("%s: ssh error: %w", msg, sshError)
 			}
 			return errors.New(msg)
 		} else {
@@ -295,7 +279,7 @@ func Start(ctx context.Context, mc *vmconfigs.MachineConfig, mp vmconfigs.VMProv
 	}
 
 	if err = machine.WaitAPIAndPrintInfo(socksInHost, forwardingState, mc.Name); err != nil {
-		return err
+		return fmt.Errorf("failed to wait api and print info: %w", err)
 	}
 
 	for {
@@ -303,7 +287,7 @@ func Start(ctx context.Context, mc *vmconfigs.MachineConfig, mp vmconfigs.VMProv
 		running, err := system.IsProcesSAlive(pids)
 		if !running {
 			_ = gvproxyPidFile.Delete()
-			return fmt.Errorf("%v", err)
+			return fmt.Errorf("failed to start krunkit: %w", err)
 		}
 	}
 }

@@ -73,7 +73,7 @@ func (mc *MachineConfig) DataDir() (*define.VMFile, error) {
 func (mc *MachineConfig) IsFirstBoot() (bool, error) {
 	never, err := time.Parse(time.RFC3339, "0001-01-01T00:00:00Z")
 	if err != nil {
-		return false, err
+		return false, fmt.Errorf("failed to parse time: %w", err)
 	}
 	return mc.LastUp == never, nil
 }
@@ -81,9 +81,9 @@ func (mc *MachineConfig) IsFirstBoot() (bool, error) {
 func (mc *MachineConfig) IgnitionFile() (*define.VMFile, error) {
 	configDir, err := mc.ConfigDir()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to get config dir: %w", err)
 	}
-	return configDir.AppendToNewVMFile(mc.Name+".ign", nil)
+	return configDir.AppendToNewVMFile(mc.Name+".ign", nil) //nolint:wrapcheck
 }
 
 type MachineConfig struct {
@@ -155,7 +155,7 @@ func NewMachineConfig(opts define.InitOptions, dirs *define.MachineDirs, sshIden
 	// Assign Dirs
 	cf, err := define.NewMachineFile(filepath.Join(dirs.ConfigDir.GetPath(), fmt.Sprintf("%s.json", opts.Name)), nil)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to create machine config file: %w", err)
 	}
 	mc.ConfigPath = cf
 
@@ -172,7 +172,7 @@ func NewMachineConfig(opts define.InitOptions, dirs *define.MachineDirs, sshIden
 	if tempErr != nil {
 		logrus.Infof("Gvproxy SSH port 61234 port can not be used , try to get a random port...")
 		if sshPort, err = ports.AllocateMachinePort(); err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to allocate machine port: %w", err)
 		}
 	} else {
 		_, portString, _ := net.SplitHostPort(listener.Addr().String())
@@ -204,14 +204,14 @@ func LoadMachineByName(name string, dirs *define.MachineDirs) (*MachineConfig, e
 	fullPath, err := dirs.ConfigDir.AppendToNewVMFile(name+".json", nil)
 	logrus.Infof("Try load MachineConfigure %s from %s", name, fullPath.GetPath())
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to create full path: %w", err)
 	}
 	mc, err := loadMachineFromFQPath(fullPath)
 	if err != nil {
 		if errors.Is(err, fs.ErrNotExist) {
 			return nil, &define.ErrVMDoesNotExist{Name: name}
 		}
-		return nil, err
+		return nil, fmt.Errorf("failed to load machine config: %w", err)
 	}
 	mc.Dirs = dirs
 	mc.ConfigPath = fullPath
@@ -230,18 +230,17 @@ func LoadMachineByName(name string, dirs *define.MachineDirs) (*MachineConfig, e
 
 func LoadMachinesInDir(dirs *define.MachineDirs) (map[string]*MachineConfig, error) {
 	mcs := make(map[string]*MachineConfig)
-	if err := filepath.WalkDir(dirs.ConfigDir.GetPath(), func(path string, d fs.DirEntry, err error) error {
+	err := filepath.WalkDir(dirs.ConfigDir.GetPath(), func(path string, d fs.DirEntry, err error) error {
 		if strings.HasSuffix(d.Name(), ".json") {
 			fullPath, err := dirs.ConfigDir.AppendToNewVMFile(d.Name(), nil)
 			if err != nil {
-				return err
+				return fmt.Errorf("failed to create full path: %w", err)
 			}
 			mc, err := loadMachineFromFQPath(fullPath)
 			if err != nil {
-				return err
+				return fmt.Errorf("failed to load machine config: %w", err)
 			}
 			// if we find an incompatible machine configuration file, we emit and error
-			//
 			if mc.Version == 0 {
 				tmpErr := &define.ErrIncompatibleMachineConfig{
 					Name: mc.Name,
@@ -255,9 +254,11 @@ func LoadMachinesInDir(dirs *define.MachineDirs) (map[string]*MachineConfig, err
 			mcs[mc.Name] = mc
 		}
 		return nil
-	}); err != nil {
-		return nil, err
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to walk machine config dir: %w", err)
 	}
+
 	return mcs, nil
 }
 
@@ -265,13 +266,16 @@ func loadMachineFromFQPath(path *define.VMFile) (*MachineConfig, error) {
 	mc := new(MachineConfig)
 	b, err := path.Read()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to read machine config: %w", err)
 	}
 
 	if err = json.Unmarshal(b, mc); err != nil {
-		return nil, fmt.Errorf("unable to load machine config file: %q", err)
+		return nil, fmt.Errorf("unable to load machine config file: %w", err)
 	}
 	lock, err := lock.GetMachineLock(mc.Name, filepath.Dir(path.GetPath()))
+	if err != nil {
+		return nil, fmt.Errorf("failed to get machine lock: %w", err)
+	}
 	mc.lock = lock
-	return mc, err
+	return mc, nil
 }

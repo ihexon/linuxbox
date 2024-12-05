@@ -14,9 +14,7 @@ import (
 )
 
 func SSHD() error {
-	var err error
 	ssh.Handle(func(s ssh.Session) {
-		var handleErr error
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
 
@@ -65,11 +63,10 @@ func SSHD() error {
 		}
 	})
 
-	err = ssh.ListenAndServe("127.0.0.1:5321", nil)
-	if err != nil {
+	if err := ssh.ListenAndServe("127.0.0.1:5321", nil); err != nil {
 		_, _ = fmt.Fprintf(os.Stderr, "Error: %s\n", err)
-		return err
+		return fmt.Errorf("listen and serve error: %w", err)
 	}
 
-	return err
+	return nil
 }

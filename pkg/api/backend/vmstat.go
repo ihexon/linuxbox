@@ -5,6 +5,7 @@ package backend
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 
 	"bauklotze/pkg/api/utils"
@@ -45,16 +46,16 @@ func getVMstat(vmName string) (statType, error) {
 	for _, sprovider := range providers {
 		dirs, err := env.GetMachineDirs(sprovider.VMType())
 		if err != nil {
-			return unknown, err
+			return unknown, fmt.Errorf("failed to get machine dirs: %w", err)
 		}
 		mcs, err := vmconfigs.LoadMachinesInDir(dirs)
 		if err != nil {
-			return unknown, err
+			return unknown, fmt.Errorf("failed to load machines in dir: %w", err)
 		}
 		if mc, exists := mcs[vmName]; exists {
 			state, err := sprovider.State(mc)
 			if err != nil {
-				return unknown, err
+				return unknown, fmt.Errorf("failed to get state: %w", err)
 			}
 			switch state {
 			case define.Running:

@@ -26,7 +26,7 @@ type LibKrunStubber struct {
 }
 
 func (l LibKrunStubber) State(mc *vmconfigs.MachineConfig) (define.Status, error) {
-	return mc.AppleKrunkitHypervisor.Krunkit.State()
+	return mc.AppleKrunkitHypervisor.Krunkit.State() //nolint:wrapcheck
 }
 
 func (l LibKrunStubber) StopVM(mc *vmconfigs.MachineConfig, ifHardStop bool) error {
@@ -38,7 +38,7 @@ func (l LibKrunStubber) GetDisk(userInputPath string, dirs *define.MachineDirs, 
 	// mc.ImagePath is the bootable copied from user provided image --boot <bootable.img.xz>
 	// userInputPath is the bootable image user provided
 	// Extract  userInputPath --> imagePath
-	return diskpull.GetDisk(userInputPath, imagePath)
+	return diskpull.GetDisk(userInputPath, imagePath) //nolint:wrapcheck
 }
 
 func (l LibKrunStubber) Exists(name string) (bool, error) {
@@ -92,20 +92,19 @@ const (
 )
 
 func (l LibKrunStubber) CreateVM(opts define.CreateVMOpts, mc *vmconfigs.MachineConfig) error {
-	var err error
 	mc.AppleKrunkitHypervisor = new(vmconfigs.AppleKrunkitConfig)
 	mc.AppleKrunkitHypervisor.Krunkit = hvhelper.Helper{}
 	bl := vfConfig.NewEFIBootloader(fmt.Sprintf("%s/efi-bl-%s", opts.Dirs.DataDir.GetPath(), opts.Name), true)
 	mc.AppleKrunkitHypervisor.Krunkit.VirtualMachine = vfConfig.NewVirtualMachine(uint(mc.Resources.CPUs), uint64(mc.Resources.Memory), bl)
 	randPort, err := system.GetRandomPort()
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to get random port: %w", err)
 	}
 	// Endpoint is a string: http://127.0.0.1/[random_port]
 	mc.AppleKrunkitHypervisor.Krunkit.Endpoint = localhostURI + ":" + strconv.Itoa(randPort)
 	mc.AppleKrunkitHypervisor.Krunkit.LogLevel = logrus.InfoLevel
 
-	return err
+	return nil
 }
 
 func (l LibKrunStubber) VMType() define.VMType {

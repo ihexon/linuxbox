@@ -32,7 +32,7 @@ type ConnectionsFile struct {
 func connectionsConfigFile() (string, error) {
 	path, err := env.ConfDirPrefix()
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("failed to get conf dir prefix: %w", err)
 	}
 	return filepath.Join(path, "connectionCfg", connectionsFile), nil // ${BauklotzeHomePath}/config/connectionCfg/bugbox-connections.json
 }
@@ -46,7 +46,7 @@ func readConnectionConf(path string) (*ConnectionsFile, error) {
 			return conf, nil
 		}
 
-		return nil, err
+		return nil, fmt.Errorf("failed to open connections config: %w", err)
 	}
 	defer f.Close()
 
@@ -59,23 +59,23 @@ func readConnectionConf(path string) (*ConnectionsFile, error) {
 
 func writeConnectionConf(path string, conf *ConnectionsFile) error {
 	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
-		return err
+		return fmt.Errorf("create directory %q: %w", filepath.Dir(path), err)
 	}
 
 	opts := &ioutils.AtomicFileWriterOptions{ExplicitCommit: true}
 	configFile, err := ioutils.NewAtomicFileWriterWithOpts(path, 0o644, opts)
 	if err != nil {
-		return err
+		return fmt.Errorf("create atomic file writer: %s, %w", path, err)
 	}
 	defer configFile.Close()
 
 	err = json.NewEncoder(configFile).Encode(conf)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to encode connections config: %s, %w", configFile, err)
 	}
 
 	// If no errors commit the changes to the config file
-	return configFile.Commit()
+	return configFile.Commit() //nolint:wrapcheck
 }
 
 // EditConnectionConfig must be used to edit the connections config.
@@ -84,7 +84,7 @@ func writeConnectionConf(path string, conf *ConnectionsFile) error {
 func EditConnectionConfig(callback func(cfg *ConnectionsFile) error) error {
 	path, err := connectionsConfigFile()
 	if err != nil {
-		return err
+		return fmt.Errorf("get connections config file path: %w", err)
 	}
 
 	lockPath := path + ".lock"
@@ -101,7 +101,7 @@ func EditConnectionConfig(callback func(cfg *ConnectionsFile) error) error {
 	}
 
 	if err := callback(conf); err != nil {
-		return err
+		return fmt.Errorf("failed to call edit connections config: %w", err)
 	}
 
 	return writeConnectionConf(path, conf)

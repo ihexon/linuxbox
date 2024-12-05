@@ -15,7 +15,7 @@ import (
 func CheckMaxMemory(newMem strongunits.MiB) error {
 	memStat, err := mem.VirtualMemory()
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to get memory stats: %w", err)
 	}
 	if total := strongunits.B(memStat.Total); strongunits.B(memStat.Total) < newMem.ToBytes() {
 		return fmt.Errorf("requested amount of memory (%d MB) greater than total system memory (%d MB)", newMem, total)

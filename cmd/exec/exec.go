@@ -4,6 +4,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -101,7 +102,7 @@ func main() {
 	if err := session.Start(str); err != nil {
 		// Fatalf will call os.Exit to end the process ut we need to get the return value of the str(cmdline)
 		logrus.Errorf("Failed to start command: %s\n", err)
-		os.Exit(err.(*ssh.ExitError).ExitStatus()) //nolint: gocritic
+		os.Exit(getExitCode(err)) //nolint:gocritic
 	}
 
 	// Output command execution results in real time
@@ -115,7 +116,16 @@ func main() {
 	// Wait for the command to complete
 	if err := session.Wait(); err != nil {
 		logrus.Errorf("Command finished with error: %s\n", err)
-		os.Exit(err.(*ssh.ExitError).ExitStatus())
+		os.Exit(getExitCode(err))
 	}
 	fmt.Println("Command executed successfully")
+}
+
+func getExitCode(err error) int {
+	var sshErr *ssh.ExitError
+	if ok := errors.As(err, &sshErr); ok {
+		return sshErr.ExitStatus()
+	}
+
+	return 1
 }

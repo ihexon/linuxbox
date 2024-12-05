@@ -28,11 +28,11 @@ const (
 func setupMachineSockets(mc *vmconfigs.MachineConfig, _dirs *define.MachineDirs) (string, string, error) {
 	host, err := mc.PodmanAPISocketHost()
 	if err != nil {
-		return "", "", err
+		return "", "", fmt.Errorf("failed to get podman api socket host: %w", err)
 	}
 	err = host.Delete()
 	if err != nil {
-		return "", "", err
+		return "", "", fmt.Errorf("failed to delete podman api socket host: %w", err)
 	}
 	return host.GetPath(), podmanGuestSocks, nil
 }
@@ -44,7 +44,7 @@ func startHostForwarder(mc *vmconfigs.MachineConfig, provider vmconfigs.VMProvid
 
 	binary, err := cfg.FindHelperBinary(machine.ForwarderBinaryName)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to find helper binary: %w", err)
 	}
 
 	cmd := gvproxy.NewGvproxyCommand() // New a GvProxyCommands
@@ -61,7 +61,7 @@ func startHostForwarder(mc *vmconfigs.MachineConfig, provider vmconfigs.VMProvid
 	cmd.AddForwardIdentity(mc.SSH.IdentityPath) // ssh keys
 
 	if err := provider.StartNetworking(mc, &cmd); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to start networking: %w", err)
 	}
 
 	gvcmd := cmd.Cmd(binary)
@@ -82,5 +82,8 @@ func startHostForwarder(mc *vmconfigs.MachineConfig, provider vmconfigs.VMProvid
 	mc.GvProxy.HostSocks = []string{socksInHost}
 	mc.GvProxy.RemoteSocks = socksInGuest
 
-	return gvcmd, mc.Write()
+	if err := mc.Write(); err != nil {
+		return nil, fmt.Errorf("failed to write machine config: %w", err)
+	}
+	return gvcmd, nil
 }

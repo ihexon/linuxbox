@@ -6,6 +6,7 @@ package vmconfigs
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"os"
 
 	"bauklotze/pkg/machine/define"
@@ -14,7 +15,7 @@ import (
 func (mc *MachineConfig) GVProxySocket() (*define.VMFile, error) {
 	machineRuntimeDir, err := mc.RuntimeDir()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to get runtime dir: %w", err)
 	}
 	return gvProxySocket(mc.Name, machineRuntimeDir)
 }
@@ -22,7 +23,7 @@ func (mc *MachineConfig) GVProxySocket() (*define.VMFile, error) {
 func (mc *MachineConfig) PodmanAPISocketHost() (*define.VMFile, error) {
 	machineRuntimeDir, err := mc.RuntimeDir()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to get runtime dir: %w", err)
 	}
 	return podmanAPISocketOnHost(mc.Name, machineRuntimeDir)
 }
@@ -40,9 +41,9 @@ func (mc *MachineConfig) Unlock() {
 func (mc *MachineConfig) Refresh() error {
 	content, err := os.ReadFile(mc.ConfigPath.GetPath())
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to read machine config: %w", err)
 	}
-	return json.Unmarshal(content, mc)
+	return json.Unmarshal(content, mc) //nolint:wrapcheck
 }
 
 // ConfigDir is a simple helper to obtain the machine config dir

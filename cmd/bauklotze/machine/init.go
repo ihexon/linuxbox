@@ -105,7 +105,7 @@ func initMachine(cmd *cobra.Command, args []string) error {
 	// TODO Continue to check the ppid alive
 	// First check the parent process is alive once
 	if isRunning, err := system.IsProcesSAlive([]int32{ppid}); !isRunning {
-		return err
+		return fmt.Errorf("parent process %d is not alive: %w", ppid, err)
 	}
 
 	initOpts.Name = defaultMachineName
@@ -121,14 +121,14 @@ func initMachine(cmd *cobra.Command, args []string) error {
 
 	oldMc, _, err := shim.VMExists(initOpts.Name, []vmconfigs.VMProvider{provider})
 	if err != nil {
-		return err
+		return fmt.Errorf("check machine exists error: %w", err)
 	}
 
 	// update machine configure
 
 	dataDir, err := env.DataDirPrefix() // ${BauklotzeHomePath}/data
 	if err != nil {
-		return fmt.Errorf("can not get Data dir %v", err)
+		return fmt.Errorf("can not get Data dir %w", err)
 	}
 
 	dataDisk := filepath.Join(dataDir, "external_disk", initOpts.Name, "data.raw") // ${BauklotzeHomePath}/data/{MachineName}/data.raw
@@ -159,7 +159,7 @@ func initMachine(cmd *cobra.Command, args []string) error {
 		logrus.Infof("Recreate data disk: %s", initOpts.ImagesStruct.DataDisk)
 		err = system2.CreateAndResizeDisk(initOpts.ImagesStruct.DataDisk, strongunits.GiB(100))
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to create/resize data disk: %w", err)
 		}
 
 		if oldMc != nil {
@@ -167,7 +167,7 @@ func initMachine(cmd *cobra.Command, args []string) error {
 			oldMc.DataDiskVersion = initOpts.ImageVerStruct.DataDiskVersion
 			logrus.Infof("Update old machine configure DataDiskVersion field: %s", oldMc.ConfigPath.GetPath())
 			if err = oldMc.Write(); err != nil {
-				return err
+				return fmt.Errorf("update machine configure error: %w", err)
 			}
 		}
 	} else {
@@ -198,17 +198,16 @@ func initMachine(cmd *cobra.Command, args []string) error {
 	logrus.Infof("Initialize virtual machine [ %s ] with bootable image: [ %s ]", initOpts.Name, initOpts.ImagesStruct.BootableImage)
 	err = shim.Init(initOpts, provider)
 	if err != nil {
-		return err
+		return fmt.Errorf("initialize virtual machine error: %w", err)
 	}
 	return nil
 }
 
 func systemResourceCheck(cmd *cobra.Command) error {
-	var err error
 	if cmd.Flags().Changed("memory") {
-		if err = system2.CheckMaxMemory(strongunits.MiB(initOpts.Memory)); err != nil {
+		if err := system2.CheckMaxMemory(strongunits.MiB(initOpts.Memory)); err != nil {
 			logrus.Errorf("Can not allocate the memory size %d", initOpts.Memory)
-			return err
+			return fmt.Errorf("can not allocate the memory size %d: %w", initOpts.Memory, err)
 		}
 	}
 
@@ -219,19 +218,19 @@ func systemResourceCheck(cmd *cobra.Command) error {
 		}
 	}
 
-	return err
+	return nil
 }
 
 func updateMachineResource(mc *vmconfigs.MachineConfig) error {
-	var err error
 	if mc != nil {
 		mc.Resources.CPUs = initOpts.CPUS                                               // Update the CPUs
 		mc.Resources.Memory = strongunits.MiB(initOpts.Memory)                          // Update the Memory
 		mc.Mounts = shim.CmdLineVolumesToMounts(initOpts.Volumes, provider.MountType()) // Update the Volumes
 		logrus.Infof("Update old machine CPU/Memory/Mounts configure: [ %s ]", mc.ConfigPath.GetPath())
-		if err = mc.Write(); err != nil {
-			return err
+		if err := mc.Write(); err != nil {
+			return fmt.Errorf("update machine configure error: %w", err)
 		}
 	}
-	return err
+
+	return nil
 }
