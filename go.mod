@@ -5,7 +5,7 @@ go 1.22
 require (
 	github.com/Code-Hex/go-infinity-channel v1.0.0
 	github.com/DataDog/zstd v1.5.6
-	github.com/containers/common v0.60.3
+	github.com/containers/common v0.60.4
 	github.com/containers/gvisor-tap-vsock v0.7.5
 	github.com/containers/podman/v5 v5.2.3
 	github.com/containers/storage v1.55.0

@@ -17,8 +17,8 @@ github.com/chenzhuoyu/base64x v0.0.0-20230717121745-296ad89f973d/go.mod h1:8EPpV
 github.com/chenzhuoyu/iasm v0.9.0/go.mod h1:Xjy2NpN3h7aUqeqM+woSuuvxmIe6+DDsiNLIrkAmYog=
 github.com/chenzhuoyu/iasm v0.9.1 h1:tUHQJXo3NhBqw6s33wkGn9SP3bvrWLdlVIJ3hQBL7P0=
 github.com/chenzhuoyu/iasm v0.9.1/go.mod h1:Xjy2NpN3h7aUqeqM+woSuuvxmIe6+DDsiNLIrkAmYog=
-github.com/containers/common v0.60.3 h1:pToT7gtFx/KWyMtWw98g4pIbW54i9KfGH2QrdN2s1io=
-github.com/containers/common v0.60.3/go.mod h1:I0upBi1qJX3QmzGbUOBN1LVP6RvkKhd3qQpZbQT+Q54=
+github.com/containers/common v0.60.4 h1:H5+LAMHPZEqX6vVNOQ+IguVsaFl8kbO/SZ/VPXjxhy0=
+github.com/containers/common v0.60.4/go.mod h1:I0upBi1qJX3QmzGbUOBN1LVP6RvkKhd3qQpZbQT+Q54=
 github.com/containers/gvisor-tap-vsock v0.7.5 h1:bTy4u3DOmmUPwurL6me2rsgfypAFDhyeJleUcQmBR/E=
 github.com/containers/gvisor-tap-vsock v0.7.5/go.mod h1:GW9jOqAEEGdaS20XwTYdm6KCYDHIulOE/yEEOabkoE4=
 github.com/containers/podman/v5 v5.2.3 h1:jDAfDHoNqYsQMsKQS/8fnjfp+ZEErxOb4zzJGXUcZCQ=
