@@ -34,6 +34,10 @@ clean: ##@ Clean up build artifacts
 ##@
 ##@ Misc commands
 ##@
+
+lint: ##@ Run linter
+	@golangci-lint run
+
 help: ##@ (Default) Print listing of key targets with their descriptions
 	@printf "\nUsage: make <command>\n"
 	@grep -F -h "##@" $(MAKEFILE_LIST) | grep -F -v grep -F | sed -e 's/\\$$//' | awk 'BEGIN {FS = ":*[[:space:]]*##@[[:space:]]*"}; \
