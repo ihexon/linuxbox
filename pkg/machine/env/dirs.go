@@ -142,8 +142,10 @@ func GetMachineDirs(vmType define.VMType) (*define.MachineDirs, error) {
 	if err = os.MkdirAll(logsDirVMFile.GetPath(), 0755); err != nil {
 		return nil, fmt.Errorf("unable to create logs dir: %s: %w", logsDirVMFile.GetPath(), err)
 	}
-	err = os.MkdirAll(imageCacheDir.GetPath(), 0755)
-	return &dirs, fmt.Errorf("unable to create image cache dir: %s: %w", imageCacheDir.GetPath(), err)
+	if err = os.MkdirAll(imageCacheDir.GetPath(), 0755); err != nil {
+		return nil, fmt.Errorf("unable to create image cache dir: %s: %w", imageCacheDir.GetPath(), err)
+	}
+	return &dirs, nil
 }
 
 // GetSSHIdentityPath returns the path to the expected SSH private key
