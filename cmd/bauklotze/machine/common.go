@@ -18,10 +18,12 @@ var provider vmconfigs.VMProvider
 
 func machinePreRunE(cmd *cobra.Command, args []string) error {
 	logrus.Infof("Try to get current hypervisor provider...")
-	provider, err := whatProvider.Get()
+	p, err := whatProvider.Get()
 	if err != nil {
 		return fmt.Errorf("failed to get current hypervisor provider: %w", err)
 	}
-	logrus.Infof("Got current hypervisor provider %s", provider.VMType().String())
+
+	provider = p
+	logrus.Infof("Got current hypervisor provider %s", p.VMType().String())
 	return nil
 }
