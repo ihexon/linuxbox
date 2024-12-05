@@ -20,12 +20,12 @@ import (
 const connectionsFile = "connections.json"
 
 type ConnectionConfig struct {
-	Default     string                 `json:",omitempty"`
-	Connections map[string]Destination `json:",omitempty"`
+	Default     string                 `json:"Default,omitempty"`
+	Connections map[string]Destination `json:"Connections,omitempty"`
 }
 
 type ConnectionsFile struct {
-	Connection ConnectionConfig `json:",omitempty"`
+	Connection ConnectionConfig `json:"Connection,omitempty"`
 }
 
 // connectionsConfigFile returns the path to the rw connections config file

@@ -13,5 +13,5 @@ type QEMUConfig struct{}
 
 // krunkit 的优先级放到最高
 type AppleKrunkitConfig struct {
-	Krunkit hvhelper.Helper
+	Krunkit hvhelper.Helper `json:"Krunkit"`
 }

@@ -19,7 +19,6 @@ linters:
     - gocognit # temp disabled
     - testpackage
     - err113
-#    - wrapcheck
     - paralleltest
     - wsl
     - godox
@@ -42,7 +41,6 @@ linters:
     - gocyclo
     - lll
     - gosec
-    - musttag # way to many warnings to fix for now, also some false positives
     - mnd # way to many false positives
     - gomoddirectives
     - containedctx

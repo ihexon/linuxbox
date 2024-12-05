@@ -19,7 +19,7 @@ const MaxSocketPathLength int = 103
 
 type VMFile struct {
 	// Path is the fully qualified path to a file
-	Path string
+	Path string `json:"Path"`
 	// Symlink is a shortened version of Path by using
 	// a symlink
 	Symlink *string `json:"symlink,omitempty"`

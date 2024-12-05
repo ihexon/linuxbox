@@ -18,10 +18,10 @@ import (
 // Destination represents destination for remote service
 type Destination struct {
 	// URI, required. Example: ssh://root@example.com:22/run/podman/podman.sock
-	URI string `toml:"uri"`
+	URI string `json:"URI" toml:"uri"`
 
 	// Identity file with ssh key, optional
-	Identity string `json:",omitempty" toml:"identity,omitempty"`
+	Identity string `json:"Identity,omitempty" toml:"identity,omitempty"`
 }
 
 type MachineConfig struct {

@@ -43,21 +43,21 @@ type VMProvider interface { //nolint:interfacebloat
 }
 
 type Mount struct {
-	OriginalInput string
-	ReadOnly      bool
-	Source        string
-	Tag           string
-	Target        string
-	Type          string
-	VSockNumber   *uint64
+	OriginalInput string  `json:"OriginalInput"`
+	ReadOnly      bool    `json:"ReadOnly"`
+	Source        string  `json:"Source"`
+	Tag           string  `json:"Tag"`
+	Target        string  `json:"Target"`
+	Type          string  `json:"Type"`
+	VSockNumber   *uint64 `json:"VSockNumber"`
 }
 
 // HostUser describes the host user
 type HostUser struct {
 	// Whether this machine should run in a rootful or rootless manner
-	Rootful bool
+	Rootful bool `json:"Rootful"`
 	// UID is the numerical id of the user that called machine
-	UID int
+	UID int `json:"UID"`
 	// Whether one of these fields has changed and actions should be taken
 	Modified bool `json:"HostUserModified"`
 }
@@ -87,49 +87,49 @@ func (mc *MachineConfig) IgnitionFile() (*define.VMFile, error) {
 }
 
 type MachineConfig struct {
-	Created time.Time
-	LastUp  time.Time
+	Created time.Time `json:"Created"`
+	LastUp  time.Time `json:"LastUp"`
 
-	Dirs     *define.MachineDirs
-	HostUser HostUser
-	Name     string
+	Dirs     *define.MachineDirs `json:"Dirs"`
+	HostUser HostUser            `json:"HostUser"`
+	Name     string              `json:"Name"`
 	// TODO Using Image struct and BootableDiskVersion struct
-	ImagePath   *define.VMFile // mc.ImagePath is the bootable copied from user provided image --boot <bootable.img.xz>
-	DataDisk    *define.VMFile // External Disk file
-	OverlayDisk *define.VMFile // Overlay Disk file
+	ImagePath   *define.VMFile `json:"ImagePath"`   // mc.ImagePath is the bootable copied from user provided image --boot <bootable.img.xz>
+	DataDisk    *define.VMFile `json:"DataDisk"`    // External Disk file
+	OverlayDisk *define.VMFile `json:"OverlayDisk"` // Overlay Disk file
 
-	BootableDiskVersion string `json:",omitempty"` // Bootable Image for now
-	DataDiskVersion     string `json:",omitempty"` // External Disk for now
+	BootableDiskVersion string `json:"BootableDiskVersion,omitempty"` // Bootable Image for now
+	DataDiskVersion     string `json:"DataDiskVersion,omitempty"`     // External Disk for now
 
-	AppleKrunkitHypervisor *AppleKrunkitConfig `json:",omitempty"`
-	WSLHypervisor          *WSLConfig          `json:",omitempty"`
+	AppleKrunkitHypervisor *AppleKrunkitConfig `json:"AppleKrunkitHypervisor,omitempty"`
+	WSLHypervisor          *WSLConfig          `json:"WSLHypervisor,omitempty"`
 
-	ConfigPath *define.VMFile
-	Resources  define.ResourceConfig
-	Version    uint
-	Mounts     []*Mount
-	GvProxy    GvproxyCommand
-	SSH        SSHConfig
-	Starting   bool
+	ConfigPath *define.VMFile        `json:"ConfigPath"`
+	Resources  define.ResourceConfig `json:"Resources"`
+	Version    uint                  `json:"Version"`
+	Mounts     []*Mount              `json:"Mounts"`
+	GvProxy    GvproxyCommand        `json:"GvProxy"`
+	SSH        SSHConfig             `json:"SSH"`
+	Starting   bool                  `json:"Starting"`
 	lock       *lockfile.LockFile
 	// Oomol Studio
 	ReportURL *define.VMFile `json:",omitempty"`
 }
 
 type GvproxyCommand struct {
-	GvProxy     gvproxy.GvproxyCommand
-	HostSocks   []string
-	RemoteSocks string
+	GvProxy     gvproxy.GvproxyCommand `json:"GvProxy"`
+	HostSocks   []string               `json:"HostSocks"`
+	RemoteSocks string                 `json:"RemoteSocks"`
 }
 
 // SSHConfig contains remote access information for SSH
 type SSHConfig struct {
 	// IdentityPath is the fq path to the ssh priv key
-	IdentityPath string
+	IdentityPath string `json:"IdentityPath"`
 	// SSH port for user networking
-	Port int
+	Port int `json:"Port"`
 	// RemoteUsername of the vm user
-	RemoteUsername string
+	RemoteUsername string `json:"RemoteUsername"`
 }
 
 // RuntimeDir is simple helper function to obtain the runtime dir

@@ -16,10 +16,10 @@ const (
 )
 
 type CreateVMOpts struct {
-	Name          string
-	Dirs          *MachineDirs
-	ReExec        bool   // re-exec as administrator
-	UserImageFile string // Only used in wsl2
+	Name          string       `json:"Name"`
+	Dirs          *MachineDirs `json:"Dirs"`
+	ReExec        bool         `json:"ReExec"`        // re-exec as administrator
+	UserImageFile string       `json:"UserImageFile"` // Only used in wsl2
 }
 
 type WSLConfig struct {
@@ -27,17 +27,17 @@ type WSLConfig struct {
 
 type ResourceConfig struct {
 	// CPUs to be assigned to the VM
-	CPUs uint64
+	CPUs uint64 `json:"CPUs"`
 	// Memory in megabytes assigned to the vm
-	Memory strongunits.MiB
+	Memory strongunits.MiB `json:"Memory"`
 }
 
 type MachineDirs struct {
-	ConfigDir     *VMFile
-	DataDir       *VMFile
-	ImageCacheDir *VMFile
-	RuntimeDir    *VMFile
-	LogsDir       *VMFile
+	ConfigDir     *VMFile `json:"ConfigDir"`
+	DataDir       *VMFile `json:"DataDir"`
+	ImageCacheDir *VMFile `json:"ImageCacheDir"`
+	RuntimeDir    *VMFile `json:"RuntimeDir"`
+	LogsDir       *VMFile `json:"LogsDir"`
 }
 
 const (

@@ -44,11 +44,11 @@ type Endpoint string
 
 // Helper describes the use of hvhelper: cmdline and endpoint
 type Helper struct {
-	LogLevel       logrus.Level
-	Endpoint       string
-	BinaryPath     *define.VMFile
-	VirtualMachine *vfkit_config.VirtualMachine
-	Rosetta        bool
+	LogLevel       logrus.Level                 `json:"LogLevel"`
+	Endpoint       string                       `json:"Endpoint"`
+	BinaryPath     *define.VMFile               `json:"BinaryPath"`
+	VirtualMachine *vfkit_config.VirtualMachine `json:"VirtualMachine"`
+	Rosetta        bool                         `json:"Rosetta"`
 }
 
 // state asks vfkit for the virtual machine state. in case the vfkit
