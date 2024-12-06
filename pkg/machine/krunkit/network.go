@@ -14,15 +14,15 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-// StartGenericNetworking most has been logic removed
+// StartGenericNetworking most logic has been removed
 func StartGenericNetworking(mc *vmconfigs.MachineConfig, cmd *gvproxy.GvproxyCommand) error {
 	gvProxySock, err := mc.GVProxySocket()
 	if err != nil {
 		return fmt.Errorf("failed to get gvproxy socket: %w", err)
 	}
 	// make sure it does not exist before gvproxy is called
+	logrus.Infof("Deleting gvproxy socket %s", gvProxySock.GetPath())
 	if err := gvProxySock.Delete(); err != nil {
-		logrus.Error(err)
 		return fmt.Errorf("failed to delete gvproxy socket: %w", err)
 	}
 

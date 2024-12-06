@@ -39,7 +39,7 @@ func (m *VMFile) GetPath() string {
 func (m *VMFile) Delete() error {
 	if m.Symlink != nil {
 		if err := os.RemoveAll(*m.Symlink); err != nil && !errors.Is(err, os.ErrNotExist) {
-			logrus.Errorf("unable to remove symlink %q", *m.Symlink)
+			return fmt.Errorf("unable to remove symlink %q", *m.Symlink)
 		}
 	}
 	if err := os.RemoveAll(m.Path); err != nil && !errors.Is(err, os.ErrNotExist) {

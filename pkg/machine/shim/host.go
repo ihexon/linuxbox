@@ -242,7 +242,7 @@ func Start(ctx context.Context, mc *vmconfigs.MachineConfig, mp vmconfigs.VMProv
 	}
 
 	// Start krunkit now
-	logrus.Infof("Start krunkit....")
+	logrus.Infof("--> Start krunkit....")
 	krunCmd, WaitForReady, err := mp.StartVM(mc)
 	if err != nil {
 		return fmt.Errorf("failed to start krunkit: %w", err)

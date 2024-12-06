@@ -14,18 +14,18 @@ import (
 )
 
 // WaitForSocketWithBackoffs attempts to discover listening socket in maxBackoffs attempts
-func WaitForSocketWithBackoffs(maxBackoffs int, backoff time.Duration, socketPath string, name string) error {
-	backoffWait := backoff
-	logrus.Debugf("checking that %q socket is ready", name)
-	for range maxBackoffs {
+func WaitForSocketWithBackoffs(socketPath string) error {
+	var gvProxyWaitBackoff = 300 * time.Millisecond
+	logrus.Infof("Checking that %s socket is ready\n", socketPath)
+	for range 10 {
 		err := fileutils.Exists(socketPath)
 		if err == nil {
 			return nil
 		}
-		time.Sleep(backoffWait)
-		backoffWait *= 2
+		logrus.Infof("Gvproxy Socket %s not ready, try again....\n", socketPath)
+		time.Sleep(gvProxyWaitBackoff)
 	}
-	return fmt.Errorf("unable to connect to %q socket at %q", name, socketPath)
+	return fmt.Errorf("unable to connect to socket at %q", socketPath)
 }
 
 // ListenAndWaitOnSocket waits for a new connection to the listener and sends

@@ -11,7 +11,6 @@ import (
 	"net"
 	"os"
 	"os/exec"
-	"time"
 
 	"bauklotze/pkg/config"
 	"bauklotze/pkg/machine"
@@ -94,11 +93,6 @@ func GetVfKitEndpointCMDArgs(endpoint string) ([]string, error) {
 	return restEndpoint.ToCmdLine() //nolint:wrapcheck
 }
 
-var (
-	gvProxyWaitBackoff        = 100 * time.Millisecond
-	gvProxyMaxBackoffAttempts = 6
-)
-
 // TODO, If there is an error,  it should return error
 func readFileContent(path string) string {
 	content, err := os.ReadFile(path)
@@ -124,7 +118,7 @@ func StartGenericAppleVM(mc *vmconfigs.MachineConfig, cmdBinary string, bootload
 
 	// Before `netDevice.SetUnixSocketPath(gvproxySocket.GetPath())`, we need to wait on gvproxy to be running and aware,
 	// There is a little chance that the gvproxy is not ready yet, so we need to wait for it.
-	if err := sockets.WaitForSocketWithBackoffs(gvProxyMaxBackoffAttempts, gvProxyWaitBackoff, gvproxySocket.GetPath(), "gvproxy"); err != nil {
+	if err := sockets.WaitForSocketWithBackoffs(gvproxySocket.GetPath()); err != nil {
 		return nil, nil, fmt.Errorf("failed to wait for gvproxy: %w", err)
 	}
 
