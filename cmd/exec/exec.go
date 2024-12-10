@@ -5,7 +5,6 @@ package main
 
 import (
 	"errors"
-	"fmt"
 	"io"
 	"os"
 	"strings"
@@ -118,7 +117,7 @@ func main() {
 		logrus.Errorf("Command finished with error: %s\n", err)
 		os.Exit(getExitCode(err))
 	}
-	fmt.Println("Command executed successfully")
+	logrus.Infof("Command executed successfully")
 }
 
 func getExitCode(err error) int {

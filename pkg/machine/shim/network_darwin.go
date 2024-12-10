@@ -10,7 +10,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"strings"
 
 	"bauklotze/pkg/config"
 	"bauklotze/pkg/machine"
@@ -68,7 +67,12 @@ func startHostForwarder(mc *vmconfigs.MachineConfig, provider vmconfigs.VMProvid
 	gvcmd.Stdout = os.Stdout
 	gvcmd.Stderr = os.Stderr
 
-	logrus.Infof("Gvproxy command-line: %s %s", binary, strings.Join(cmd.ToCmdline(), " "))
+	if os.Getenv("OVM_DEBUG") == "true" {
+		logrus.Infof("Add -debug flag to gvproxy")
+		gvcmd.Args = append(gvcmd.Args, "-debug")
+	}
+
+	logrus.Infof("Gvproxy command-line: %s", gvcmd.Args)
 	if err := gvcmd.Start(); err != nil {
 		return nil, fmt.Errorf("unable to execute: %q: %w", cmd.ToCmdline(), err)
 	} else {

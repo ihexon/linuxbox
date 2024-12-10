@@ -25,7 +25,7 @@ func WaitForSocketWithBackoffs(socketPath string) error {
 		logrus.Infof("Gvproxy Socket %s not ready, try again....\n", socketPath)
 		time.Sleep(gvProxyWaitBackoff)
 	}
-	return fmt.Errorf("unable to connect to socket at %q", socketPath)
+	return fmt.Errorf("unable to connect to socket at %s", socketPath)
 }
 
 // ListenAndWaitOnSocket waits for a new connection to the listener and sends
