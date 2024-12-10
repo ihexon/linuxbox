@@ -11,6 +11,7 @@ import (
 	"net"
 	"os"
 	"os/exec"
+	"time"
 
 	"bauklotze/pkg/config"
 	"bauklotze/pkg/machine"
@@ -238,15 +239,16 @@ func StartGenericAppleVM(mc *vmconfigs.MachineConfig, cmdBinary string, bootload
 		return nil, nil, fmt.Errorf("failed to delete the %s: %w", ignSocket.GetPath(), err)
 	}
 
-	logrus.Infof("Serving the ignition file over the socket: %s", ignSocket.GetPath())
-
 	go func() {
+		logrus.Infof("Serving the ignition file over the socket: %s", ignSocket.GetPath())
 		if err := ignition.ServeIgnitionOverSockV2(ignSocket, mc); err != nil {
 			logrus.Errorf("failed to serve ignition file: %v", err)
 			readyChan <- err
 		}
 	}()
-
+	// wait the ServeIgnitionOverSockV2 to be ready, this line try to fix the krunkit start stuck issue
+	var ignSleepTime = 100 * time.Millisecond
+	time.Sleep(ignSleepTime)
 	logrus.Infof("krunkit command-line: %v", krunCmd.Args)
 
 	if err := krunCmd.Start(); err != nil {

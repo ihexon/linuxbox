@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"time"
 
 	"bauklotze/pkg/machine/define"
 )
@@ -52,4 +53,9 @@ func (mc *MachineConfig) ConfigDir() (*define.VMFile, error) {
 		return nil, errors.New("no configuration directory set")
 	}
 	return mc.Dirs.ConfigDir, nil
+}
+
+func (mc *MachineConfig) UpdateLastBoot() error { //nolint:unused
+	mc.LastUp = time.Now()
+	return mc.Write()
 }

@@ -15,7 +15,7 @@ import (
 
 // WaitForSocketWithBackoffs attempts to discover listening socket in maxBackoffs attempts
 func WaitForSocketWithBackoffs(socketPath string) error {
-	var gvProxyWaitBackoff = 300 * time.Millisecond
+	var gvProxyWaitBackoff = 100 * time.Millisecond
 	logrus.Infof("Checking that %s socket is ready\n", socketPath)
 	for range 10 {
 		err := fileutils.Exists(socketPath)

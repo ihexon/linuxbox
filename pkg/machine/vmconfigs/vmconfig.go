@@ -70,14 +70,6 @@ func (mc *MachineConfig) DataDir() (*define.VMFile, error) {
 	return mc.Dirs.DataDir, nil
 }
 
-func (mc *MachineConfig) IsFirstBoot() (bool, error) {
-	never, err := time.Parse(time.RFC3339, "0001-01-01T00:00:00Z")
-	if err != nil {
-		return false, fmt.Errorf("failed to parse time: %w", err)
-	}
-	return mc.LastUp == never, nil
-}
-
 func (mc *MachineConfig) IgnitionFile() (*define.VMFile, error) {
 	configDir, err := mc.ConfigDir()
 	if err != nil {

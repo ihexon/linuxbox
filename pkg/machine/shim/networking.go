@@ -58,8 +58,8 @@ func conductVMReadinessCheck(mc *vmconfigs.MachineConfig, maxBackoffs int, backo
 			sshError = ErrSSHNotListening
 			continue
 		}
-		if sshError = machine.CommonSSHSilent(mc.SSH.RemoteUsername, mc.SSH.IdentityPath, mc.Name, mc.SSH.Port, []string{"true"}); sshError != nil {
-			logrus.Debugf("SSH readiness check for machine failed: %v", sshError)
+		if sshError = machine.CommonSSHSilent(mc.SSH.RemoteUsername, mc.SSH.IdentityPath, mc.Name, mc.SSH.Port, []string{"echo Hello"}); sshError != nil {
+			logrus.Infof("SSH readiness check for machine failed: %v", sshError)
 			continue
 		}
 		connected = true

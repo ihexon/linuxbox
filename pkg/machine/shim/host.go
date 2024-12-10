@@ -192,7 +192,7 @@ func getMCsOverProviders(vmstubbers []vmconfigs.VMProvider) (map[string]*vmconfi
 	return mcs, nil
 }
 
-const defaultBackoff = 500 * time.Millisecond
+const defaultBackoff = 100 * time.Millisecond
 
 func Start(ctx context.Context, mc *vmconfigs.MachineConfig, mp vmconfigs.VMProvider, dirs *define.MachineDirs, opts define.StartOptions) error {
 	var err error
@@ -281,6 +281,10 @@ func Start(ctx context.Context, mc *vmconfigs.MachineConfig, mp vmconfigs.VMProv
 
 	if err = machine.WaitAPIAndPrintInfo(socksInHost, forwardingState, mc.Name); err != nil {
 		return fmt.Errorf("failed to wait api and print info: %w", err)
+	}
+
+	if err = mc.UpdateLastBoot(); err != nil {
+		return fmt.Errorf("failed to update last boot time: %w", err)
 	}
 
 	for {

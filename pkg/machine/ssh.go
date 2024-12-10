@@ -37,16 +37,14 @@ func commonBuiltinSSH(username, identityPath, name string, sshPort int, inputArg
 	defer session.Close()
 
 	cmd := strings.Join(inputArgs, " ")
-	logrus.Debugf("Running ssh command on machine %q: %s", name, cmd)
+	logrus.Infof("Running ssh command on machine %q: %s", name, cmd)
 	session.Stdin = stdin
 	if passOutput {
 		session.Stdout = os.Stdout
 		session.Stderr = os.Stderr
-	} else if logrus.IsLevelEnabled(logrus.DebugLevel) {
-		return runSessionWithDebug(session, cmd)
 	}
 
-	return session.Run(cmd) //nolint:wrapcheck
+	return runSessionWithDebug(session, cmd)
 }
 
 func runSessionWithDebug(session *ssh.Session, cmd string) error {
@@ -61,7 +59,7 @@ func runSessionWithDebug(session *ssh.Session, cmd string) error {
 	logOuput := func(pipe io.Reader, done chan struct{}) {
 		scanner := bufio.NewScanner(pipe)
 		for scanner.Scan() {
-			logrus.Debugf("ssh output: %s", scanner.Text())
+			logrus.Infof("ssh output: %s", scanner.Text())
 		}
 		done <- struct{}{}
 	}

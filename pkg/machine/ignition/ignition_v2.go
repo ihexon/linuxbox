@@ -24,7 +24,6 @@ const (
 	DefaultIgnitionVersion  = "3.4.0"
 	GenerateScriptDir       = "/.ignfiles"
 	PodmanMachine           = "/etc/containers/podman-machine"
-	SystemEtcDir            = "/etc"
 	SystemOpenRcDir         = "/etc/init.d/"
 	SystemDefaultRunlevels  = "/etc/runlevels/default"
 )
