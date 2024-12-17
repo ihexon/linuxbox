@@ -44,8 +44,6 @@ func getVM(vmName string) (*vmconfigs.MachineConfig, error) {
 }
 
 func exec(ctx context.Context, mc *vmconfigs.MachineConfig, command string, outCh *infinity.Channel[string], errCh chan string) error {
-	logrus.Infof("Request /exec")
-
 	key, err := os.ReadFile(mc.SSH.IdentityPath)
 	if err != nil {
 		return fmt.Errorf("failed to read private key: %w", err)
@@ -84,11 +82,13 @@ func exec(ctx context.Context, mc *vmconfigs.MachineConfig, command string, outC
 	stderr := recordWriter(w)
 	session.Stderr = stderr
 
+	logrus.Infof("starting exec command: '%s'", command)
 	if err := session.Run(command); err != nil {
 		newErr := fmt.Errorf("%s\n%s", stderr.LastRecord(), err) //nolint:errorlint
 		errCh <- newErr.Error()
 		return fmt.Errorf("run command error %w", newErr)
 	}
+	logrus.Infof("exec command finished")
 
 	return nil
 }
@@ -98,6 +98,8 @@ type execBody struct {
 }
 
 func DoExec(w http.ResponseWriter, r *http.Request) {
+	logrus.Infof("Request /exec")
+
 	name := utils.GetName(r)
 	mc, err := getVM(name)
 	if err != nil {
