@@ -101,7 +101,7 @@ func (c *Config) FindHelperBinary(name string) (string, error) {
 			// exec.LookPath from absolute path on Unix is equal to os.Stat + IsNotDir + check for executable bits in FileMode
 			// exec.LookPath from absolute path on Windows is equal to os.Stat + IsNotDir for `file.ext` or loops through extensions from PATHEXT for `file`
 			if lp, err := exec.LookPath(abspath); err == nil {
-				err = os.Setenv(env.DYLDLibraryPath, fmt.Sprintf("%s:%s", path, os.Getenv(env.DYLDLibraryPath)))
+				err = os.Setenv(env.DYLD_LIBRARY_PATH, fmt.Sprintf("%s:%s", path, os.Getenv(env.DYLD_LIBRARY_PATH)))
 				if err != nil {
 					return "", fmt.Errorf("can not set env DYLD_LIBRARY_PATH with %s", path)
 				}

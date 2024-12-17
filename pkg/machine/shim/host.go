@@ -9,7 +9,6 @@ import (
 	"errors"
 	"fmt"
 	"runtime"
-	"time"
 
 	"bauklotze/pkg/machine"
 	"bauklotze/pkg/machine/connection"
@@ -104,6 +103,7 @@ func Init(opts define.InitOptions, mp vmconfigs.VMProvider) error {
 	mc.ImagePath = imagePath // mc.ImagePath is the bootable copied from user provided image --boot <bootable.img.xz>
 
 	// Generate the mc.Mounts structs from the opts.Volumes
+	// mp.MountType() return vmconfigs.VirtIOFS
 	mc.Mounts = CmdLineVolumesToMounts(opts.Volumes, mp.MountType())
 	jsonMounts, err := json.MarshalIndent(mc.Mounts, "", "  ")
 	if err != nil {
@@ -192,8 +192,6 @@ func getMCsOverProviders(vmstubbers []vmconfigs.VMProvider) (map[string]*vmconfi
 	return mcs, nil
 }
 
-const defaultBackoff = 100 * time.Millisecond
-
 func Start(ctx context.Context, mc *vmconfigs.MachineConfig, mp vmconfigs.VMProvider, dirs *define.MachineDirs, opts define.StartOptions) error {
 	var err error
 
@@ -237,6 +235,8 @@ func Start(ctx context.Context, mc *vmconfigs.MachineConfig, mp vmconfigs.VMProv
 
 	// start gvproxy and set up the API socket forwarding
 	socksInHost, forwardingState, gvcmd, err := startNetworking(mc, mp)
+	// _, _, gvcmd, err := startNetworking(mc, mp)
+
 	if err != nil {
 		return fmt.Errorf("failed to start networking: %w", err)
 	}
@@ -261,10 +261,8 @@ func Start(ctx context.Context, mc *vmconfigs.MachineConfig, mp vmconfigs.VMProv
 		return mp.State(mc)
 	}
 
-	maxBackoffs := 3
-
 	if mp.VMType() != define.WSLVirt {
-		connected, sshError, err := conductVMReadinessCheck(mc, maxBackoffs, defaultBackoff, stateF)
+		connected, sshError, err := conductVMReadinessCheck(mc, stateF)
 		if err != nil {
 			return fmt.Errorf("failed to conduct vm readiness check: %w", err)
 		}

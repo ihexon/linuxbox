@@ -6,9 +6,10 @@
 package machine
 
 import (
+	"fmt"
+
 	whatProvider "bauklotze/pkg/machine/provider"
 	"bauklotze/pkg/machine/vmconfigs"
-	"fmt"
 
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"

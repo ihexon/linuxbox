@@ -6,8 +6,9 @@
 package krunkit
 
 import (
-	"bauklotze/pkg/machine/vmconfigs"
 	"fmt"
+
+	"bauklotze/pkg/machine/vmconfigs"
 
 	vfConfig "github.com/crc-org/vfkit/pkg/config"
 )

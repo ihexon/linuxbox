@@ -89,6 +89,11 @@ func init() {
 	_ = initCmd.MarkFlagRequired(DataImageVersion)
 }
 
+const (
+	initfsDir  = "/tmp/initfs"
+	initfsArgs = initfsDir + ":" + initfsDir
+)
+
 func initMachine(cmd *cobra.Command, args []string) error {
 	var err error
 	// TODO Use ctx to get some parameters would be nice, also using ctx to control the lifecycle init()
@@ -101,6 +106,8 @@ func initMachine(cmd *cobra.Command, args []string) error {
 
 	initOpts.CommonOptions.ReportURL = cmd.Flag(cmdflags.ReportURLFlag).Value.String()
 	initOpts.CommonOptions.PPID = ppid
+	// Ignition scripts placed in /tmp/initfs will be executed by the ovmounter service
+	initOpts.Volumes = append(initOpts.Volumes, initfsArgs)
 
 	// TODO Continue to check the ppid alive
 	// First check the parent process is alive once

@@ -20,46 +20,51 @@ import (
 )
 
 var (
+	defaultBackoff     = 100 * time.Millisecond
+	maxTried           = 200
 	ErrNotRunning      = errors.New("machine not in running state")
 	ErrSSHNotListening = errors.New("machine is not listening on ssh port")
 )
 
-const defaultDialTimeout = 10 * time.Millisecond
+const defaultDialTimeout = 30 * time.Millisecond
 
 func isListening(port int) bool {
-	// Check if we can dial it
+	var err error
 	conn, err := net.DialTimeout("tcp", fmt.Sprintf("%s:%d", "127.0.0.1", port), defaultDialTimeout)
 	if err != nil {
 		return false
 	}
-	if err := conn.Close(); err != nil {
-		logrus.Error(err)
+	if err = conn.Close(); err != nil {
+		logrus.Errorf("isListening: close connection failed: %s\n", err.Error())
 	}
+
 	return true
 }
 
 // conductVMReadinessCheck checks to make sure the machine is in the proper state
 // and that SSH is up and running
-func conductVMReadinessCheck(mc *vmconfigs.MachineConfig, maxBackoffs int, backoff time.Duration, stateF func() (define.Status, error)) (connected bool, sshError error, err error) {
-	for i := range maxBackoffs {
+func conductVMReadinessCheck(mc *vmconfigs.MachineConfig, stateF func() (define.Status, error)) (connected bool, sshError error, err error) {
+	for i := range maxTried {
 		if i > 0 {
-			time.Sleep(backoff)
-			backoff *= 2
+			time.Sleep(defaultBackoff)
 		}
 		state, err := stateF()
 		if err != nil {
-			return false, nil, err
+			return false, nil, fmt.Errorf("failed to get machine state: %w", err)
 		}
+
 		if state != define.Running {
 			sshError = ErrNotRunning
 			continue
 		}
+
 		if !isListening(mc.SSH.Port) {
 			sshError = ErrSSHNotListening
 			continue
 		}
+
 		if sshError = machine.CommonSSHSilent(mc.SSH.RemoteUsername, mc.SSH.IdentityPath, mc.Name, mc.SSH.Port, []string{"echo Hello"}); sshError != nil {
-			logrus.Infof("SSH readiness check for machine failed: %v", sshError)
+			logrus.Warnf("SSH readiness check for machine failed: %v", sshError)
 			continue
 		}
 		connected = true

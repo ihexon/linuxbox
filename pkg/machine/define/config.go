@@ -22,9 +22,6 @@ type CreateVMOpts struct {
 	UserImageFile string       `json:"UserImageFile"` // Only used in wsl2
 }
 
-type WSLConfig struct {
-}
-
 type ResourceConfig struct {
 	// CPUs to be assigned to the VM
 	CPUs uint64 `json:"CPUs"`

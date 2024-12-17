@@ -4,8 +4,6 @@
 package env
 
 const (
-	DefaultRootAPIPath    = "127.0.0.1:65176"
-	DefaultRootAPIAddress = "tcp://" + DefaultRootAPIPath
-	BauklotzeHome         = "BAUKLOTZE_HOME"
-	DYLDLibraryPath       = "DYLD_LIBRARY_PATH"
+	BAUKLOTZE_HOME    = "BAUKLOTZE_HOME"    //nolint:stylecheck
+	DYLD_LIBRARY_PATH = "DYLD_LIBRARY_PATH" //nolint:stylecheck
 )

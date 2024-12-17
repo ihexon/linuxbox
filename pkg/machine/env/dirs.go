@@ -12,9 +12,9 @@ import (
 )
 
 func GetBauklotzeHomePath() (string, error) {
-	home := os.Getenv(BauklotzeHome)
+	home := os.Getenv(BAUKLOTZE_HOME)
 	if home == "" {
-		return "", fmt.Errorf("%s is not set", BauklotzeHome)
+		return "", fmt.Errorf("%s is not set", BAUKLOTZE_HOME)
 	}
 	return home, nil
 }

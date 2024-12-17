@@ -68,7 +68,7 @@ func startHostForwarder(mc *vmconfigs.MachineConfig, provider vmconfigs.VMProvid
 	gvcmd.Stderr = os.Stderr
 
 	if os.Getenv("OVM_DEBUG") == "true" {
-		logrus.Infof("Add -debug flag to gvproxy")
+		logrus.Warnf("Add -debug flag to gvproxy\n")
 		gvcmd.Args = append(gvcmd.Args, "-debug")
 	}
 
