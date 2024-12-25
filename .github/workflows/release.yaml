@@ -46,7 +46,7 @@ jobs:
       - name: Build
         run: make build
         env:
-          CODESIGN_IDENTITY: ${{ secrets.CODESIGN_IDENTITY || '-' }}
+          CODESIGN_IDENTITY: ${{ secrets.CODESIGN_IDENTITY }}
 
       - name: Gen SHA256
         working-directory: ./out/bin
