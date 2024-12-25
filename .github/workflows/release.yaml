@@ -16,14 +16,12 @@ jobs:
 
     steps:
       - name: Configure R2 Credentials
-        if: github.repository == 'oomol/Bauklotze'
         run: |
           aws configure set aws_access_key_id ${{ secrets.R2_OOMOL_STATIC_S3_AK }}
           aws configure set aws_secret_access_key ${{ secrets.R2_OOMOL_STATIC_S3_SK }}
           aws configure set region auto
 
       - name: Setup Codesign
-        if: github.repository == 'oomol/Bauklotze'
         run: |
           echo $MACOS_CERTIFICATE | base64 --decode > certificate.p12
           security create-keychain -p action build.keychain
@@ -64,7 +62,6 @@ jobs:
         run: echo "RELEASE_VERSION=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
 
       - name: Upload To R2
-        if: github.repository == 'oomol/Bauklotze'
         shell: bash
         run: |
           aws s3 cp \
