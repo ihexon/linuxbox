@@ -9,6 +9,7 @@ import (
 	"errors"
 	"fmt"
 	"runtime"
+	"time"
 
 	"bauklotze/pkg/machine"
 	"bauklotze/pkg/machine/connection"
@@ -87,7 +88,7 @@ func Init(opts define.InitOptions, mp vmconfigs.VMProvider) error {
 	}
 
 	switch mp.VMType() {
-	case define.LibKrun:
+	case define.LibKrun, define.VFkit:
 		imageExtension = ".raw"
 	case define.WSLVirt:
 		imageExtension = ""
@@ -292,5 +293,6 @@ func Start(ctx context.Context, mc *vmconfigs.MachineConfig, mp vmconfigs.VMProv
 			_ = gvproxyPidFile.Delete()
 			return fmt.Errorf("failed to start krunkit: %w", err)
 		}
+		time.Sleep(1 * time.Second)
 	}
 }

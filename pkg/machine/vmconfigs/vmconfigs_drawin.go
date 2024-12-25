@@ -1,17 +1,19 @@
 //  SPDX-FileCopyrightText: 2024-2024 OOMOL, Inc. <https://www.oomol.com>
 //  SPDX-License-Identifier: MPL-2.0
 
-//go:build (darwin || linux) && (amd64 || arm64)
+//go:build darwin
 
 package vmconfigs
 
-import "bauklotze/pkg/machine/apple/hvhelper"
+import (
+	"bauklotze/pkg/machine/apple/hvhelper"
+)
 
-type HyperVConfig struct{}
-type WSLConfig struct{}
-type QEMUConfig struct{}
-
-// krunkit 的优先级放到最高
 type AppleKrunkitConfig struct {
 	Krunkit hvhelper.Helper `json:"Krunkit"`
+}
+
+type AppleVFkitConfig struct {
+	// The VFKit endpoint where we can interact with the VM
+	Vfkit hvhelper.Helper `json:"Vfkit"`
 }

@@ -1,9 +1,7 @@
 //  SPDX-FileCopyrightText: 2024-2024 OOMOL, Inc. <https://www.oomol.com>
 //  SPDX-License-Identifier: MPL-2.0
 
-//go:build darwin
-
-package krunkit
+package vfkit
 
 import (
 	"errors"
@@ -42,14 +40,18 @@ func GetDefaultDevices(mc *vmconfigs.MachineConfig) ([]vfConfig.VirtioDevice, er
 		return nil, fmt.Errorf("failed to create externalDisk device: %w", err)
 	}
 
+	serial, err := vfConfig.VirtioSerialNewStdio()
+	if err != nil {
+		return nil, fmt.Errorf("failed to create serial device: %w", err)
+	}
+	devices = append(devices, serial)
+
 	devices = append(devices, disk, rng)
 	// MUST APPEND AFTER disk PLEASE DO NOT CHANGE THE ORDER PLZ PLZ PLZ
 	devices = append(devices, externalDisk)
-
 	return devices, nil
 }
 
-// GetVfKitEndpointCMDArgs converts the vfkit endpoint to a cmdline format
 func GetVfKitEndpointCMDArgs(endpoint string) ([]string, error) {
 	if len(endpoint) == 0 {
 		return nil, errors.New("endpoint cannot be empty")
@@ -60,16 +62,6 @@ func GetVfKitEndpointCMDArgs(endpoint string) ([]string, error) {
 	}
 	return restEndpoint.ToCmdLine() //nolint:wrapcheck
 }
-
-// TODO, If there is an error,  it should return error
-// func readFileContent(path string) string {
-//	content, err := os.ReadFile(path)
-//	if err != nil {
-//		logrus.Errorf("failed to read sshkey.pub content: %s", path)
-//		return ""
-//	}
-//	return string(content)
-//}
 
 func StartGenericAppleVM(mc *vmconfigs.MachineConfig, cmdBinary string, bootloader vfConfig.Bootloader, endpoint string) (*exec.Cmd, func() error, error) {
 	const applehvMACAddress = "5a:94:ef:e4:0c:ee"
@@ -114,11 +106,11 @@ func StartGenericAppleVM(mc *vmconfigs.MachineConfig, cmdBinary string, bootload
 	cmdBinaryPath, err := cfg.FindHelperBinary(cmdBinary)
 
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to find krunkit binary: %w", err)
+		return nil, nil, fmt.Errorf("failed to find vfkit binary: %w", err)
 	}
 	logrus.Infof("krunkit binary path is: %s", cmdBinaryPath)
 
-	krunCmd, err := vm.Cmd(cmdBinaryPath)
+	vfkitCmd, err := vm.Cmd(cmdBinaryPath)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to create krunkit command: %w", err)
 	}
@@ -129,31 +121,28 @@ func StartGenericAppleVM(mc *vmconfigs.MachineConfig, cmdBinary string, bootload
 		return nil, nil, fmt.Errorf("failed to get vfkit endpoint args: %w", err)
 	}
 
-	krunCmd.Args = append(krunCmd.Args, endpointArgs...)
-	// Add the "krun-log-level" flag for setting up the desired log level for libkrun's debug facilities.
-	// Log level for libkrun (0=off, 1=error, 2=warn, 3=info, 4=debug, 5 or higher=trace)
-	krunCmd.Args = append(krunCmd.Args, "--krun-log-level", "3")
+	vfkitCmd.Args = append(vfkitCmd.Args, endpointArgs...)
 
 	err = ignition.GenerateIgnScripts(mc)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to generate ignition scripts: %w", err)
 	}
 
-	logrus.Infof("krunkit command-line: %v", krunCmd.Args)
+	logrus.Infof("krunkit command-line: %v", vfkitCmd.Args)
 	// Run krunkit in pty, the pty should never close because the krunkit is a background process
-	ptmx, err := mypty.RunInPty(krunCmd)
+	ptmx, err := mypty.RunInPty(vfkitCmd)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to run krunkit in pty: %w", err)
 	}
 	go func() {
 		_, _ = io.Copy(os.Stdout, ptmx)
 	}()
-	machine.GlobalCmds.SetKrunCmd(krunCmd)
+	machine.GlobalCmds.SetKrunCmd(vfkitCmd)
 
-	mc.AppleKrunkitHypervisor.Krunkit.BinaryPath, _ = define.NewMachineFile(cmdBinaryPath, nil)
+	mc.AppleVFkitHypervisor.Vfkit.BinaryPath, _ = define.NewMachineFile(cmdBinaryPath, nil)
 
 	returnFunc := func() error {
 		return nil
 	}
-	return krunCmd, returnFunc, nil
+	return vfkitCmd, returnFunc, nil
 }

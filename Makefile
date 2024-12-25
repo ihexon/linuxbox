@@ -14,13 +14,21 @@ all: help
 ##@
 build: ##@ Build binaries for all architectures
 	@echo "Build commit:  ${GIT_COMMIT}"
-	@echo "GO_LDFLAGS: ${GO_LDFLAGS}"
 	@$(MAKE) out/bin/ovm-arm64
+	@$(MAKE) out/bin/ovm-amd64
 
 build-arm64: ##@ Build arm64 binary
 	@$(MAKE) out/bin/ovm-arm64
 
+build-amd64: ##@ Build arm64 binary
+	@$(MAKE) out/bin/ovm-amd64
+
 out/bin/ovm-arm64: out/bin/ovm-%:
+	@mkdir -p $(@D)
+	CGO_ENABLED=1 CGO_CFLAGS=$(CGO_CFLAGS) CGO_CFLAGS=$(CGO_CFLAGS) GOOS=darwin GOARCH=$* go build $(GO_LDFLAGS) '$(BUILD_FLAGS)' -o $@ bauklotze/cmd
+	codesign --force --options runtime --sign $(CODESIGN_IDENTITY) $@
+
+out/bin/ovm-amd64: out/bin/ovm-%:
 	@mkdir -p $(@D)
 	CGO_ENABLED=1 CGO_CFLAGS=$(CGO_CFLAGS) CGO_CFLAGS=$(CGO_CFLAGS) GOOS=darwin GOARCH=$* go build $(GO_LDFLAGS) '$(BUILD_FLAGS)' -o $@ bauklotze/cmd
 	codesign --force --options runtime --sign $(CODESIGN_IDENTITY) $@

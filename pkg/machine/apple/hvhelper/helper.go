@@ -1,7 +1,7 @@
 //  SPDX-FileCopyrightText: 2024-2024 OOMOL, Inc. <https://www.oomol.com>
 //  SPDX-License-Identifier: MPL-2.0
 
-//go:build darwin && arm64
+//go:build darwin
 
 package hvhelper
 
@@ -48,7 +48,6 @@ type Helper struct {
 	Endpoint       string                       `json:"Endpoint"`
 	BinaryPath     *define.VMFile               `json:"BinaryPath"`
 	VirtualMachine *vfkit_config.VirtualMachine `json:"VirtualMachine"`
-	Rosetta        bool                         `json:"Rosetta"`
 }
 
 // state asks vfkit for the virtual machine state. in case the vfkit

@@ -39,8 +39,6 @@ type VirtIoFs struct {
 }
 
 // generateTag generates a tag for VirtIOFs mounts.
-// AppleHV requires tags to be 36 bytes or fewer.
-// SHA256 the path, then truncate to 36 bytes
 func (v VirtIoFs) generateTag() string {
 	sum := sha256.Sum256([]byte(v.Target))
 	stringSum := hex.EncodeToString(sum[:])

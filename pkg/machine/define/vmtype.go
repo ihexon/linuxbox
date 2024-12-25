@@ -14,13 +14,13 @@ type VMType int64
 const (
 	WSLVirt VMType = iota
 	LibKrun
-	AppleHvVirt
+	VFkit
 	UnknownVirt
 )
 const (
 	wsl     = "wsl"
 	libkrun = "libkrun"
-	appleHV = "applehv"
+	vfkit   = "vfkit"
 )
 
 func (v VMType) String() string {
@@ -29,23 +29,23 @@ func (v VMType) String() string {
 		return wsl
 	case LibKrun:
 		return libkrun
-	case AppleHvVirt:
-		return appleHV
+	case VFkit:
+		return vfkit
 	default:
 	}
 	return wsl
 }
 
-func ParseVMType(input string, emptyFallback VMType) (VMType, error) {
+func ParseVMType(input string, fallback VMType) (VMType, error) {
 	switch strings.TrimSpace(strings.ToLower(input)) {
 	case wsl:
 		return WSLVirt, nil
 	case libkrun:
 		return LibKrun, nil
-	case appleHV:
-		return AppleHvVirt, nil
+	case vfkit:
+		return VFkit, nil
 	case "":
-		return emptyFallback, nil
+		return fallback, nil
 	default:
 		return UnknownVirt, fmt.Errorf("unknown VMType `%s`", input)
 	}

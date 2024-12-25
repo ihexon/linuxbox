@@ -3,7 +3,7 @@
 
 //go:build darwin
 
-package krunkit
+package vfkit
 
 import (
 	"fmt"

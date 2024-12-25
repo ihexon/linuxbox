@@ -94,7 +94,7 @@ type MachineConfig struct {
 	DataDiskVersion     string `json:"DataDiskVersion,omitempty"`     // External Disk for now
 
 	AppleKrunkitHypervisor *AppleKrunkitConfig `json:"AppleKrunkitHypervisor,omitempty"`
-	WSLHypervisor          *WSLConfig          `json:"WSLHypervisor,omitempty"`
+	AppleVFkitHypervisor   *AppleVFkitConfig   `json:"AppleVFkitConfig,omitempty"`
 
 	ConfigPath *define.VMFile        `json:"ConfigPath"`
 	Resources  define.ResourceConfig `json:"Resources"`
