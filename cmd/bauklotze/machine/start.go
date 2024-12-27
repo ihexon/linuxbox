@@ -50,7 +50,7 @@ func init() {
 	})
 }
 
-const tickerInterval = 1 * time.Second
+const tickerInterval = 300 * time.Millisecond
 
 func start(cmd *cobra.Command, args []string) error {
 	// Killall ovm process before running ovm, this should never happen,

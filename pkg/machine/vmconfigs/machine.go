@@ -29,15 +29,6 @@ func (mc *MachineConfig) PodmanAPISocketHost() (*define.VMFile, error) {
 	return podmanAPISocketOnHost(mc.Name, machineRuntimeDir)
 }
 
-func (mc *MachineConfig) Lock() {
-	mc.lock.Lock()
-}
-
-// Unlock removes an existing lock
-func (mc *MachineConfig) Unlock() {
-	mc.lock.Unlock()
-}
-
 // Refresh reloads the config file from disk
 func (mc *MachineConfig) Refresh() error {
 	content, err := os.ReadFile(mc.ConfigPath.GetPath())

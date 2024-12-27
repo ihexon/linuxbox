@@ -209,12 +209,6 @@ func Start(ctx context.Context, mc *vmconfigs.MachineConfig, mp vmconfigs.VMProv
 		return fmt.Errorf("machine %s: %w", mc.Name, define.ErrVMAlreadyRunning)
 	}
 
-	logrus.Infof("Require machine lock, if there is any other operation on this machine, it will be blocked")
-	mc.Lock()
-	logrus.Infof("Machine lock require success")
-
-	defer mc.Unlock()
-
 	// Set starting to true
 	mc.Starting = true
 	if err = mc.Write(); err != nil {
