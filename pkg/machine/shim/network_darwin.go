@@ -6,6 +6,7 @@
 package shim
 
 import (
+	"bauklotze/pkg/machine/events"
 	"fmt"
 	"os"
 	"os/exec"
@@ -73,11 +74,14 @@ func startHostForwarder(mc *vmconfigs.MachineConfig, provider vmconfigs.VMProvid
 	}
 
 	logrus.Infof("Gvproxy command-line: %s", gvcmd.Args)
-	if err := gvcmd.Start(); err != nil {
+	events.NotifyRun(events.StartGvProxy, "staring...")
+
+	if err = gvcmd.Start(); err != nil {
 		return nil, fmt.Errorf("unable to execute: %q: %w", cmd.ToCmdline(), err)
-	} else {
-		machine.GlobalCmds.SetGvpCmd(gvcmd)
 	}
+	events.NotifyRun(events.StartGvProxy, "finished")
+
+	machine.GlobalCmds.SetGvpCmd(gvcmd)
 
 	mc.GvProxy.GvProxy.PidFile = cmd.PidFile
 	mc.GvProxy.GvProxy.LogFile = cmd.LogFile

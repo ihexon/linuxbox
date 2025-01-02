@@ -4,6 +4,7 @@
 package main
 
 import (
+	"bauklotze/pkg/machine/events"
 	"context"
 	"fmt"
 	"io"
@@ -17,8 +18,6 @@ import (
 	"bauklotze/cmd/registry"
 	"bauklotze/pkg/machine/define"
 	"bauklotze/pkg/machine/system"
-	"bauklotze/pkg/network"
-	"bauklotze/pkg/notifyexit"
 	"bauklotze/pkg/terminal"
 
 	"github.com/sirupsen/logrus"
@@ -126,7 +125,7 @@ func main() {
 func ReportHook() {
 	if commonOpts.ReportURL != "" {
 		logrus.Infof("ReportHook(): Report events to the url: %s\n", commonOpts.ReportURL)
-		network.NewReporter(commonOpts.ReportURL)
+		events.ReportURL = commonOpts.ReportURL
 	} else {
 		logrus.Infof("No report url provided, skip report events\n")
 	}
@@ -221,13 +220,12 @@ func RootCmdExecute() {
 	err := rootCmd.ExecuteContext(context.Background())
 	if err != nil {
 		_, _ = fmt.Fprintln(os.Stderr, formatError(err))
-		network.Reporter.SendEventToOvmJs("error", fmt.Sprintf("Error: %v", err))
 		registry.SetExitCode(1)
 	} else {
 		registry.SetExitCode(0)
 	}
-
-	notifyexit.NotifyExit(registry.GetExitCode())
+	events.NotifyExit()
+	os.Exit(registry.GetExitCode())
 }
 
 func loggingHook() {

@@ -4,6 +4,7 @@
 package shim
 
 import (
+	"bauklotze/pkg/machine/events"
 	"context"
 	"encoding/json"
 	"errors"
@@ -18,7 +19,6 @@ import (
 	"bauklotze/pkg/machine/provider"
 	"bauklotze/pkg/machine/system"
 	"bauklotze/pkg/machine/vmconfigs"
-	"bauklotze/pkg/network"
 
 	"github.com/sirupsen/logrus"
 )
@@ -116,21 +116,23 @@ func Init(opts define.InitOptions, mp vmconfigs.VMProvider) error {
 	initCmdOpts := opts
 	logrus.Infof("A bootable Image provided: %s", initCmdOpts.ImagesStruct.BootableImage)
 
-	network.Reporter.SendEventToOvmJs("decompress", "running")
-	if err = mp.GetDisk(initCmdOpts.ImagesStruct.BootableImage, dirs, mc.ImagePath, mp.VMType(), mc.Name); err != nil {
+	err = mp.GetDisk(initCmdOpts.ImagesStruct.BootableImage, dirs, mc.ImagePath, mp.VMType(), mc.Name)
+	if err != nil {
 		return fmt.Errorf("failed to get disk: %w", err)
-	} else {
-		network.Reporter.SendEventToOvmJs("decompress", "success")
 	}
+	events.NotifyInit(events.ExtractBootImage)
 
 	callbackFuncs.Add(func() error {
 		logrus.Infof("callback: Removing image %s", mc.ImagePath.GetPath())
 		return mc.ImagePath.Delete()
 	})
 
-	if err = connection.AddSSHConnectionsToPodmanSocket(0, mc.SSH.Port, mc.SSH.IdentityPath, mc.Name, mc.SSH.RemoteUsername, opts); err != nil {
+	err = connection.AddSSHConnectionsToPodmanSocket(0, mc.SSH.Port, mc.SSH.IdentityPath, mc.Name, mc.SSH.RemoteUsername, opts)
+
+	if err != nil {
 		return fmt.Errorf("failed to add ssh connections to podman socket: %w", err)
 	}
+	events.NotifyInit(events.WriteSSHConnectConfig)
 
 	cleanup := func() error {
 		machines, err := provider.GetAllMachinesAndRootfulness()
@@ -157,13 +159,12 @@ func Init(opts define.InitOptions, mp vmconfigs.VMProvider) error {
 
 	mc.DataDiskVersion = opts.ImageVerStruct.DataDiskVersion
 
-	network.Reporter.SendEventToOvmJs("writeConfig", "running")
 	err = mc.Write()
 	if err != nil {
 		return fmt.Errorf("failed to write machine config: %w", err)
 	}
+	events.NotifyInit(events.InitUpdateConfig)
 
-	network.Reporter.SendEventToOvmJs("writeConfig", "success")
 	callbackFuncs.Add(func() error {
 		logrus.Infof("callback: Removing Machine config %s", mc.ConfigPath.GetPath())
 		return mc.ConfigPath.Delete()

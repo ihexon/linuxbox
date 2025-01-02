@@ -4,6 +4,7 @@
 package vfkit
 
 import (
+	"bauklotze/pkg/machine/events"
 	"errors"
 	"fmt"
 	"io"
@@ -128,16 +129,21 @@ func StartGenericAppleVM(mc *vmconfigs.MachineConfig, cmdBinary string, bootload
 		return nil, nil, fmt.Errorf("failed to generate ignition scripts: %w", err)
 	}
 
-	logrus.Infof("krunkit command-line: %v", vfkitCmd.Args)
+	logrus.Infof("vfkit command-line: %v", vfkitCmd.Args)
+
 	// Run krunkit in pty, the pty should never close because the krunkit is a background process
+	events.NotifyRun(events.StartVMProvider, "vfkit staring...")
 	ptmx, err := mypty.RunInPty(vfkitCmd)
+
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to run krunkit in pty: %w", err)
 	}
+	events.NotifyRun(events.StartVMProvider, "vfkit start finished")
+
 	go func() {
 		_, _ = io.Copy(os.Stdout, ptmx)
 	}()
-	machine.GlobalCmds.SetKrunCmd(vfkitCmd)
+	machine.GlobalCmds.SetVMProviderCmd(vfkitCmd)
 
 	mc.AppleVFkitHypervisor.Vfkit.BinaryPath, _ = define.NewMachineFile(cmdBinaryPath, nil)
 

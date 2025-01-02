@@ -4,6 +4,7 @@
 package machine
 
 import (
+	"bauklotze/pkg/machine/events"
 	"context"
 	"fmt"
 	"net/url"
@@ -22,7 +23,6 @@ import (
 	"bauklotze/pkg/machine/shim"
 	"bauklotze/pkg/machine/system"
 	"bauklotze/pkg/machine/vmconfigs"
-	"bauklotze/pkg/network"
 	system2 "bauklotze/pkg/system"
 
 	"github.com/sirupsen/logrus"
@@ -53,6 +53,9 @@ func init() {
 const tickerInterval = 300 * time.Millisecond
 
 func start(cmd *cobra.Command, args []string) error {
+	// Set the current stage to Run
+	events.CurrentStage = events.Run
+
 	// Killall ovm process before running ovm, this should never happen,
 	// but we still do this to avoid any issue
 	var pids []int32
@@ -129,10 +132,10 @@ func start(cmd *cobra.Command, args []string) error {
 		if err != nil {
 			return fmt.Errorf("failed to load machine %q: %w", vmName, err)
 		}
+		events.NotifyRun(events.LoadMachineConfig)
+
 		logrus.Infof("Starting machine %q\n", vmName)
 		go func() {
-			network.Reporter.SendEventToOvmJs("start", fmt.Sprintf("Starting machine: %s ....", vmName))
-			// Note: shim.Start is no block function
 			errCh <- shim.Start(ctx, mc, provider, dirs, startOpts)
 		}()
 
@@ -144,6 +147,7 @@ func start(cmd *cobra.Command, args []string) error {
 				logrus.Infof("Machine %q started successfully\n", vmName)
 			}
 		}
+
 		return err
 	})
 
@@ -167,19 +171,23 @@ func start(cmd *cobra.Command, args []string) error {
 
 	if mc != nil {
 		logrus.Infof("Do sync in virtualMachine....")
+		events.NotifyRun(events.SyncMachineDisk, "syncing...")
 		if syncErr := machine.CommonSSHSilent(mc.SSH.RemoteUsername, mc.SSH.IdentityPath, mc.Name, mc.SSH.Port, []string{"sync"}); syncErr != nil {
 			logrus.Warnf("Sync failed: %v", syncErr)
 		}
+		events.NotifyRun(events.SyncMachineDisk, "finished")
 	}
 
-	if kruncmd := machine.GlobalCmds.GetKrunCmd(); kruncmd != nil {
-		logrus.Infof("--> Killing krun PID: %d", kruncmd.Process.Pid)
-		_ = kruncmd.Process.Kill()
-		_ = kruncmd.Wait()
+	if mpcmd := machine.GlobalCmds.GetVMProviderCmd(); mpcmd != nil {
+		logrus.Infof("--> Killing VMProvider PID: %d", mpcmd.Process.Pid)
+		events.NotifyRun(events.KillingVMProvider)
+		_ = mpcmd.Process.Kill()
+		_ = mpcmd.Wait()
 	}
 
 	if gvcmd := machine.GlobalCmds.GetGvproxyCmd(); gvcmd != nil {
 		logrus.Infof("--> Killing gvproxy PID: %d", gvcmd.Process.Pid)
+		events.NotifyRun(events.KillingGvProxy)
 		_ = gvcmd.Process.Kill()
 		_ = gvcmd.Wait()
 	}

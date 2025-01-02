@@ -9,7 +9,7 @@ import (
 	"net/http"
 )
 
-func unixClient(myConnection *Connection) *http.Client {
+func unixClient(myConnection *Conn) *http.Client {
 	myConnection.UnixClient = &http.Client{
 		Transport: &http.Transport{
 			DialContext: func(ctx context.Context, _, _ string) (net.Conn, error) {

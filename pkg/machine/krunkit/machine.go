@@ -6,6 +6,7 @@
 package krunkit
 
 import (
+	"bauklotze/pkg/machine/events"
 	"errors"
 	"fmt"
 	"io"
@@ -60,16 +61,6 @@ func GetVfKitEndpointCMDArgs(endpoint string) ([]string, error) {
 	}
 	return restEndpoint.ToCmdLine() //nolint:wrapcheck
 }
-
-// TODO, If there is an error,  it should return error
-// func readFileContent(path string) string {
-//	content, err := os.ReadFile(path)
-//	if err != nil {
-//		logrus.Errorf("failed to read sshkey.pub content: %s", path)
-//		return ""
-//	}
-//	return string(content)
-//}
 
 func StartGenericAppleVM(mc *vmconfigs.MachineConfig, cmdBinary string, bootloader vfConfig.Bootloader, endpoint string) (*exec.Cmd, func() error, error) {
 	const applehvMACAddress = "5a:94:ef:e4:0c:ee"
@@ -140,6 +131,7 @@ func StartGenericAppleVM(mc *vmconfigs.MachineConfig, cmdBinary string, bootload
 	}
 
 	logrus.Infof("krunkit command-line: %v", krunCmd.Args)
+	events.NotifyRun(events.StartVMProvider, "krunkit staring...")
 	// Run krunkit in pty, the pty should never close because the krunkit is a background process
 	ptmx, err := mypty.RunInPty(krunCmd)
 	if err != nil {
@@ -148,7 +140,9 @@ func StartGenericAppleVM(mc *vmconfigs.MachineConfig, cmdBinary string, bootload
 	go func() {
 		_, _ = io.Copy(os.Stdout, ptmx)
 	}()
-	machine.GlobalCmds.SetKrunCmd(krunCmd)
+	events.NotifyRun(events.StartVMProvider, "krunkit start done")
+
+	machine.GlobalCmds.SetVMProviderCmd(krunCmd)
 
 	mc.AppleKrunkitHypervisor.Krunkit.BinaryPath, _ = define.NewMachineFile(cmdBinaryPath, nil)
 

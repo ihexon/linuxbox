@@ -103,7 +103,6 @@ func (l LibKrunStubber) CreateVM(opts define.CreateVMOpts, mc *vmconfigs.Machine
 	// Endpoint is a string: http://127.0.0.1/[random_port]
 	mc.AppleKrunkitHypervisor.Krunkit.Endpoint = localhostURI + ":" + strconv.Itoa(randPort)
 	mc.AppleKrunkitHypervisor.Krunkit.LogLevel = logrus.InfoLevel
-
 	return nil
 }
 

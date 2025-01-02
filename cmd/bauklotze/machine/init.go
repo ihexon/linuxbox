@@ -4,6 +4,7 @@
 package machine
 
 import (
+	"bauklotze/pkg/machine/events"
 	"errors"
 	"fmt"
 	"os"
@@ -95,11 +96,9 @@ const (
 )
 
 func initMachine(cmd *cobra.Command, args []string) error {
+	// Init is the current lifecycle that initializes the virtual machine.
+	events.CurrentStage = events.Init
 	var err error
-	// TODO Use ctx to get some parameters would be nice, also using ctx to control the lifecycle init()
-	// ctx := cmd.Context()
-	// ctx, cancel := context.WithCancelCause(ctx)
-	// logrus.Infof("cmd.Context().Value(\"commonOpts\") --> %v", ctx.Value("commonOpts"))
 
 	ppid, _ := cmd.Flags().GetInt32(cmdflags.PpidFlag) // Get PPID from
 	logrus.Infof("PID is [ %d ], watching PPID: [ %d ]", os.Getpid(), ppid)
