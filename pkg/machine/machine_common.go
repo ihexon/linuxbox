@@ -1,17 +1,16 @@
-//  SPDX-FileCopyrightText: 2024-2024 OOMOL, Inc. <https://www.oomol.com>
+//  SPDX-FileCopyrightText: 2024-2025 OOMOL, Inc. <https://www.oomol.com>
 //  SPDX-License-Identifier: MPL-2.0
 
 package machine
 
 import (
-	"bauklotze/pkg/machine/events"
 	"fmt"
-	"net/http"
-	"net/url"
 	"os/exec"
 	"time"
 
-	"bauklotze/pkg/network"
+	"bauklotze/pkg/machine/events"
+
+	"bauklotze/pkg/httpclient"
 
 	"github.com/sirupsen/logrus"
 )
@@ -55,15 +54,10 @@ func WaitAPIAndPrintInfo(sockInHost string, forwardState APIForwardingState, nam
 }
 
 const defaultPingTimeout = 5 * time.Second
-const defaultPingInterval = 100 * time.Microsecond
+const defaultPingInterval = 200 * time.Millisecond
 
 func WaitAndPingAPI(sock string) error {
-	connCtx, err := network.NewConn(sock)
-	if err != nil {
-		return fmt.Errorf("failed to create connection context: %w", err)
-	}
-	connCtx.URLParameter = url.Values{}
-	connCtx.Headers = http.Header{}
+	client := httpclient.New().SetTransport(httpclient.CreateUnixTransport(sock))
 
 	timeout := time.After(defaultPingTimeout)
 	for {
@@ -73,9 +67,8 @@ func WaitAndPingAPI(sock string) error {
 		default:
 			logrus.Info("Ping Podman API....")
 			time.Sleep(defaultPingInterval)
-			res, err := connCtx.Request("GET", "_ping")
-			if err == nil {
-				_ = res.Response.Body.Close()
+
+			if err := client.Get("_ping"); err == nil {
 				logrus.Infof("Podman ping test success")
 				return nil
 			}

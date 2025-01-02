@@ -1,9 +1,12 @@
+//  SPDX-FileCopyrightText: 2024-2025 OOMOL, Inc. <https://www.oomol.com>
+//  SPDX-License-Identifier: MPL-2.0
+
 package events
 
 import (
-	"bauklotze/pkg/network"
-	"net/http"
 	"net/url"
+
+	"bauklotze/pkg/httpclient"
 
 	"github.com/sirupsen/logrus"
 )
@@ -14,39 +17,29 @@ var (
 
 // notify sends an event to the report URL
 func notify(e event) {
-	stage := e.Stage
-	name := e.Name
-	value := e.Value
-
 	if ReportURL == "" {
 		return
 	}
 
-	connCtx, err := network.NewConn(ReportURL)
-	if err != nil {
-		logrus.Errorf("report url not valid, --report-url only support unix:/// proto: %v\n", err)
-		return
-	}
+	client := httpclient.New().
+		SetTransport(httpclient.CreateUnixTransport(ReportURL)).
+		SetBaseURL("http://local").
+		SetHeader("Content-Type", PlainTextContentType).
+		SetQueryParams(map[string]string{
+			"stage": e.Stage,
+			"name":  e.Name,
+			"value": url.QueryEscape(e.Value),
+		})
 
-	connCtx.Headers = http.Header{
-		"Content-Type": []string{PlainTextContentType},
-	}
-	connCtx.URLParameter = url.Values{
-		"stage": []string{stage},
-		"name":  []string{name},
-		"value": []string{url.QueryEscape(value)},
-	}
 	logrus.Infof("Send Event to %s , stage: %s, name: %s, value: %s \n",
-		connCtx.URI,
-		connCtx.URLParameter.Get("stage"),
-		connCtx.URLParameter.Get("name"),
-		connCtx.URLParameter.Get("value"),
+		ReportURL,
+		client.QueryParam.Get("stage"),
+		client.QueryParam.Get("name"),
+		client.QueryParam.Get("value"),
 	)
-	req, err := connCtx.Request("GET", "notify")
-	if err != nil {
+
+	if err := client.Get("notify"); err != nil {
 		logrus.Warnf("Failed to notify %q: %v\n", ReportURL, err)
-	} else {
-		req.Body.Close()
 	}
 }
 
