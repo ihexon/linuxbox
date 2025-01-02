@@ -219,6 +219,7 @@ func formatError(err error) string {
 func RootCmdExecute() {
 	err := rootCmd.ExecuteContext(context.Background())
 	if err != nil {
+		events.NotifyError(err)
 		_, _ = fmt.Fprintln(os.Stderr, formatError(err))
 		registry.SetExitCode(1)
 	} else {

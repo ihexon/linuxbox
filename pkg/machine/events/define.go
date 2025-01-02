@@ -27,8 +27,12 @@ const (
 	KillingGvProxy    RunStageName = "KillingGvProxy"
 	KillingVMProvider RunStageName = "KillingKillingVMProvider"
 	SyncMachineDisk   RunStageName = "SyncMachineDisk"
-	MachineReady      RunStageName = "MachineReady"
+	Ready             RunStageName = "Ready"
 	RunExit           RunStageName = "Exit"
+)
+
+const (
+	kError string = "error"
 )
 
 type event struct {

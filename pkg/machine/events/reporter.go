@@ -86,3 +86,11 @@ func NotifyExit() {
 		logrus.Warnf("Unknown stage %q", CurrentStage)
 	}
 }
+
+func NotifyError(err error) {
+	notify(event{
+		Stage: CurrentStage,
+		Name:  kError,
+		Value: err.Error(),
+	})
+}

@@ -48,7 +48,7 @@ func WaitAPIAndPrintInfo(sockInHost string, forwardState APIForwardingState, nam
 		logrus.Error("failed to ping Podman API: ", err)
 		return err
 	} else {
-		events.NotifyRun(events.MachineReady)
+		events.NotifyRun(events.Ready)
 		fmt.Printf("Podman API forwarding listening on: %s\n", sockInHost)
 	}
 	return nil
