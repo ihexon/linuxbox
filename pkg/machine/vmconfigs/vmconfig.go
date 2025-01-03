@@ -8,17 +8,14 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
-	"net"
 	"os"
 	"os/exec"
 	"path/filepath"
-	"strconv"
 	"strings"
 	"time"
 
 	"bauklotze/pkg/machine/define"
 	"bauklotze/pkg/machine/lock"
-	"bauklotze/pkg/machine/ports"
 
 	"github.com/containers/common/pkg/strongunits"
 	gvproxy "github.com/containers/gvisor-tap-vsock/pkg/types"
@@ -110,6 +107,10 @@ func (mc *MachineConfig) RuntimeDir() (*define.VMFile, error) {
 	return mc.Dirs.RuntimeDir, nil
 }
 
+const (
+	defaultSSHPort = 61234
+)
+
 func NewMachineConfig(opts define.InitOptions, dirs *define.MachineDirs, sshIdentityPath string, mtype define.VMType) (*MachineConfig, error) {
 	mc := new(MachineConfig)
 	mc.Name = opts.Name
@@ -130,22 +131,9 @@ func NewMachineConfig(opts define.InitOptions, dirs *define.MachineDirs, sshIden
 	}
 	mc.Resources = mrc
 
-	var sshPort int
-	listener, tempErr := net.Listen("tcp", "127.0.0.1:61234")
-	if tempErr != nil {
-		logrus.Infof("Gvproxy SSH port 61234 port can not be used , try to get a random port...")
-		if sshPort, err = ports.AllocateMachinePort(); err != nil {
-			return nil, fmt.Errorf("failed to allocate machine port: %w", err)
-		}
-	} else {
-		_, portString, _ := net.SplitHostPort(listener.Addr().String())
-		sshPort, _ = strconv.Atoi(portString)
-		listener.Close()
-	}
-
 	sshConfig := SSHConfig{
 		IdentityPath:   sshIdentityPath,
-		Port:           sshPort,
+		Port:           defaultSSHPort,
 		RemoteUsername: opts.Username, // always be root
 	}
 	mc.SSH = sshConfig

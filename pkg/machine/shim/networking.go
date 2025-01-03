@@ -6,15 +6,13 @@ package shim
 import (
 	"errors"
 	"fmt"
-	"net"
 	"os/exec"
 	"time"
 
 	"bauklotze/pkg/machine"
-	"bauklotze/pkg/machine/connection"
 	"bauklotze/pkg/machine/define"
-	"bauklotze/pkg/machine/ports"
 	"bauklotze/pkg/machine/vmconfigs"
+	"bauklotze/pkg/port"
 
 	"github.com/sirupsen/logrus"
 )
@@ -25,21 +23,6 @@ var (
 	ErrNotRunning      = errors.New("machine not in running state")
 	ErrSSHNotListening = errors.New("machine is not listening on ssh port")
 )
-
-const defaultDialTimeout = 30 * time.Millisecond
-
-func isListening(port int) bool {
-	var err error
-	conn, err := net.DialTimeout("tcp", fmt.Sprintf("%s:%d", "127.0.0.1", port), defaultDialTimeout)
-	if err != nil {
-		return false
-	}
-	if err = conn.Close(); err != nil {
-		logrus.Errorf("isListening: close connection failed: %s\n", err.Error())
-	}
-
-	return true
-}
 
 // conductVMReadinessCheck checks to make sure the machine is in the proper state
 // and that SSH is up and running
@@ -58,7 +41,7 @@ func conductVMReadinessCheck(mc *vmconfigs.MachineConfig, stateF func() (define.
 			continue
 		}
 
-		if !isListening(mc.SSH.Port) {
+		if !port.IsListening(mc.SSH.Port) {
 			sshError = ErrSSHNotListening
 			continue
 		}
@@ -74,59 +57,7 @@ func conductVMReadinessCheck(mc *vmconfigs.MachineConfig, stateF func() (define.
 	return
 }
 
-func reassignSSHPort(mc *vmconfigs.MachineConfig) error {
-	newPort, err := ports.AllocateMachinePort()
-	if err != nil {
-		return fmt.Errorf("failed to allocate machine port: %w", err)
-	}
-
-	success := false
-	defer func() {
-		if !success {
-			if err := ports.ReleaseMachinePort(newPort); err != nil {
-				logrus.Warnf("could not release port allocation as part of failure rollback (%d): %s", newPort, err.Error())
-			}
-		}
-	}()
-
-	// Write a transient invalid port, to force a retry on failure
-	oldPort := mc.SSH.Port
-	mc.SSH.Port = 0
-	if err := mc.Write(); err != nil {
-		return fmt.Errorf("failed to write updated port: %w", err)
-	}
-
-	if err := ports.ReleaseMachinePort(oldPort); err != nil {
-		logrus.Warnf("could not release current ssh port allocation (%d): %s", oldPort, err.Error())
-	}
-
-	logrus.Infof("Update ssh port for %s, new ssh port: %d", mc.Name, newPort)
-
-	mc.SSH.Port = newPort
-	if err := connection.UpdateConnectionPairPort(mc.Name, newPort, 0, mc.SSH.RemoteUsername, mc.SSH.IdentityPath); err != nil {
-		return fmt.Errorf("could not update remote connection configuration: %w", err)
-	}
-
-	// Write updated port back
-	if err := mc.Write(); err != nil {
-		return fmt.Errorf("failed to write updated port: %w", err)
-	}
-
-	// inform defer routine not to release the port
-	success = true
-
-	return nil
-}
-
 func startNetworking(mc *vmconfigs.MachineConfig, provider vmconfigs.VMProvider) (string, machine.APIForwardingState, *exec.Cmd, error) {
-	// Check if SSH port is in use, and reassign if necessary
-	if !ports.IsLocalPortAvailable(mc.SSH.Port) {
-		logrus.Warnf("detected port conflict on machine ssh port [%d], reassigning", mc.SSH.Port)
-		if err := reassignSSHPort(mc); err != nil {
-			return "", machine.NoForwarding, nil, err
-		}
-	}
-
 	socksInHost, socksInGuest, err := setupMachineSockets(mc, mc.Dirs)
 	if err != nil {
 		return "", machine.NoForwarding, nil, err

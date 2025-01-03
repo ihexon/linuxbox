@@ -1,10 +1,9 @@
-//  SPDX-FileCopyrightText: 2024-2024 OOMOL, Inc. <https://www.oomol.com>
+//  SPDX-FileCopyrightText: 2024-2025 OOMOL, Inc. <https://www.oomol.com>
 //  SPDX-License-Identifier: MPL-2.0
 
 package shim
 
 import (
-	"bauklotze/pkg/machine/events"
 	"context"
 	"encoding/json"
 	"errors"
@@ -12,11 +11,12 @@ import (
 	"runtime"
 	"time"
 
+	"bauklotze/pkg/machine/events"
+	"bauklotze/pkg/port"
+
 	"bauklotze/pkg/machine"
-	"bauklotze/pkg/machine/connection"
 	"bauklotze/pkg/machine/define"
 	"bauklotze/pkg/machine/env"
-	"bauklotze/pkg/machine/provider"
 	"bauklotze/pkg/machine/system"
 	"bauklotze/pkg/machine/vmconfigs"
 
@@ -127,23 +127,6 @@ func Init(opts define.InitOptions, mp vmconfigs.VMProvider) error {
 		return mc.ImagePath.Delete()
 	})
 
-	err = connection.AddSSHConnectionsToPodmanSocket(0, mc.SSH.Port, mc.SSH.IdentityPath, mc.Name, mc.SSH.RemoteUsername, opts)
-
-	if err != nil {
-		return fmt.Errorf("failed to add ssh connections to podman socket: %w", err)
-	}
-	events.NotifyInit(events.WriteSSHConnectConfig)
-
-	cleanup := func() error {
-		machines, err := provider.GetAllMachinesAndRootfulness()
-		if err != nil {
-			return fmt.Errorf("failed to get all machines and rootfulness: %w", err)
-		}
-		logrus.Infof("callback: Removing connections for %s", mc.Name)
-		return connection.RemoveConnections(machines, mc.Name+"-root")
-	}
-	callbackFuncs.Add(cleanup)
-
 	err = mp.CreateVM(createOpts, mc)
 	if err != nil {
 		return fmt.Errorf("failed to create vm: %w", err)
@@ -223,6 +206,18 @@ func Start(ctx context.Context, mc *vmconfigs.MachineConfig, mp vmconfigs.VMProv
 			logrus.Error(err)
 		}
 	}()
+
+	sshPort, err := port.GetFree(mc.SSH.Port)
+	if err != nil {
+		return fmt.Errorf("failed to get free port: %w", err)
+	}
+
+	if sshPort != mc.SSH.Port {
+		if err := mc.Write(); err != nil {
+			return fmt.Errorf("failed to write machine config: %w", err)
+		}
+		mc.SSH.Port = sshPort
+	}
 
 	gvproxyPidFile, err := dirs.RuntimeDir.AppendToNewVMFile("gvproxy.pid", nil)
 	if err != nil {

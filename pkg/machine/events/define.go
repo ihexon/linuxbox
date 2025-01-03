@@ -14,10 +14,9 @@ const (
 type InitStageName string
 
 const (
-	ExtractBootImage      InitStageName = "ExtractBootImage"
-	InitUpdateConfig      InitStageName = "UpdateConfig"
-	WriteSSHConnectConfig InitStageName = "WriteSSHConnectConfig"
-	InitExit              InitStageName = "Exit"
+	ExtractBootImage InitStageName = "ExtractBootImage"
+	InitUpdateConfig InitStageName = "UpdateConfig"
+	InitExit         InitStageName = "Exit"
 )
 
 type RunStageName string
