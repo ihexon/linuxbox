@@ -1,6 +1,6 @@
 module bauklotze
 
-go 1.22
+go 1.23.4
 
 require (
 	github.com/Code-Hex/go-infinity-channel v1.0.0
