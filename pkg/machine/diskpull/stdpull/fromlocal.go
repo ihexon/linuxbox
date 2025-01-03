@@ -1,4 +1,4 @@
-//  SPDX-FileCopyrightText: 2024-2024 OOMOL, Inc. <https://www.oomol.com>
+//  SPDX-FileCopyrightText: 2024-2025 OOMOL, Inc. <https://www.oomol.com>
 //  SPDX-License-Identifier: MPL-2.0
 
 package stdpull
@@ -6,7 +6,7 @@ package stdpull
 import (
 	"fmt"
 
-	"bauklotze/pkg/archiver/decompress"
+	"bauklotze/pkg/decompress"
 	"bauklotze/pkg/machine/define"
 
 	"github.com/containers/storage/pkg/fileutils"
@@ -35,7 +35,7 @@ func (s *StdDiskPull) Get() error {
 	}
 	logrus.Infof("Try to decompress %s to %s", s.inputPath.GetPath(), s.finalPath.GetPath())
 	// Only support zstd compressed bootable.img
-	err := decompress.Zstd(s.inputPath, s.finalPath)
+	err := decompress.Zstd(s.inputPath.GetPath(), s.finalPath.GetPath())
 	if err != nil {
 		errors := fmt.Errorf("could not decompress %s to %s, %w", s.inputPath.GetPath(), s.finalPath.GetPath(), err)
 		return errors
