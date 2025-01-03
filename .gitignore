@@ -35,3 +35,5 @@ atlassian-ide-plugin.xml
 .idea/sonarlint/
 # Editor-based Rest Client
 .idea/httpRequests
+#golinter
+.idea/golinter.xml
