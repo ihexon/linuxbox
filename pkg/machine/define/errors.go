@@ -1,4 +1,4 @@
-//  SPDX-FileCopyrightText: 2024-2024 OOMOL, Inc. <https://www.oomol.com>
+//  SPDX-FileCopyrightText: 2024-2025 OOMOL, Inc. <https://www.oomol.com>
 //  SPDX-License-Identifier: MPL-2.0
 
 package define
@@ -6,8 +6,6 @@ package define
 import (
 	"errors"
 	"fmt"
-
-	"github.com/containers/common/pkg/strongunits"
 )
 
 var (
@@ -30,12 +28,4 @@ type VMDoesNotExistError struct {
 func (err *VMDoesNotExistError) Error() string {
 	// the current error in qemu is not quoted
 	return fmt.Sprintf("%s: VM does not exist", err.Name)
-}
-
-type NewDiskSizeTooSmallError struct {
-	OldSize, NewSize strongunits.GiB
-}
-
-func (err *NewDiskSizeTooSmallError) Error() string {
-	return fmt.Sprintf("invalid disk size %d: new disk must be larger than %dGB", err.OldSize, err.NewSize)
 }

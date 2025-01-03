@@ -1,12 +1,10 @@
-//  SPDX-FileCopyrightText: 2024-2024 OOMOL, Inc. <https://www.oomol.com>
+//  SPDX-FileCopyrightText: 2024-2025 OOMOL, Inc. <https://www.oomol.com>
 //  SPDX-License-Identifier: MPL-2.0
 
 package sockets
 
 import (
-	"bufio"
 	"fmt"
-	"net"
 	"time"
 
 	"github.com/containers/storage/pkg/fileutils"
@@ -26,25 +24,4 @@ func WaitForSocketWithBackoffs(socketPath string) error {
 		time.Sleep(gvProxyWaitBackoff)
 	}
 	return fmt.Errorf("unable to connect to socket at %s", socketPath)
-}
-
-// ListenAndWaitOnSocket waits for a new connection to the listener and sends
-// any error back through the channel. ListenAndWaitOnSocket is intended to be
-// used as a goroutine
-func ListenAndWaitOnSocket(errChan chan<- error, listener net.Listener) {
-	conn, err := listener.Accept()
-	if err != nil {
-		logrus.Errorf("failed to connect to ready socket")
-		errChan <- err
-		return
-	}
-	_, err = bufio.NewReader(conn).ReadString('\n')
-	logrus.Infof("READY ACK received")
-
-	if closeErr := conn.Close(); closeErr != nil {
-		errChan <- closeErr
-		return
-	}
-
-	errChan <- err
 }

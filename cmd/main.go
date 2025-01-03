@@ -1,10 +1,9 @@
-//  SPDX-FileCopyrightText: 2024-2024 OOMOL, Inc. <https://www.oomol.com>
+//  SPDX-FileCopyrightText: 2024-2025 OOMOL, Inc. <https://www.oomol.com>
 //  SPDX-License-Identifier: MPL-2.0
 
 package main
 
 import (
-	"bauklotze/pkg/machine/events"
 	"context"
 	"fmt"
 	"io"
@@ -12,13 +11,14 @@ import (
 	"path/filepath"
 	"strings"
 
+	"bauklotze/pkg/machine/events"
+
 	cmdflags "bauklotze/cmd/bauklotze/flags"
 	_ "bauklotze/cmd/bauklotze/machine"
 	"bauklotze/cmd/bauklotze/validata"
 	"bauklotze/cmd/registry"
 	"bauklotze/pkg/machine/define"
 	"bauklotze/pkg/machine/system"
-	"bauklotze/pkg/terminal"
 
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -189,10 +189,6 @@ func stdOutHook() {
 func parseCommands() *cobra.Command {
 	for _, c := range registry.Commands {
 		addCommand(c)
-	}
-
-	if err := terminal.SetConsole(); err != nil {
-		logrus.Warn(err.Error())
 	}
 
 	rootCmd.SetFlagErrorFunc(flagErrorFunc)

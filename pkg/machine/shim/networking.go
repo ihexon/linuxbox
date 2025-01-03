@@ -1,4 +1,4 @@
-//  SPDX-FileCopyrightText: 2024-2024 OOMOL, Inc. <https://www.oomol.com>
+//  SPDX-FileCopyrightText: 2024-2025 OOMOL, Inc. <https://www.oomol.com>
 //  SPDX-License-Identifier: MPL-2.0
 
 package shim
@@ -74,7 +74,7 @@ func conductVMReadinessCheck(mc *vmconfigs.MachineConfig, stateF func() (define.
 	return
 }
 
-func reassignSSHPort(mc *vmconfigs.MachineConfig, provider vmconfigs.VMProvider) error {
+func reassignSSHPort(mc *vmconfigs.MachineConfig) error {
 	newPort, err := ports.AllocateMachinePort()
 	if err != nil {
 		return fmt.Errorf("failed to allocate machine port: %w", err)
@@ -101,9 +101,6 @@ func reassignSSHPort(mc *vmconfigs.MachineConfig, provider vmconfigs.VMProvider)
 	}
 
 	logrus.Infof("Update ssh port for %s, new ssh port: %d", mc.Name, newPort)
-	if err := provider.UpdateSSHPort(mc, newPort); err != nil {
-		return fmt.Errorf("failed to update ssh port: %w", err)
-	}
 
 	mc.SSH.Port = newPort
 	if err := connection.UpdateConnectionPairPort(mc.Name, newPort, 0, mc.SSH.RemoteUsername, mc.SSH.IdentityPath); err != nil {
@@ -125,7 +122,7 @@ func startNetworking(mc *vmconfigs.MachineConfig, provider vmconfigs.VMProvider)
 	// Check if SSH port is in use, and reassign if necessary
 	if !ports.IsLocalPortAvailable(mc.SSH.Port) {
 		logrus.Warnf("detected port conflict on machine ssh port [%d], reassigning", mc.SSH.Port)
-		if err := reassignSSHPort(mc, provider); err != nil {
+		if err := reassignSSHPort(mc); err != nil {
 			return "", machine.NoForwarding, nil, err
 		}
 	}

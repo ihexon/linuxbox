@@ -1,4 +1,4 @@
-//  SPDX-FileCopyrightText: 2024-2024 OOMOL, Inc. <https://www.oomol.com>
+//  SPDX-FileCopyrightText: 2024-2025 OOMOL, Inc. <https://www.oomol.com>
 //  SPDX-License-Identifier: MPL-2.0
 
 package vmconfigs
@@ -28,18 +28,12 @@ import (
 
 type VMProvider interface { //nolint:interfacebloat
 	VMType() define.VMType
-	Exists(name string) (bool, error)
 	GetDisk(userInputPath string, dirs *define.MachineDirs, imagePath *define.VMFile, vmType define.VMType, name string) error
 	CreateVM(opts define.CreateVMOpts, mc *MachineConfig) error
-	StopVM(mc *MachineConfig, hardStop bool) error
 	MountType() VolumeMountType
-	RequireExclusiveActive() bool
 	State(mc *MachineConfig) (define.Status, error)
-	UpdateSSHPort(mc *MachineConfig, port int) error
 	StartNetworking(mc *MachineConfig, cmd *gvproxy.GvproxyCommand) error
-	PostStartNetworking(mc *MachineConfig, noInfo bool) error
 	StartVM(mc *MachineConfig) (*exec.Cmd, func() error, error)
-	MountVolumesToVM(mc *MachineConfig, quiet bool) error
 }
 
 type Mount struct {
@@ -60,22 +54,6 @@ type HostUser struct {
 	UID int `json:"UID"`
 	// Whether one of these fields has changed and actions should be taken
 	Modified bool `json:"HostUserModified"`
-}
-
-// DataDir is a simple helper function to obtain the machine data dir
-func (mc *MachineConfig) DataDir() (*define.VMFile, error) {
-	if mc.Dirs == nil || mc.Dirs.DataDir == nil {
-		return nil, errors.New("no data directory set")
-	}
-	return mc.Dirs.DataDir, nil
-}
-
-func (mc *MachineConfig) IgnitionFile() (*define.VMFile, error) {
-	configDir, err := mc.ConfigDir()
-	if err != nil {
-		return nil, fmt.Errorf("failed to get config dir: %w", err)
-	}
-	return configDir.AppendToNewVMFile(mc.Name+".ign", nil) //nolint:wrapcheck
 }
 
 type MachineConfig struct {
@@ -130,13 +108,6 @@ func (mc *MachineConfig) RuntimeDir() (*define.VMFile, error) {
 		return nil, errors.New("no runtime directory set")
 	}
 	return mc.Dirs.RuntimeDir, nil
-}
-
-func (mc *MachineConfig) LogsDir() (*define.VMFile, error) {
-	if mc.Dirs == nil || mc.Dirs.LogsDir == nil {
-		return nil, errors.New("no runtime directory set")
-	}
-	return mc.Dirs.LogsDir, nil
 }
 
 func NewMachineConfig(opts define.InitOptions, dirs *define.MachineDirs, sshIdentityPath string, mtype define.VMType) (*MachineConfig, error) {
@@ -254,9 +225,9 @@ func LoadMachinesInDir(dirs *define.MachineDirs) (map[string]*MachineConfig, err
 	return mcs, nil
 }
 
-func loadMachineFromFQPath(path *define.VMFile) (*MachineConfig, error) {
+func loadMachineFromFQPath(f *define.VMFile) (*MachineConfig, error) {
 	mc := new(MachineConfig)
-	b, err := path.Read()
+	b, err := f.Read()
 	if err != nil {
 		return nil, fmt.Errorf("failed to read machine config: %w", err)
 	}
@@ -264,7 +235,7 @@ func loadMachineFromFQPath(path *define.VMFile) (*MachineConfig, error) {
 	if err = json.Unmarshal(b, mc); err != nil {
 		return nil, fmt.Errorf("unable to load machine config file: %w", err)
 	}
-	lock, err := lock.GetMachineLock(mc.Name, filepath.Dir(path.GetPath()))
+	lock, err := lock.GetMachineLock(mc.Name, filepath.Dir(f.GetPath()))
 	if err != nil {
 		return nil, fmt.Errorf("failed to get machine lock: %w", err)
 	}

@@ -1,3 +1,6 @@
+//  SPDX-FileCopyrightText: 2024-2025 OOMOL, Inc. <https://www.oomol.com>
+//  SPDX-License-Identifier: MPL-2.0
+
 package events
 
 // CurrentStage Stage is the stage of the lifecycle
@@ -20,7 +23,6 @@ const (
 type RunStageName string
 
 const (
-	RunUpdateConfig   RunStageName = "UpdateConfig"
 	LoadMachineConfig RunStageName = "LoadMachineConfig"
 	StartGvProxy      RunStageName = "StartGvProxy"
 	StartVMProvider   RunStageName = "StartVMProvider"

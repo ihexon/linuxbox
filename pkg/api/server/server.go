@@ -1,4 +1,4 @@
-//  SPDX-FileCopyrightText: 2024-2024 OOMOL, Inc. <https://www.oomol.com>
+//  SPDX-FileCopyrightText: 2024-2025 OOMOL, Inc. <https://www.oomol.com>
 //  SPDX-License-Identifier: MPL-2.0
 
 package server
@@ -28,7 +28,6 @@ type APIServer struct {
 	net.Listener
 	context.Context
 	context.CancelFunc
-	idleTracker *idleTracker
 }
 
 func RestService(ctx context.Context, apiurl *url.URL) error {
@@ -103,16 +102,11 @@ func makeNewServer(listener net.Listener) *APIServer {
 	logrus.Infof("API service listening on %q.", listener.Addr())
 	router := mux.NewRouter().UseEncodedPath()
 
-	// setup a tracker to tracking every connections
-	tracker := newIdleTracker()
-
 	server := APIServer{
 		Server: http.Server{
-			ConnState: tracker.ConnState, // connection tracker
-			Handler:   router,            // Mux
+			Handler: router, // Mux
 		},
-		Listener:    listener,
-		idleTracker: tracker,
+		Listener: listener,
 	}
 
 	server.Server.BaseContext = func(l net.Listener) context.Context {
@@ -156,11 +150,11 @@ func (s *APIServer) Shutdown() error {
 }
 
 func (s *APIServer) setupRouter(r *mux.Router) *mux.Router {
-	r.Handle(("/apiversion"), s.APIHandler(backend.VersionHandler)).Methods(http.MethodGet)
-	r.Handle(("/{name}/info"), s.APIHandler(backend.GetInfos)).Methods(http.MethodGet)
-	r.Handle(("/{name}/vmstat"), s.APIHandler(backend.GetVMStat)).Methods(http.MethodGet)
-	r.Handle(("/{name}/synctime"), s.APIHandler(backend.TimeSync)).Methods(http.MethodGet)
-	r.Handle(("/{name}/exec"), s.APIHandler(backend.DoExec)).Methods(http.MethodPost)
+	r.Handle("/apiversion", s.APIHandler(backend.VersionHandler)).Methods(http.MethodGet)
+	r.Handle("/{name}/info", s.APIHandler(backend.GetInfos)).Methods(http.MethodGet)
+	r.Handle("/{name}/vmstat", s.APIHandler(backend.GetVMStat)).Methods(http.MethodGet)
+	r.Handle("/{name}/synctime", s.APIHandler(backend.TimeSync)).Methods(http.MethodGet)
+	r.Handle("/{name}/exec", s.APIHandler(backend.DoExec)).Methods(http.MethodPost)
 
 	return r
 }

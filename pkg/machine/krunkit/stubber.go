@@ -1,4 +1,4 @@
-//  SPDX-FileCopyrightText: 2024-2024 OOMOL, Inc. <https://www.oomol.com>
+//  SPDX-FileCopyrightText: 2024-2025 OOMOL, Inc. <https://www.oomol.com>
 //  SPDX-License-Identifier: MPL-2.0
 
 //go:build darwin
@@ -29,11 +29,6 @@ func (l LibKrunStubber) State(mc *vmconfigs.MachineConfig) (define.Status, error
 	return mc.AppleKrunkitHypervisor.Krunkit.State() //nolint:wrapcheck
 }
 
-func (l LibKrunStubber) StopVM(mc *vmconfigs.MachineConfig, ifHardStop bool) error {
-	// Not implement yet
-	return nil
-}
-
 func (l LibKrunStubber) GetDisk(userInputPath string, dirs *define.MachineDirs, imagePath *define.VMFile, vmType define.VMType, name string) error {
 	// mc.ImagePath is the bootable copied from user provided image --boot <bootable.img.xz>
 	// userInputPath is the bootable image user provided
@@ -41,45 +36,8 @@ func (l LibKrunStubber) GetDisk(userInputPath string, dirs *define.MachineDirs, 
 	return diskpull.GetDisk(userInputPath, imagePath) //nolint:wrapcheck
 }
 
-func (l LibKrunStubber) Exists(name string) (bool, error) {
-	// not applicable for libkrun (same as applehv)
-	return false, nil
-}
-
-func (l LibKrunStubber) MountVolumesToVM(mc *vmconfigs.MachineConfig, quiet bool) error {
-	return nil
-}
-
-func (l LibKrunStubber) Remove(mc *vmconfigs.MachineConfig) ([]string, func() error, error) {
-	return []string{}, func() error { return nil }, nil
-}
-
-func (l LibKrunStubber) RemoveAndCleanMachines(dirs *define.MachineDirs) error {
-	return nil
-}
-
 func (l LibKrunStubber) StartNetworking(mc *vmconfigs.MachineConfig, cmd *gvproxy.GvproxyCommand) error {
 	return StartGenericNetworking(mc, cmd)
-}
-
-func (l LibKrunStubber) PostStartNetworking(mc *vmconfigs.MachineConfig, noInfo bool) error {
-	return nil
-}
-
-func (l LibKrunStubber) UserModeNetworkEnabled(mc *vmconfigs.MachineConfig) bool {
-	return true
-}
-
-func (l LibKrunStubber) UseProviderNetworkSetup() bool {
-	return false
-}
-
-func (l LibKrunStubber) RequireExclusiveActive() bool {
-	return false // HyperVisor Libkrun do not require exclusive active
-}
-
-func (l LibKrunStubber) UpdateSSHPort(mc *vmconfigs.MachineConfig, port int) error {
-	return nil
 }
 
 func (l LibKrunStubber) MountType() vmconfigs.VolumeMountType {

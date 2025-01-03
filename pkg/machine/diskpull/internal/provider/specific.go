@@ -1,9 +1,0 @@
-//  SPDX-FileCopyrightText: 2024-2024 OOMOL, Inc. <https://www.oomol.com>
-//  SPDX-License-Identifier: MPL-2.0
-
-package provider
-
-// Get image from somewhere
-type Disker interface {
-	Get() error
-}

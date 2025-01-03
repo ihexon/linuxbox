@@ -1,4 +1,4 @@
-//  SPDX-FileCopyrightText: 2024-2024 OOMOL, Inc. <https://www.oomol.com>
+//  SPDX-FileCopyrightText: 2024-2025 OOMOL, Inc. <https://www.oomol.com>
 //  SPDX-License-Identifier: MPL-2.0
 
 //go:build darwin
@@ -21,14 +21,10 @@ import (
 )
 
 const (
-	inspect = "/vm/inspect"
-	state   = "/vm/state"
-	version = "/version"
+	state = "/vm/state"
 )
 
 const (
-	// Values that the machine can be in
-	// "VirtualMachineStateStoppedVirtualMachineStateRunningVirtualMachineStatePausedVirtualMachineStateErrorVirtualMachineStateStartingVirtualMachineStatePausingVirtualMachineStateResumingVirtualMachineStateStopping"
 	VZMachineStateStopped  VZMachineState = "VirtualMachineStateStopped"
 	VZMachineStateRunning  VZMachineState = "VirtualMachineStateRunning"
 	VZMachineStatePaused   VZMachineState = "VirtualMachineStatePaused"
@@ -50,7 +46,7 @@ type Helper struct {
 	VirtualMachine *vfkit_config.VirtualMachine `json:"VirtualMachine"`
 }
 
-// state asks vfkit for the virtual machine state. in case the vfkit
+// State asks vfkit for the virtual machine state. in case the vfkit
 // service is not responding, we assume the service is not running
 // and return a stopped status
 func (vf *Helper) State() (define.Status, error) {
@@ -82,7 +78,7 @@ func (vf *Helper) getRawState() (define.Status, error) {
 	if err := serverResponse.Body.Close(); err != nil {
 		logrus.Error(err)
 	}
-	return ToMachineStatus(response.State)
+	return toMachineStatus(response.State)
 }
 
 func (vf *Helper) get(endpoint string, payload io.Reader) (*http.Response, error) {
@@ -95,7 +91,7 @@ func (vf *Helper) get(endpoint string, payload io.Reader) (*http.Response, error
 	return client.Do(req) //nolint:wrapcheck
 }
 
-func ToMachineStatus(val string) (define.Status, error) {
+func toMachineStatus(val string) (define.Status, error) {
 	switch val {
 	case string(VZMachineStateRunning), string(VZMachineStatePausing), string(VZMachineStateResuming), string(VZMachineStateStopping), string(VZMachineStatePaused):
 		return define.Running, nil

@@ -1,4 +1,4 @@
-//  SPDX-FileCopyrightText: 2024-2024 OOMOL, Inc. <https://www.oomol.com>
+//  SPDX-FileCopyrightText: 2024-2025 OOMOL, Inc. <https://www.oomol.com>
 //  SPDX-License-Identifier: MPL-2.0
 
 package define
@@ -46,11 +46,6 @@ var (
 	DefaultFilePerm os.FileMode = 0644
 )
 
-type StopOptions struct {
-	SendEvt       string
-	CommonOptions *CommonOptions
-}
-
 type InitOptions struct {
 	IsDefault      bool
 	CPUS           uint64
@@ -81,12 +76,6 @@ type ImageVerStruct struct {
 type ImagesStruct struct {
 	BootableImage string // Bootable image
 	DataDisk      string // Mounted in /var
-}
-
-type SetOptions struct {
-	CPUs    uint64
-	Memory  uint64
-	Volumes []string
 }
 
 var (
