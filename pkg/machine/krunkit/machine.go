@@ -1,4 +1,4 @@
-//  SPDX-FileCopyrightText: 2024-2024 OOMOL, Inc. <https://www.oomol.com>
+//  SPDX-FileCopyrightText: 2024-2025 OOMOL, Inc. <https://www.oomol.com>
 //  SPDX-License-Identifier: MPL-2.0
 
 //go:build darwin
@@ -6,14 +6,15 @@
 package krunkit
 
 import (
-	"bauklotze/pkg/machine/events"
 	"errors"
 	"fmt"
 	"io"
 	"os"
 	"os/exec"
 
-	"bauklotze/pkg/config"
+	"bauklotze/pkg/libexec"
+	"bauklotze/pkg/machine/events"
+
 	"bauklotze/pkg/machine"
 	"bauklotze/pkg/machine/define"
 	"bauklotze/pkg/machine/ignition"
@@ -99,11 +100,7 @@ func StartGenericAppleVM(mc *vmconfigs.MachineConfig, cmdBinary string, bootload
 	}
 	vm.Devices = append(vm.Devices, mounts...)
 
-	// To start the VM, we need to call krunkit
-	cfg := config.Default()
-
-	cmdBinaryPath, err := cfg.FindHelperBinary(cmdBinary)
-
+	cmdBinaryPath, err := libexec.FindBinary(cmdBinary)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to find krunkit binary: %w", err)
 	}
@@ -113,6 +110,9 @@ func StartGenericAppleVM(mc *vmconfigs.MachineConfig, cmdBinary string, bootload
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to create krunkit command: %w", err)
 	}
+
+	dyld := fmt.Sprintf("%s:%s", libexec.GetDYLDLibraryPath(), os.Getenv("DYLD_LIBRARY_PATH"))
+	krunCmd.Env = append(krunCmd.Env, fmt.Sprintf("DYLD_LIBRARY_PATH=%s", dyld))
 
 	// endpoint is krunkit rest api endpoint
 	endpointArgs, err := GetVfKitEndpointCMDArgs(endpoint)

@@ -1,10 +1,9 @@
-//  SPDX-FileCopyrightText: 2024-2024 OOMOL, Inc. <https://www.oomol.com>
+//  SPDX-FileCopyrightText: 2024-2025 OOMOL, Inc. <https://www.oomol.com>
 //  SPDX-License-Identifier: MPL-2.0
 
 package machine
 
 import (
-	"bauklotze/pkg/machine/events"
 	"context"
 	"fmt"
 	"net/url"
@@ -12,6 +11,9 @@ import (
 	"os/signal"
 	"syscall"
 	"time"
+
+	"bauklotze/pkg/libexec"
+	"bauklotze/pkg/machine/events"
 
 	cmdflags "bauklotze/cmd/bauklotze/flags"
 	"bauklotze/cmd/registry"
@@ -35,7 +37,7 @@ var (
 		Use:               "start [options] [MACHINE]",
 		Short:             "Start an existing machine",
 		Long:              "Start a managed virtual machine ",
-		PersistentPreRunE: machinePreRunE, // Get Provider and set workdir if needed
+		PersistentPreRunE: preStart,
 		RunE:              start,
 		Args:              cobra.MaximumNArgs(1),
 		Example:           `bauklotze machine start`,
@@ -194,6 +196,22 @@ func start(cmd *cobra.Command, args []string) error {
 
 	if err != nil {
 		return fmt.Errorf("machine start failed: %w", err)
+	}
+	return nil
+}
+
+func preStart(cmd *cobra.Command, args []string) error {
+	if machinePreRunE(cmd, args) != nil {
+		return fmt.Errorf("failed to get current hypervisor provider")
+	}
+
+	executable, err := os.Executable()
+	if err != nil {
+		return fmt.Errorf("failed to get executable path: %w", err)
+	}
+
+	if err := libexec.Setup(executable); err != nil {
+		return fmt.Errorf("failed to setup libexec: %w", err)
 	}
 	return nil
 }

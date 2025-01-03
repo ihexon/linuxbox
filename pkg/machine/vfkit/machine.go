@@ -1,17 +1,18 @@
-//  SPDX-FileCopyrightText: 2024-2024 OOMOL, Inc. <https://www.oomol.com>
+//  SPDX-FileCopyrightText: 2024-2025 OOMOL, Inc. <https://www.oomol.com>
 //  SPDX-License-Identifier: MPL-2.0
 
 package vfkit
 
 import (
-	"bauklotze/pkg/machine/events"
 	"errors"
 	"fmt"
 	"io"
 	"os"
 	"os/exec"
 
-	"bauklotze/pkg/config"
+	"bauklotze/pkg/libexec"
+	"bauklotze/pkg/machine/events"
+
 	"bauklotze/pkg/machine"
 	"bauklotze/pkg/machine/define"
 	"bauklotze/pkg/machine/ignition"
@@ -101,10 +102,7 @@ func StartGenericAppleVM(mc *vmconfigs.MachineConfig, cmdBinary string, bootload
 	}
 	vm.Devices = append(vm.Devices, mounts...)
 
-	// To start the VM, we need to call krunkit
-	cfg := config.Default()
-
-	cmdBinaryPath, err := cfg.FindHelperBinary(cmdBinary)
+	cmdBinaryPath, err := libexec.FindBinary(cmdBinary)
 
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to find vfkit binary: %w", err)

@@ -1,4 +1,4 @@
-//  SPDX-FileCopyrightText: 2024-2024 OOMOL, Inc. <https://www.oomol.com>
+//  SPDX-FileCopyrightText: 2024-2025 OOMOL, Inc. <https://www.oomol.com>
 //  SPDX-License-Identifier: MPL-2.0
 
 //go:build darwin
@@ -6,13 +6,14 @@
 package shim
 
 import (
-	"bauklotze/pkg/machine/events"
 	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
 
-	"bauklotze/pkg/config"
+	"bauklotze/pkg/libexec"
+	"bauklotze/pkg/machine/events"
+
 	"bauklotze/pkg/machine"
 	"bauklotze/pkg/machine/define"
 	"bauklotze/pkg/machine/vmconfigs"
@@ -40,9 +41,7 @@ func setupMachineSockets(mc *vmconfigs.MachineConfig, _dirs *define.MachineDirs)
 func startHostForwarder(mc *vmconfigs.MachineConfig, provider vmconfigs.VMProvider, dirs *define.MachineDirs, socksInHost string, socksInGuest string) (*exec.Cmd, error) {
 	forwardUser := mc.SSH.RemoteUsername
 
-	cfg := config.Default()
-
-	binary, err := cfg.FindHelperBinary(machine.ForwarderBinaryName)
+	binary, err := libexec.FindBinary(machine.ForwarderBinaryName)
 	if err != nil {
 		return nil, fmt.Errorf("failed to find helper binary: %w", err)
 	}
