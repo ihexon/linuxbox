@@ -14,7 +14,7 @@ import (
 	"bauklotze/pkg/machine/define"
 	"bauklotze/pkg/machine/diskpull"
 	"bauklotze/pkg/machine/vmconfigs"
-	"bauklotze/pkg/system"
+	"bauklotze/pkg/port"
 
 	gvproxy "github.com/containers/gvisor-tap-vsock/pkg/types"
 	vfConfig "github.com/crc-org/vfkit/pkg/config"
@@ -54,7 +54,7 @@ func (l LibKrunStubber) CreateVM(opts define.CreateVMOpts, mc *vmconfigs.Machine
 	mc.AppleKrunkitHypervisor.Krunkit = hvhelper.Helper{}
 	bl := vfConfig.NewEFIBootloader(fmt.Sprintf("%s/efi-bl-%s", opts.Dirs.DataDir.GetPath(), opts.Name), true)
 	mc.AppleKrunkitHypervisor.Krunkit.VirtualMachine = vfConfig.NewVirtualMachine(uint(mc.Resources.CPUs), uint64(mc.Resources.Memory), bl)
-	randPort, err := system.GetRandomPort()
+	randPort, err := port.GetFree(0)
 	if err != nil {
 		return fmt.Errorf("failed to get random port: %w", err)
 	}
