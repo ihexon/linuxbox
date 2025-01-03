@@ -8,7 +8,6 @@ package vfkit
 import (
 	"fmt"
 	"os/exec"
-	"strconv"
 
 	"bauklotze/pkg/machine/apple/hvhelper"
 	"bauklotze/pkg/machine/define"
@@ -52,14 +51,16 @@ const (
 func (l VFkitStubber) CreateVM(opts define.CreateVMOpts, mc *vmconfigs.MachineConfig) error {
 	mc.AppleVFkitHypervisor = new(vmconfigs.AppleVFkitConfig)
 	mc.AppleVFkitHypervisor.Vfkit = hvhelper.Helper{}
+
 	bl := vfConfig.NewEFIBootloader(fmt.Sprintf("%s/efi-bl-%s", opts.Dirs.DataDir.GetPath(), opts.Name), true)
 	mc.AppleVFkitHypervisor.Vfkit.VirtualMachine = vfConfig.NewVirtualMachine(uint(mc.Resources.CPUs), uint64(mc.Resources.Memory), bl)
+
 	randPort, err := port.GetFree(0)
 	if err != nil {
 		return fmt.Errorf("failed to get random port: %w", err)
 	}
-	// Endpoint is a string: http://127.0.0.1/[random_port]
-	mc.AppleVFkitHypervisor.Vfkit.Endpoint = localhostURI + ":" + strconv.Itoa(randPort)
+
+	mc.AppleVFkitHypervisor.Vfkit.Endpoint = fmt.Sprintf("%s:%d", localhostURI, randPort)
 	mc.AppleVFkitHypervisor.Vfkit.LogLevel = logrus.InfoLevel
 
 	return nil
