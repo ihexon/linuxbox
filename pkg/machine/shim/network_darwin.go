@@ -72,6 +72,15 @@ func startHostForwarder(mc *vmconfigs.MachineConfig, provider vmconfigs.VMProvid
 		gvcmd.Args = append(gvcmd.Args, "-debug")
 	}
 
+	// Add gvproxy API listen endpoint
+	gvpAPIPath := filepath.Join(mc.Dirs.RuntimeDir.GetPath(), "gvp_api.sock")
+	err = os.RemoveAll(gvpAPIPath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to remove old gvp_api.sock: %w", err)
+	}
+
+	gvcmd.Args = append(gvcmd.Args, "--listen", "unix://"+gvpAPIPath)
+
 	logrus.Infof("Gvproxy command-line: %s", gvcmd.Args)
 	events.NotifyRun(events.StartGvProxy, "staring...")
 
