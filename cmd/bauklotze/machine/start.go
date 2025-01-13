@@ -138,7 +138,7 @@ func start(cmd *cobra.Command, args []string) error {
 
 		logrus.Infof("Starting machine %q\n", vmName)
 		go func() {
-			errCh <- shim.Start(ctx, mc, provider, dirs, startOpts)
+			errCh <- shim.Start(mc, provider, dirs, startOpts)
 		}()
 
 		select {

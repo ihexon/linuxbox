@@ -7,28 +7,13 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"time"
 
 	"bauklotze/pkg/api/utils"
-	"bauklotze/pkg/machine"
 	"bauklotze/pkg/machine/env"
 	provider2 "bauklotze/pkg/machine/provider"
+	"bauklotze/pkg/machine/system"
 	"bauklotze/pkg/machine/vmconfigs"
 )
-
-type timeStruct struct {
-	Time string `json:"time"`
-	Tz   string `json:"tz"`
-}
-
-func getCurrentTime() *timeStruct {
-	currentTime := time.Now()
-	tz, _ := currentTime.Zone()
-	return &timeStruct{
-		Time: currentTime.Format("2006-01-02 15:04:05"),
-		Tz:   tz,
-	}
-}
 
 func getVMMc(vmName string) (*vmconfigs.MachineConfig, error) {
 	providers = provider2.GetAll()
@@ -49,20 +34,16 @@ func getVMMc(vmName string) (*vmconfigs.MachineConfig, error) {
 }
 
 func TimeSync(w http.ResponseWriter, r *http.Request) {
-	timeSt := getCurrentTime()
-
 	name := utils.GetName(r)
 	mc, err := getVMMc(name)
-
 	if err != nil {
 		utils.Error(w, http.StatusInternalServerError, err)
 		return
 	}
-
-	if sshError := machine.CommonSSHSilent(mc.SSH.RemoteUsername, mc.SSH.IdentityPath, mc.Name, mc.SSH.Port, []string{"date -s " + "'" + timeSt.Time + "'"}); sshError != nil {
-		utils.Error(w, http.StatusInternalServerError, sshError)
+	err = system.TimeSync(mc)
+	if err != nil {
+		utils.Error(w, http.StatusInternalServerError, err)
 		return
 	}
-
-	utils.WriteResponse(w, http.StatusOK, timeSt)
+	utils.WriteResponse(w, http.StatusOK, "")
 }

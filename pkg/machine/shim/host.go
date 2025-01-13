@@ -4,7 +4,6 @@
 package shim
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"runtime"
@@ -176,7 +175,7 @@ func getMCsOverProviders(vmstubbers []vmconfigs.VMProvider) (map[string]*vmconfi
 	return mcs, nil
 }
 
-func Start(ctx context.Context, mc *vmconfigs.MachineConfig, mp vmconfigs.VMProvider, dirs *define.MachineDirs, opts define.StartOptions) error {
+func Start(mc *vmconfigs.MachineConfig, mp vmconfigs.VMProvider, dirs *define.MachineDirs, opts define.StartOptions) error {
 	var err error
 
 	if err := mc.Refresh(); err != nil {
@@ -261,6 +260,19 @@ func Start(ctx context.Context, mc *vmconfigs.MachineConfig, mp vmconfigs.VMProv
 	if err = mc.UpdateLastBoot(); err != nil {
 		return fmt.Errorf("failed to update last boot time: %w", err)
 	}
+
+	const defaultTimeSyncInterval = 10 * time.Minute
+
+	go func() {
+		for {
+			logrus.Infof("Time sync starting...")
+			err := system.TimeSync(mc)
+			if err != nil {
+				logrus.Warnf("Time sync failed: %v", err)
+			}
+			time.Sleep(defaultTimeSyncInterval)
+		}
+	}()
 
 	for {
 		pids := []int32{int32(gvcmd.Process.Pid), int32(krunCmd.Process.Pid)}
