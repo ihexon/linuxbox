@@ -5,14 +5,11 @@ package shim
 
 import (
 	"errors"
-	"fmt"
 	"os/exec"
 	"time"
 
 	"bauklotze/pkg/machine"
-	"bauklotze/pkg/machine/define"
 	"bauklotze/pkg/machine/vmconfigs"
-	"bauklotze/pkg/port"
 
 	"github.com/sirupsen/logrus"
 )
@@ -24,37 +21,20 @@ var (
 	ErrSSHNotListening = errors.New("machine is not listening on ssh port")
 )
 
-// conductVMReadinessCheck checks to make sure the machine is in the proper state
-// and that SSH is up and running
-func conductVMReadinessCheck(mc *vmconfigs.MachineConfig, stateF func() (define.Status, error)) (connected bool, sshError error, err error) {
+// conductVMReadinessCheck checks to make sure SSH is up and running
+func conductVMReadinessCheck(mc *vmconfigs.MachineConfig) bool {
 	for i := range maxTried {
 		if i > 0 {
 			time.Sleep(defaultBackoff)
 		}
-		state, err := stateF()
-		if err != nil {
-			return false, nil, fmt.Errorf("failed to get machine state: %w", err)
-		}
 
-		if state != define.Running {
-			sshError = ErrNotRunning
+		if err := machine.CommonSSHSilent(mc.SSH.RemoteUsername, mc.SSH.IdentityPath, mc.Name, mc.SSH.Port, []string{"echo Hello"}); err != nil {
+			logrus.Warnf("SSH readiness check for machine failed: %v", err)
 			continue
 		}
-
-		if !port.IsListening(mc.SSH.Port) {
-			sshError = ErrSSHNotListening
-			continue
-		}
-
-		if sshError = machine.CommonSSHSilent(mc.SSH.RemoteUsername, mc.SSH.IdentityPath, mc.Name, mc.SSH.Port, []string{"echo Hello"}); sshError != nil {
-			logrus.Warnf("SSH readiness check for machine failed: %v", sshError)
-			continue
-		}
-		connected = true
-		sshError = nil
-		break
+		return true
 	}
-	return
+	return false
 }
 
 func startNetworking(mc *vmconfigs.MachineConfig, provider vmconfigs.VMProvider) (string, machine.APIForwardingState, *exec.Cmd, error) {

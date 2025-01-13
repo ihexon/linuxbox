@@ -6,7 +6,6 @@ package shim
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"runtime"
 	"time"
@@ -247,31 +246,18 @@ func Start(ctx context.Context, mc *vmconfigs.MachineConfig, mp vmconfigs.VMProv
 		return fmt.Errorf("failed to wait for ready: %w", err)
 	}
 
-	// Update state
-	stateF := func() (define.Status, error) {
-		return mp.State(mc)
+	// First check ssh is ready
+	if !conductVMReadinessCheck(mc) {
+		return fmt.Errorf("ssh not ready")
 	}
+	logrus.Infof("Machine %s SSH is ready, using sshkey %s with %s, listen in %d", mc.Name, mc.SSH.IdentityPath, mc.SSH.RemoteUsername, mc.SSH.Port)
 
-	if mp.VMType() != define.WSLVirt {
-		connected, sshError, err := conductVMReadinessCheck(mc, stateF)
-		if err != nil {
-			return fmt.Errorf("failed to conduct vm readiness check: %w", err)
-		}
-		if !connected {
-			msg := "machine did not transition into running state"
-			if sshError != nil {
-				return fmt.Errorf("%s: ssh error: %w", msg, sshError)
-			}
-			return errors.New(msg)
-		} else {
-			logrus.Infof("Machine %s SSH is ready,Using sshkey %s with %s, listen in %d", mc.Name, mc.SSH.IdentityPath, mc.SSH.RemoteUsername, mc.SSH.Port)
-		}
-	}
-
+	// Then ping the podman api
 	if err = machine.WaitAPIAndPrintInfo(socksInHost, forwardingState, mc.Name); err != nil {
 		return fmt.Errorf("failed to wait api and print info: %w", err)
 	}
 
+	// Update the list boot timestamp
 	if err = mc.UpdateLastBoot(); err != nil {
 		return fmt.Errorf("failed to update last boot time: %w", err)
 	}
