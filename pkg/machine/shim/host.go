@@ -261,11 +261,11 @@ func Start(mc *vmconfigs.MachineConfig, mp vmconfigs.VMProvider, dirs *define.Ma
 		return fmt.Errorf("failed to update last boot time: %w", err)
 	}
 
-	const defaultTimeSyncInterval = 10 * time.Minute
+	// TODO: temp fix for time sync issue @ihexon @BlackHole1
+	const defaultTimeSyncInterval = 10 * time.Second
 
 	go func() {
 		for {
-			logrus.Infof("Time sync starting...")
 			err := system.TimeSync(mc)
 			if err != nil {
 				logrus.Warnf("Time sync failed: %v", err)
