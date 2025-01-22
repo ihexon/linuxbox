@@ -16,23 +16,22 @@ import (
 	"time"
 
 	"bauklotze/pkg/api/utils"
-	"bauklotze/pkg/machine/env"
 	provider2 "bauklotze/pkg/machine/provider"
-	"bauklotze/pkg/machine/vmconfigs"
+	"bauklotze/pkg/machine/vmconfig"
 
 	"github.com/Code-Hex/go-infinity-channel"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/crypto/ssh"
 )
 
-func getVM(vmName string) (*vmconfigs.MachineConfig, error) {
+func getVM(vmName string) (*vmconfig.MachineConfig, error) {
 	providers = provider2.GetAll()
 	for _, sprovider := range providers {
-		dirs, err := env.GetMachineDirs(sprovider.VMType())
+		dirs, err := vmconfig.GetMachineDirs(sprovider.VMType())
 		if err != nil {
 			return nil, fmt.Errorf("failed to get machine dirs: %w", err)
 		}
-		mcs, err := vmconfigs.LoadMachinesInDir(dirs)
+		mcs, err := vmconfig.LoadMachinesInDir(dirs)
 		if err != nil {
 			return nil, fmt.Errorf("failed to load machines in dir: %w", err)
 		}
@@ -43,7 +42,7 @@ func getVM(vmName string) (*vmconfigs.MachineConfig, error) {
 	return nil, errors.New("can not find machine")
 }
 
-func exec(ctx context.Context, mc *vmconfigs.MachineConfig, command string, outCh *infinity.Channel[string], errCh chan string) error {
+func exec(ctx context.Context, mc *vmconfig.MachineConfig, command string, outCh *infinity.Channel[string], errCh chan string) error {
 	key, err := os.ReadFile(mc.SSH.IdentityPath)
 	if err != nil {
 		return fmt.Errorf("failed to read private key: %w", err)

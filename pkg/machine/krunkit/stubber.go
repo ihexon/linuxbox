@@ -6,14 +6,14 @@
 package krunkit
 
 import (
-	"fmt"
-	"os/exec"
-
-	"bauklotze/pkg/machine/apple/hvhelper"
+	"bauklotze/pkg/decompress"
+	"bauklotze/pkg/machine/defconfig"
 	"bauklotze/pkg/machine/define"
-	"bauklotze/pkg/machine/diskpull"
-	"bauklotze/pkg/machine/vmconfigs"
+	"bauklotze/pkg/machine/vmconfig"
+	"bauklotze/pkg/machine/volumes"
 	"bauklotze/pkg/port"
+	"fmt"
+	"strconv"
 
 	gvproxy "github.com/containers/gvisor-tap-vsock/pkg/types"
 	vfConfig "github.com/crc-org/vfkit/pkg/config"
@@ -21,59 +21,57 @@ import (
 )
 
 type LibKrunStubber struct {
-	vmconfigs.AppleKrunkitConfig
+	vmconfig.AppleKrunkitConfig
 }
 
-func (l LibKrunStubber) State(mc *vmconfigs.MachineConfig) (define.Status, error) {
-	return mc.AppleKrunkitHypervisor.Krunkit.State() //nolint:wrapcheck
+// ExtractBootable only support zstd compressed bootable image
+func (l LibKrunStubber) ExtractBootable(userInputPath string, mc *vmconfig.MachineConfig) error {
+	destDir := mc.Bootable.Image.GetPath()
+	logrus.Infof("Try to decompress %s to %s", userInputPath, destDir)
+	if err := decompress.Zstd(userInputPath, mc.Bootable.Image.GetPath()); err != nil {
+		errors := fmt.Errorf("could not decompress %s to %s, %w", userInputPath, destDir, err)
+		return errors
+	}
+	return nil
 }
 
-func (l LibKrunStubber) GetDisk(userInputPath string, dirs *define.MachineDirs, imagePath *define.VMFile, vmType define.VMType, name string) error {
-	// mc.ImagePath is the bootable copied from user provided image --boot <bootable.img.xz>
-	// userInputPath is the bootable image user provided
-	// Extract  userInputPath --> imagePath
-	return diskpull.GetDisk(userInputPath, imagePath) //nolint:wrapcheck
+func (l LibKrunStubber) SetupProviderNetworking(mc *vmconfig.MachineConfig, gvcmd *gvproxy.GvproxyCommand) error {
+	gvpNetworkBackend, err := mc.GVProxyNetworkBackendSocks()
+	if err != nil {
+		return fmt.Errorf("failed to get gvproxy networking backend socket: %w", err)
+	}
+	// make sure it does not exist before gvproxy is called
+	if err := gvpNetworkBackend.Delete(true); err != nil {
+		return fmt.Errorf("failed to delete gvproxy socket: %w", err)
+	}
+	gvcmd.AddVfkitSocket(fmt.Sprintf("unixgram://%s", gvpNetworkBackend.GetPath()))
+	return nil
 }
 
-func (l LibKrunStubber) StartNetworking(mc *vmconfigs.MachineConfig, cmd *gvproxy.GvproxyCommand) error {
-	return StartGenericNetworking(mc, cmd)
+func (l LibKrunStubber) MountType() volumes.VolumeMountType {
+	return volumes.VirtIOFS
 }
 
-func (l LibKrunStubber) MountType() vmconfigs.VolumeMountType {
-	return vmconfigs.VirtIOFS
-}
-
-const (
-	krunkitBinary = "krunkit"
-	localhostURI  = "http://127.0.0.1"
-)
-
-func (l LibKrunStubber) CreateVM(opts define.CreateVMOpts, mc *vmconfigs.MachineConfig) error {
-	mc.AppleKrunkitHypervisor = new(vmconfigs.AppleKrunkitConfig)
-	mc.AppleKrunkitHypervisor.Krunkit = hvhelper.Helper{}
-
-	bl := vfConfig.NewEFIBootloader(fmt.Sprintf("%s/efi-bl-%s", opts.Dirs.DataDir.GetPath(), opts.Name), true)
+func (l LibKrunStubber) CreateVMConfig(mc *vmconfig.MachineConfig) error {
+	mc.AppleKrunkitHypervisor = new(vmconfig.AppleKrunkitConfig)
+	mc.AppleKrunkitHypervisor.Krunkit = vmconfig.Helper{}
+	bl := vfConfig.NewEFIBootloader(fmt.Sprintf("%s/efi-bl-%s", mc.Dirs.DataDir.GetPath(), mc.VMName), true)
 	mc.AppleKrunkitHypervisor.Krunkit.VirtualMachine = vfConfig.NewVirtualMachine(uint(mc.Resources.CPUs), uint64(mc.Resources.Memory), bl)
-
 	randPort, err := port.GetFree(0)
 	if err != nil {
 		return fmt.Errorf("failed to get random port: %w", err)
 	}
-
-	mc.AppleKrunkitHypervisor.Krunkit.Endpoint = fmt.Sprintf("%s:%d", localhostURI, randPort)
+	// Endpoint is a string: http://127.0.0.1/[random_port]
+	mc.AppleKrunkitHypervisor.Krunkit.Endpoint = fmt.Sprintf("%s:%s", define.LocalHostURL, strconv.Itoa(randPort))
 	mc.AppleKrunkitHypervisor.Krunkit.LogLevel = logrus.InfoLevel
 
 	return nil
 }
 
-func (l LibKrunStubber) VMType() define.VMType {
-	return define.LibKrun
+func (l LibKrunStubber) VMType() defconfig.VMType {
+	return defconfig.LibKrun
 }
 
-func (l LibKrunStubber) StartVM(mc *vmconfigs.MachineConfig) (*exec.Cmd, func() error, error) {
-	bl := mc.AppleKrunkitHypervisor.Krunkit.VirtualMachine.Bootloader
-	if bl == nil {
-		return nil, nil, fmt.Errorf("unable to determine boot loader for this machine")
-	}
-	return StartGenericAppleVM(mc, krunkitBinary, bl, mc.AppleKrunkitHypervisor.Krunkit.Endpoint)
+func (l LibKrunStubber) StartVM(mc *vmconfig.MachineConfig) error {
+	return startKrunkit(mc)
 }

@@ -4,11 +4,11 @@
 package ignition
 
 import (
+	"bauklotze/pkg/machine/defconfig"
+	"bauklotze/pkg/machine/io"
+	"bauklotze/pkg/machine/volumes"
 	"path/filepath"
 	"testing"
-
-	"bauklotze/pkg/machine/define"
-	"bauklotze/pkg/machine/vmconfigs"
 )
 
 func TestNewIgnitionBuilder(t *testing.T) {
@@ -17,26 +17,25 @@ func TestNewIgnitionBuilder(t *testing.T) {
 	ign := NewIgnitionBuilder(
 		&DynamicIgnitionV3{
 			CodeBuffer: nil,
-			IgnFile: define.VMFile{
-				Path:    filepath.Join("/tmp", "initfs", "ign.sh"),
-				Symlink: nil,
+			IgnFile: io.VMFile{
+				Path: filepath.Join("/tmp", "initfs", "ign.sh"),
 			},
-			VMType: define.LibKrun,
-			Mounts: []*vmconfigs.Mount{
+			VMType: defconfig.LibKrun,
+			Mounts: []*volumes.Mount{
 				{
-					Type:   vmconfigs.VirtIOFS.String(),
+					Type:   volumes.VirtIOFS.String(),
 					Source: "/zzh",
 					Tag:    "virtio-zzh",
 					Target: "/mnt/zzh",
 				},
 				{
-					Type:   vmconfigs.VirtIOFS.String(),
+					Type:   volumes.VirtIOFS.String(),
 					Source: "/zzh1",
 					Tag:    "virtio-zzh1",
 					Target: "/mnt/zzh1",
 				},
 				{
-					Type:   vmconfigs.VirtIOFS.String(),
+					Type:   volumes.VirtIOFS.String(),
 					Source: "/zzh2",
 					Tag:    "virtio-zzh2",
 					Target: "/mnt/zzh2",

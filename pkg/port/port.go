@@ -9,6 +9,8 @@ import (
 	"time"
 )
 
+// GetFree returns a free TCP port. If a default port is provided and it is not in use, it returns the default port.
+// Otherwise, it finds and returns an available port.
 func GetFree(defaultPort int) (int, error) {
 	if defaultPort != 0 && !IsListening(defaultPort) {
 		return defaultPort, nil

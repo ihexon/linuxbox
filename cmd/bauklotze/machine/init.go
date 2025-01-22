@@ -1,27 +1,29 @@
-//  SPDX-FileCopyrightText: 2024-2024 OOMOL, Inc. <https://www.oomol.com>
+//  SPDX-FileCopyrightText: 2024-2025 OOMOL, Inc. <https://www.oomol.com>
 //  SPDX-License-Identifier: MPL-2.0
 
 package machine
 
 import (
+	"bauklotze/cmd/registry"
+	"bauklotze/pkg/decompress"
+	allFlag "bauklotze/pkg/machine/allflag"
+	"bauklotze/pkg/machine/defconfig"
+	"bauklotze/pkg/machine/define"
 	"bauklotze/pkg/machine/events"
+	"bauklotze/pkg/machine/helper"
+	"bauklotze/pkg/machine/shim"
+	"bauklotze/pkg/machine/vmconfig"
+	"bauklotze/pkg/machine/volumes"
+	"bauklotze/pkg/system"
 	"errors"
 	"fmt"
 	"os"
-	"path/filepath"
-
-	cmdflags "bauklotze/cmd/bauklotze/flags"
-	"bauklotze/cmd/registry"
-	"bauklotze/pkg/machine/define"
-	"bauklotze/pkg/machine/env"
-	"bauklotze/pkg/machine/shim"
-	"bauklotze/pkg/machine/system"
-	"bauklotze/pkg/machine/vmconfigs"
-	system2 "bauklotze/pkg/system"
 
 	"github.com/containers/common/pkg/strongunits"
-	"github.com/containers/storage/pkg/regexp"
+
 	"github.com/sirupsen/logrus"
+
+	"github.com/containers/storage/pkg/regexp"
 	"github.com/spf13/cobra"
 )
 
@@ -36,16 +38,15 @@ var (
 		Use:               "init [options] [NAME]",
 		Short:             "initialize a virtual machine",
 		Long:              "initialize a virtual machine",
-		PersistentPreRunE: machinePreRunE,
+		PersistentPreRunE: registry.PersistentPreRunE,
+		PreRunE:           registry.PreRunE,
 		RunE:              initMachine,
 		Args:              cobra.MaximumNArgs(1), // max positional arguments
 		Example:           `machine init default`,
 	}
-	initOpts = define.InitOptions{
-		Username: define.DefaultUserInGuest,
-	}
-	defaultMachineName = define.DefaultMachineName
 )
+
+var cfg *defconfig.DefaultConfig
 
 func init() {
 	registry.Commands = append(registry.Commands, registry.CliCommand{
@@ -53,190 +54,124 @@ func init() {
 		Parent:  machineCmd,
 	})
 
-	// Calculate the default configuration
-	// CPU, MEMORY, etc.
-	// OvmInitConfig() configures the memory/CPU/disk size/external mount points for the virtual machine.
-	// These configurations will be written to the machine's JSON file for persistence.
-	cfg := registry.OvmInitConfig()
-	flags := initCmd.Flags()
+	cfg = defconfig.VMConfig()
+	lFlags := initCmd.Flags()
 
-	cpusFlagName := cmdflags.CpusFlag
-	flags.Uint64Var(
-		&initOpts.CPUS,
-		cpusFlagName, cfg.ContainersConfDefaultsRO.Machine.CPUs,
+	ppidFlagName := registry.PpidFlag
+	defaultPPID, _ := system.GetPPID(int32(os.Getpid()))
+
+	lFlags.Int32Var(&allFlag.PPID, ppidFlagName, defaultPPID,
+		"Parent process id, if not given, the ppid is the current process's ppid")
+
+	cpusFlagName := registry.CpusFlag
+	lFlags.Uint64Var(
+		&allFlag.CPUS,
+		cpusFlagName, cfg.CPUs,
 		"Number of CPUs",
 	)
 
-	memoryFlagName := cmdflags.MemoryFlag
-	flags.Uint64VarP(
-		&initOpts.Memory,
-		memoryFlagName, "m", cfg.ContainersConfDefaultsRO.Machine.Memory,
+	memoryFlagName := registry.MemoryFlag
+	lFlags.Uint64VarP(
+		&allFlag.Memory,
+		memoryFlagName, "m", cfg.Memory,
 		"Memory in MiB",
 	)
 
-	VolumeFlagName := cmdflags.VolumeFlag
-	flags.StringArrayVarP(&initOpts.Volumes, VolumeFlagName, "v", cfg.ContainersConfDefaultsRO.Machine.Volumes.Get(), "Volumes to mount, source:target")
+	VolumeFlagName := registry.VolumeFlag
+	lFlags.StringArrayVarP(&allFlag.Volumes, VolumeFlagName, "v", []string{}, "Volumes to mount, source:target")
 
-	BootImageName := cmdflags.BootImageFlag
-	flags.StringVar(&initOpts.ImagesStruct.BootableImage, BootImageName, cfg.ContainersConfDefaultsRO.Machine.Image, "Bootable image for machine")
+	BootImageName := registry.BootImageFlag
+	lFlags.StringVar(&allFlag.BootableImage, BootImageName, cfg.Image, "Bootable image for machine")
 	_ = initCmd.MarkFlagRequired(BootImageName)
 
-	BootImageVersion := cmdflags.BootVersionFlag
-	flags.StringVar(&initOpts.ImageVerStruct.BootableImageVersion, BootImageVersion, cfg.ContainersConfDefaultsRO.Machine.Image, "Boot version field")
+	BootImageVersion := registry.BootVersionFlag
+	lFlags.StringVar(&allFlag.BootableImageVersion, BootImageVersion, cfg.Image, "Boot version field")
 	_ = initCmd.MarkFlagRequired(BootImageVersion)
 
-	DataImageVersion := cmdflags.DataVersionFlag
-	flags.StringVar(&initOpts.ImageVerStruct.DataDiskVersion, DataImageVersion, "", "Data version field")
+	DataImageVersion := registry.DataVersionFlag
+	lFlags.StringVar(&allFlag.DataDiskVersion, DataImageVersion, "", "Data version field")
 	_ = initCmd.MarkFlagRequired(DataImageVersion)
 }
 
-const (
-	initfsDir  = "/tmp/initfs"
-	initfsArgs = initfsDir + ":" + initfsDir
-)
-
 func initMachine(cmd *cobra.Command, args []string) error {
-	// Init is the current lifecycle that initializes the virtual machine.
-	events.CurrentStage = events.Init
-	var err error
-
-	ppid, _ := cmd.Flags().GetInt32(cmdflags.PpidFlag) // Get PPID from
-	logrus.Infof("PID is [ %d ], watching PPID: [ %d ]", os.Getpid(), ppid)
-
-	initOpts.CommonOptions.ReportURL = cmd.Flag(cmdflags.ReportURLFlag).Value.String()
-	initOpts.CommonOptions.PPID = ppid
-	// Ignition scripts placed in /tmp/initfs will be executed by the ovmounter service
-	initOpts.Volumes = append(initOpts.Volumes, initfsArgs)
-
-	// TODO Continue to check the ppid alive
-	// First check the parent process is alive once
-	if isRunning, err := system.IsProcesSAlive([]int32{ppid}); !isRunning {
-		return fmt.Errorf("parent process %d is not alive: %w", ppid, err)
-	}
-
-	initOpts.Name = defaultMachineName
-	if len(args) > 0 {
-		if len(args[0]) > cmdflags.MaxMachineNameSize {
-			return fmt.Errorf("machine name %q must be %d characters or less", args[0], cmdflags.MaxMachineNameSize)
-		}
-		initOpts.Name = args[0]
-		if !NameRegex.MatchString(initOpts.Name) {
-			return fmt.Errorf("invalid name %q: %w", initOpts.Name, ErrRegex)
-		}
-	}
-
-	oldMc, _, err := shim.VMExists(initOpts.Name, []vmconfigs.VMProvider{provider})
+	logrus.Infof("===================INIT===================")
+	vmp, err := registry.GetProvider()
 	if err != nil {
-		return fmt.Errorf("check machine exists error: %w", err)
+		logrus.Errorf("failed to get current hypervisor provider: %v", err)
 	}
 
-	// update machine configure
+	// Inject default mnt point from cfg into allflag.Volumes
+	allFlag.Volumes = append(allFlag.Volumes, cfg.Volumes.Get()...)
 
-	dataDir, err := env.DataDirPrefix() // ${BauklotzeHomePath}/data
+	mc, err := shim.GetVMConf(allFlag.VMName, []vmconfig.VMProvider{vmp})
+	// err != nil means the machine config not find and need to initialize the VM
 	if err != nil {
-		return fmt.Errorf("can not get Data dir %w", err)
-	}
-
-	dataDisk := filepath.Join(dataDir, "external_disk", initOpts.Name, "data.raw") // ${BauklotzeHomePath}/data/{MachineName}/data.raw
-	initOpts.ImagesStruct.DataDisk = dataDisk
-
-	// Default do not update anything
-	var (
-		updateBootableImage = false
-		updateExternalDisk  = false
-	)
-
-	switch {
-	case oldMc == nil: // If machine not initialize before, mark updateBootableImage=true  && updateExternalDisk=true
-		updateExternalDisk = true
-	case oldMc.DataDiskVersion != initOpts.ImageVerStruct.DataDiskVersion: // If old DataDisk version != given DataDisk version
-		updateExternalDisk = true
-	}
-
-	switch {
-	case oldMc == nil: // If machine not initialize before, mark updateBootableImage=true  && updateExternalDisk=true
-		updateBootableImage = true
-	case oldMc.BootableDiskVersion != initOpts.ImageVerStruct.BootableImageVersion: // If old bootable version != given bootable version
-		updateBootableImage = true
-	}
-
-	// Recreate DataDisk first if needed.
-	if updateExternalDisk {
-		logrus.Infof("Recreate data disk: %s", initOpts.ImagesStruct.DataDisk)
-		err = system2.CreateAndResizeDisk(initOpts.ImagesStruct.DataDisk, strongunits.GiB(100)) //nolint:mnd
-		if err != nil {
-			return fmt.Errorf("failed to create/resize data disk: %w", err)
-		}
-
-		if oldMc != nil {
-			// If old machine exists, update the DataDiskVersion field
-			oldMc.DataDiskVersion = initOpts.ImageVerStruct.DataDiskVersion
-			logrus.Infof("Update old machine configure DataDiskVersion field: %s", oldMc.ConfigPath.GetPath())
-			if err = oldMc.Write(); err != nil {
-				return fmt.Errorf("update machine configure error: %w", err)
-			}
+		logrus.Warnf("Get machine configure error: %v, try to initialize the VM", err)
+		events.NotifyInit(events.InitNewMachine)
+		if err = initializeNewVM(vmp); err != nil {
+			return fmt.Errorf("initialize virtual machine error: %w", err)
 		}
 	} else {
-		logrus.Infof("Skip initialize data disk.")
-	}
-
-	if err = systemResourceCheck(cmd); err != nil {
-		return err
-	}
-
-	// Update the machine configure  Resources field
-	if oldMc != nil {
-		err = updateMachineResource(oldMc)
-		if err != nil {
-			return err
-		}
-	}
-
-	if !updateBootableImage {
-		logrus.Infof("Skip initialize virtual machine with %s", initOpts.Name)
-		return nil
-	}
-
-	for idx, vol := range initOpts.Volumes {
-		initOpts.Volumes[idx] = os.ExpandEnv(vol)
-	}
-
-	logrus.Infof("Initialize virtual machine [ %s ] with bootable image: [ %s ]", initOpts.Name, initOpts.ImagesStruct.BootableImage)
-	err = shim.Init(initOpts, provider)
-	if err != nil {
-		return fmt.Errorf("initialize virtual machine error: %w", err)
-	}
-	return nil
-}
-
-func systemResourceCheck(cmd *cobra.Command) error {
-	if cmd.Flags().Changed("memory") {
-		if err := system2.CheckMaxMemory(strongunits.MiB(initOpts.Memory)); err != nil {
-			logrus.Errorf("Can not allocate the memory size %d", initOpts.Memory)
-			return fmt.Errorf("can not allocate the memory size %d: %w", initOpts.Memory, err)
-		}
-	}
-
-	// Krun limited max cpus core to 8
-	if cmd.Flags().Changed(cmdflags.CpusFlag) {
-		if initOpts.CPUS > cmdflags.KrunMaxCpus || initOpts.CPUS < 1 {
-			return fmt.Errorf("can not allocate the CPU size %d", initOpts.CPUS)
-		}
-	}
-
-	return nil
-}
-
-func updateMachineResource(mc *vmconfigs.MachineConfig) error {
-	if mc != nil {
-		mc.Resources.CPUs = initOpts.CPUS                                               // Update the CPUs
-		mc.Resources.Memory = strongunits.MiB(initOpts.Memory)                          // Update the Memory
-		mc.Mounts = shim.CmdLineVolumesToMounts(initOpts.Volumes, provider.MountType()) // Update the Volumes
-		logrus.Infof("Update old machine CPU/Memory/Mounts configure: [ %s ]", mc.ConfigPath.GetPath())
-		if err := mc.Write(); err != nil {
+		mc.VMProvider = vmp
+		// Machine already exists, update the machine configure
+		logrus.Infof("Machine %q already exists, update the machine configure", allFlag.VMName)
+		events.NotifyInit(events.InitUpdateConfig)
+		if err = updateExistedMachine(mc); err != nil {
 			return fmt.Errorf("update machine configure error: %w", err)
 		}
 	}
+	return nil
+}
 
+func updateExistedMachine(mc *vmconfig.MachineConfig) error {
+	mc.Resources.CPUs = allFlag.CPUS
+	mc.Resources.Memory = strongunits.MiB(allFlag.Memory)
+	mc.Mounts = volumes.CmdLineVolumesToMounts(allFlag.Volumes)
+	if err := updateImage(mc); err != nil {
+		return fmt.Errorf("update image error: %w", err)
+	}
+	if err := mc.Write(); err != nil {
+		return fmt.Errorf("write machine configure error: %w", err)
+	}
+	return nil
+}
+
+func updateImage(mc *vmconfig.MachineConfig) error {
+	if mc.Bootable.Version != allFlag.BootableImageVersion {
+		logrus.Warnf("Bootable image version is not match, try to update boot image")
+		if err := updateBootImage(mc); err != nil {
+			return fmt.Errorf("update boot image error: %w", err)
+		}
+	}
+	if mc.DataDisk.Version != allFlag.DataDiskVersion {
+		logrus.Warnf("Data image version is not match, try to update data image")
+		if err := updateDataImage(mc); err != nil {
+			return fmt.Errorf("update data image error: %w", err)
+		}
+	}
+	mc.Bootable.Version = allFlag.BootableImageVersion
+	mc.DataDisk.Version = allFlag.DataDiskVersion
+	return nil
+}
+
+func updateDataImage(mc *vmconfig.MachineConfig) error {
+	if err := helper.CreateAndResizeDisk(mc.DataDisk.Image, define.DefaultDataImageSizeGB); err != nil {
+		return fmt.Errorf("failed to create and resize disk: %w", err)
+	}
+	return nil
+}
+
+func updateBootImage(mc *vmconfig.MachineConfig) error {
+	destDir := mc.Bootable.Image.GetPath()
+	logrus.Infof("Try to decompress %s to %s", allFlag.BootableImage, destDir)
+	if err := decompress.Zstd(allFlag.BootableImage, destDir); err != nil {
+		return fmt.Errorf("could not decompress %s to %s, %w", allFlag.BootableImage, destDir, err)
+	}
+	return nil
+}
+func initializeNewVM(mp vmconfig.VMProvider) error {
+	if err := shim.Init(mp); err != nil {
+		return fmt.Errorf("initialize virtual machine error: %w", err)
+	}
 	return nil
 }

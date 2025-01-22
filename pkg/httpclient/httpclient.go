@@ -12,6 +12,8 @@ import (
 	"net/url"
 	"strings"
 	"time"
+
+	"github.com/sirupsen/logrus"
 )
 
 const defaultTimeout = 100 * time.Millisecond
@@ -91,8 +93,12 @@ func (c *Client) Get(path string) error {
 		return fmt.Errorf("failed to do request: %w", err)
 	}
 
+	body, err := io.ReadAll(response.Body)
+	if err != nil {
+		return fmt.Errorf("failed to read response body: %w", err)
+	}
+	logrus.Infof("Response Body: %s", string(body))
 	defer response.Body.Close()
-
 	return nil
 }
 

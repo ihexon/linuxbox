@@ -14,6 +14,7 @@ const (
 type InitStageName string
 
 const (
+	InitNewMachine   InitStageName = "InitNewMachine"
 	ExtractBootImage InitStageName = "ExtractBootImage"
 	InitUpdateConfig InitStageName = "UpdateConfig"
 	InitExit         InitStageName = "Exit"
@@ -25,8 +26,6 @@ const (
 	LoadMachineConfig RunStageName = "LoadMachineConfig"
 	StartGvProxy      RunStageName = "StartGvProxy"
 	StartVMProvider   RunStageName = "StartVMProvider"
-	KillingGvProxy    RunStageName = "KillingGvProxy"
-	KillingVMProvider RunStageName = "KillingKillingVMProvider"
 	SyncMachineDisk   RunStageName = "SyncMachineDisk"
 	Ready             RunStageName = "Ready"
 	RunExit           RunStageName = "Exit"

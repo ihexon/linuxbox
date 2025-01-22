@@ -4,6 +4,9 @@
 package ignition
 
 import (
+	"bauklotze/pkg/machine/defconfig"
+	"bauklotze/pkg/machine/io"
+	"bauklotze/pkg/machine/volumes"
 	"bytes"
 	"fmt"
 	"os"
@@ -11,23 +14,20 @@ import (
 	"strings"
 	"text/template"
 
-	"bauklotze/pkg/machine/define"
-	"bauklotze/pkg/machine/vmconfigs"
-
 	"github.com/sirupsen/logrus"
 )
 
 type DynamicIgnitionV3 struct {
-	IgnFile         define.VMFile
-	VMType          define.VMType
-	Mounts          []*vmconfigs.Mount
-	SSHIdentityPath define.VMFile
+	IgnFile         io.VMFile
+	VMType          defconfig.VMType
+	Mounts          []*volumes.Mount
+	SSHIdentityPath io.VMFile
 	TimeZone        string
 	CodeBuffer      *bytes.Buffer
 }
 
 func (ign *DynamicIgnitionV3) Write() error {
-	err := ign.IgnFile.Delete()
+	err := ign.IgnFile.Delete(false)
 	if err != nil {
 		return fmt.Errorf("failed to delete ignition file: %w", err)
 	}
@@ -110,7 +110,7 @@ func (ign *DynamicIgnitionV3) GenerateMountScripts() error {
 	t := template.Must(template.New("VirtioFsMountScriptCodes").Parse(VirtioFSMountScript))
 	mybuff := new(bytes.Buffer)
 	for _, vol := range ign.Mounts {
-		if vol.Type == vmconfigs.VirtIOFS.String() && !strings.HasPrefix(vol.Target, filepath.Dir(ign.IgnFile.Path)) {
+		if vol.Type == volumes.VirtIOFS.String() && !strings.HasPrefix(vol.Target, filepath.Dir(ign.IgnFile.Path)) {
 			data := struct {
 				FsType string
 				Source string

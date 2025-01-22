@@ -5,27 +5,25 @@
 package ignition
 
 import (
+	"bauklotze/pkg/machine/defconfig"
+	"bauklotze/pkg/machine/io"
+	"bauklotze/pkg/machine/vmconfig"
 	"fmt"
 	"path/filepath"
-
-	"bauklotze/pkg/machine/define"
-	"bauklotze/pkg/machine/vmconfigs"
 )
 
-func GenerateIgnScripts(mc *vmconfigs.MachineConfig) error {
+func GenerateIgnScripts(mc *vmconfig.MachineConfig) error {
 	var ignScriptFile = filepath.Join("/tmp", "initfs", "ovm_ign.sh")
 	ign := NewIgnitionBuilder(
 		&DynamicIgnitionV3{
 			CodeBuffer: nil,
-			IgnFile: define.VMFile{
-				Path:    ignScriptFile,
-				Symlink: nil,
+			IgnFile: io.VMFile{
+				Path: ignScriptFile,
 			},
-			VMType: define.LibKrun,
+			VMType: defconfig.LibKrun,
 			Mounts: mc.Mounts,
-			SSHIdentityPath: define.VMFile{
-				Path:    mc.SSH.IdentityPath,
-				Symlink: nil,
+			SSHIdentityPath: io.VMFile{
+				Path: mc.SSH.IdentityPath,
 			},
 		})
 

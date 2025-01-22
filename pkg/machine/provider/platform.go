@@ -4,30 +4,29 @@
 package provider
 
 import (
+	"bauklotze/pkg/machine/defconfig"
+	"bauklotze/pkg/machine/vmconfig"
 	"fmt"
 	"os"
 	"runtime"
 
-	"bauklotze/pkg/config"
-	"bauklotze/pkg/machine/define"
 	"bauklotze/pkg/machine/krunkit"
 	"bauklotze/pkg/machine/vfkit"
-	"bauklotze/pkg/machine/vmconfigs"
 
 	"github.com/sirupsen/logrus"
 )
 
 // Get current hypervisor provider with default configure
-func Get() (vmconfigs.VMProvider, error) {
-	cfg := config.Default()
+func Get() (vmconfig.VMProvider, error) {
+	cfg := defconfig.VMConfig()
 
-	provider := cfg.Machine.Provider // provider= ""
+	provider := cfg.Provider // provider= ""
 	if runtime.GOARCH == "amd64" && runtime.GOOS == "darwin" {
-		provider = define.VFkit.String()
+		provider = defconfig.VFkit.String()
 	}
 
 	if runtime.GOARCH == "arm64" && runtime.GOOS == "darwin" {
-		provider = define.LibKrun.String()
+		provider = defconfig.LibKrun.String()
 	}
 
 	// OVM_PROVIDER overwrite the provider
@@ -36,23 +35,23 @@ func Get() (vmconfigs.VMProvider, error) {
 		provider = providerOverride
 	}
 
-	resolvedVMType, err := define.ParseVMType(provider, define.LibKrun)
+	vmType, err := defconfig.ParseVMType(provider)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse vm type: %w", err)
 	}
 
-	switch resolvedVMType {
-	case define.VFkit:
+	switch vmType {
+	case defconfig.VFkit:
 		return new(vfkit.VFkitStubber), nil
-	case define.LibKrun:
+	case defconfig.LibKrun:
 		return new(krunkit.LibKrunStubber), nil
 	default:
-		return nil, fmt.Errorf("unsupported virtualization provider: `%s`", resolvedVMType.String())
+		return nil, fmt.Errorf("unsupported virtualization provider: `%s`", vmType.String())
 	}
 }
 
-func GetAll() []vmconfigs.VMProvider {
-	return []vmconfigs.VMProvider{
+func GetAll() []vmconfig.VMProvider {
+	return []vmconfig.VMProvider{
 		new(krunkit.LibKrunStubber),
 		new(vfkit.VFkitStubber),
 	}

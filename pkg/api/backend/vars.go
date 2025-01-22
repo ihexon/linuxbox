@@ -3,6 +3,8 @@
 
 package backend
 
-import "bauklotze/pkg/machine/vmconfigs"
+import (
+	"bauklotze/pkg/machine/vmconfig"
+)
 
-var providers []vmconfigs.VMProvider
+var providers []vmconfig.VMProvider

@@ -4,22 +4,21 @@
 package backend
 
 import (
+	"bauklotze/pkg/machine/vmconfig"
 	"net/http"
 
 	"bauklotze/pkg/api/utils"
-	"bauklotze/pkg/machine/env"
 	provider2 "bauklotze/pkg/machine/provider"
-	"bauklotze/pkg/machine/vmconfigs"
 )
 
-func getPodmanConnection(vmName string) *vmconfigs.MachineConfig {
+func getPodmanConnection(vmName string) *vmconfig.MachineConfig {
 	providers = provider2.GetAll()
 	for _, s := range providers {
-		dirs, err := env.GetMachineDirs(s.VMType())
+		dirs, err := vmconfig.GetMachineDirs(s.VMType())
 		if err != nil {
 			return nil
 		}
-		mcs, err := vmconfigs.LoadMachinesInDir(dirs)
+		mcs, err := vmconfig.LoadMachinesInDir(dirs)
 		if err != nil {
 			return nil
 		}

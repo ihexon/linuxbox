@@ -6,100 +6,127 @@
 package shim
 
 import (
+	"bauklotze/pkg/machine/define"
+	"bauklotze/pkg/machine/events"
+	"bauklotze/pkg/machine/vmconfig"
+	"bauklotze/pkg/system"
 	"fmt"
 	"os"
-	"os/exec"
-	"path/filepath"
+	"reflect"
+	"time"
+	"unsafe"
 
-	"bauklotze/pkg/libexec"
-	"bauklotze/pkg/machine/events"
-
-	"bauklotze/pkg/machine"
-	"bauklotze/pkg/machine/define"
-	"bauklotze/pkg/machine/vmconfigs"
+	"github.com/containers/storage/pkg/fileutils"
 
 	gvproxy "github.com/containers/gvisor-tap-vsock/pkg/types"
 	"github.com/sirupsen/logrus"
 )
 
-const (
-	podmanGuestSocks = "/run/podman/podman.sock"
-)
-
-func setupMachineSockets(mc *vmconfigs.MachineConfig, _dirs *define.MachineDirs) (string, string, error) {
-	host, err := mc.PodmanAPISocketHost()
-	if err != nil {
-		return "", "", fmt.Errorf("failed to get podman api socket host: %w", err)
-	}
-	err = host.Delete()
-	if err != nil {
+// podmanSockets returns the path to the podman api socket on host/guest
+func setupPodmanSocketsPath(mc *vmconfig.MachineConfig) (string, string, error) {
+	podmanOnHost := mc.PodmanAPISocketHost()
+	if err := podmanOnHost.Delete(true); err != nil {
 		return "", "", fmt.Errorf("failed to delete podman api socket host: %w", err)
 	}
-	return host.GetPath(), podmanGuestSocks, nil
+	return podmanOnHost.GetPath(), define.PodmanGuestSocks, nil
 }
 
-func startHostForwarder(mc *vmconfigs.MachineConfig, provider vmconfigs.VMProvider, dirs *define.MachineDirs, socksInHost string, socksInGuest string) (*exec.Cmd, error) {
-	forwardUser := mc.SSH.RemoteUsername
+func tryKillGvProxyBeforRun(mc *vmconfig.MachineConfig) {
+	gvpBin := mc.Dirs.NetworkProvider.Bin
+	proc, _ := system.FindProcessByPath(gvpBin.GetPath())
+	if proc != nil {
+		logrus.Warnf("Find running %s process, this should never happen, try to kill", gvpBin.GetPath())
+		_ = proc.Kill()
+	}
+}
 
-	binary, err := libexec.FindBinary(machine.ForwarderBinaryName)
-	if err != nil {
-		return nil, fmt.Errorf("failed to find helper binary: %w", err)
+func startForwarder(mc *vmconfig.MachineConfig, socksOnHost string, socksOnGuest string) error {
+	tryKillGvProxyBeforRun(mc)
+	gvpBin := mc.Dirs.NetworkProvider.Bin
+	logrus.Infof("Gvproxy binary: %s", mc.Dirs.NetworkProvider.Bin.GetPath())
+	if !gvpBin.Exist() {
+		return fmt.Errorf("%s does not exist", gvpBin.GetPath())
 	}
 
-	cmd := gvproxy.NewGvproxyCommand() // New a GvProxyCommands
-	runDir := dirs.RuntimeDir
-	logsDIr := dirs.LogsDir
+	tmpDir := mc.Dirs.TmpDir
+	gvproxyCommand := gvproxy.NewGvproxyCommand() // New a GvProxyCommands
 
-	cmd.PidFile = filepath.Join(runDir.GetPath(), "gvproxy.pid")
-	cmd.LogFile = filepath.Join(logsDIr.GetPath(), "gvproxy.log")
+	gvpPidFile, _ := tmpDir.AppendToNewVMFile(fmt.Sprintf("%s-%s", mc.VMName, define.GvProxyPidName))
+	if err := gvpPidFile.Delete(true); err != nil {
+		return fmt.Errorf("failed to delete pid file: %w", err)
+	}
+	gvproxyCommand.PidFile = gvpPidFile.GetPath()
+	gvproxyCommand.SSHPort = mc.SSH.Port
+	gvproxyCommand.AddForwardSock(socksOnHost)             // podman api in host
+	gvproxyCommand.AddForwardDest(socksOnGuest)            // podman api in guest
+	gvproxyCommand.AddForwardUser(mc.SSH.RemoteUsername)   // always be root
+	gvproxyCommand.AddForwardIdentity(mc.SSH.IdentityPath) // ssh keys
 
-	cmd.SSHPort = mc.SSH.Port
-	cmd.AddForwardSock(socksInHost)             // podman api in host
-	cmd.AddForwardDest(socksInGuest)            // podman api in guest
-	cmd.AddForwardUser(forwardUser)             // always be root
-	cmd.AddForwardIdentity(mc.SSH.IdentityPath) // ssh keys
-
-	if err := provider.StartNetworking(mc, &cmd); err != nil {
-		return nil, fmt.Errorf("failed to start networking: %w", err)
+	// This allows a provider to perform additional setup cause vfkit/krunkit are different hypervisor
+	// and have different networking configure
+	if err := mc.VMProvider.SetupProviderNetworking(mc, &gvproxyCommand); err != nil {
+		return fmt.Errorf("failed to setup provider networking: %w", err)
 	}
 
-	gvcmd := cmd.Cmd(binary)
-	gvcmd.Stdout = os.Stdout
-	gvcmd.Stderr = os.Stderr
-
-	if os.Getenv("OVM_DEBUG") == "true" {
-		logrus.Warnf("Add -debug flag to gvproxy\n")
-		gvcmd.Args = append(gvcmd.Args, "-debug")
+	if os.Getenv("OVM_GVPROXY_DEBUG") == "true" {
+		logrus.Warn("gvproxy running in debug mode")
+		gvproxyCommand.Debug = true
 	}
 
-	// Add gvproxy API listen endpoint
-	gvpAPIPath := filepath.Join(mc.Dirs.RuntimeDir.GetPath(), "gvp_api.sock")
-	err = os.RemoveAll(gvpAPIPath)
-	if err != nil {
-		return nil, fmt.Errorf("failed to remove old gvp_api.sock: %w", err)
-	}
+	v := reflect.ValueOf(&gvproxyCommand).Elem().FieldByName("forwardInfo")
+	aArray := reflect.NewAt(v.Type(), unsafe.Pointer(v.UnsafeAddr())).Elem().Interface().(map[string][]string)
+	mc.GvProxy.ForwardInfo = aArray
 
-	gvcmd.Args = append(gvcmd.Args, "--listen", "unix://"+gvpAPIPath)
+	v = reflect.ValueOf(&gvproxyCommand).Elem().FieldByName("sockets")
+	bArray := reflect.NewAt(v.Type(), unsafe.Pointer(v.UnsafeAddr())).Elem().Interface().(map[string]string)
+	mc.GvProxy.Sockets = bArray
 
-	logrus.Infof("Gvproxy command-line: %s", gvcmd.Args)
+	gvpExecCmd := gvproxyCommand.Cmd(gvpBin.GetPath())
+	gvpExecCmd.Stdout = os.Stdout
+	gvpExecCmd.Stderr = os.Stderr
+
+	logrus.Infof("GVPROXY FULL CMDLINE: %q", gvpExecCmd.Args)
 	events.NotifyRun(events.StartGvProxy, "staring...")
-
-	if err = gvcmd.Start(); err != nil {
-		return nil, fmt.Errorf("unable to execute: %q: %w", cmd.ToCmdline(), err)
+	if err := gvpExecCmd.Start(); err != nil {
+		return fmt.Errorf("unable to execute: %q: %w", gvpExecCmd.Args, err)
 	}
+	mc.GvpCmd = gvpExecCmd
 	events.NotifyRun(events.StartGvProxy, "finished")
 
-	machine.GlobalCmds.SetGvpCmd(gvcmd)
+	mc.GvProxy.HostSocks = []string{socksOnHost}
+	mc.GvProxy.PidFile = gvproxyCommand.PidFile
+	mc.GvProxy.SSHPort = gvproxyCommand.SSHPort
+	mc.GvProxy.MTU = gvproxyCommand.MTU
 
-	mc.GvProxy.GvProxy.PidFile = cmd.PidFile
-	mc.GvProxy.GvProxy.LogFile = cmd.LogFile
-	mc.GvProxy.GvProxy.SSHPort = cmd.SSHPort
-	mc.GvProxy.GvProxy.MTU = cmd.MTU
-	mc.GvProxy.HostSocks = []string{socksInHost}
-	mc.GvProxy.RemoteSocks = socksInGuest
+	// There is a small chance that gvproxy is started but the backend socket is not created(provided by -listen-vfkit),
+	// causing krunkit and vfkit to freeze.
+	socks, err := mc.GVProxyNetworkBackendSocks()
+	if err != nil {
+		return fmt.Errorf("failed to get gvproxy network backend socks: %w", err)
+	}
+
+	// WaitForSocket when gvproxy started, we also check that the gvproxy socket is created
+	// there is a little chance that the socket is not created, causing krunkit to freeze
+	if err = waitForSocket(socks.GetPath()); err != nil {
+		return fmt.Errorf("failed to wait for gvproxy network backend socks: %w", err)
+	}
 
 	if err := mc.Write(); err != nil {
-		return nil, fmt.Errorf("failed to write machine config: %w", err)
+		return fmt.Errorf("failed to write machine config: %w", err)
 	}
-	return gvcmd, nil
+	return nil
+}
+
+func waitForSocket(socketPath string) error {
+	var backoff = 100 * time.Millisecond
+	logrus.Infof("Test that %s socket is created", socketPath)
+	for range 10 {
+		err := fileutils.Exists(socketPath)
+		if err == nil {
+			return nil
+		}
+		logrus.Warnf("Gvproxy network backend socket not ready, try test %s again....", socketPath)
+		time.Sleep(backoff)
+	}
+	return fmt.Errorf("gvproxy network backend socket file not created: %s", socketPath)
 }

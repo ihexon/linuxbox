@@ -6,74 +6,73 @@
 package vfkit
 
 import (
-	"fmt"
-	"os/exec"
-
-	"bauklotze/pkg/machine/apple/hvhelper"
+	"bauklotze/pkg/decompress"
+	"bauklotze/pkg/machine/defconfig"
 	"bauklotze/pkg/machine/define"
-	"bauklotze/pkg/machine/diskpull"
-	"bauklotze/pkg/machine/vmconfigs"
+	"bauklotze/pkg/machine/vmconfig"
+	"bauklotze/pkg/machine/volumes"
 	"bauklotze/pkg/port"
+	"fmt"
+	"strconv"
 
-	gvproxy "github.com/containers/gvisor-tap-vsock/pkg/types"
 	vfConfig "github.com/crc-org/vfkit/pkg/config"
 	"github.com/sirupsen/logrus"
+
+	gvptypes "github.com/containers/gvisor-tap-vsock/pkg/types"
 )
 
 type VFkitStubber struct {
-	vmconfigs.AppleVFkitConfig
+	vmconfig.AppleVFkitConfig
 }
 
-func (l VFkitStubber) State(mc *vmconfigs.MachineConfig) (define.Status, error) {
-	return mc.AppleVFkitHypervisor.Vfkit.State() //nolint:wrapcheck
+func (l VFkitStubber) ExtractBootable(userInputPath string, mc *vmconfig.MachineConfig) error {
+	destDir := mc.Bootable.Image.GetPath()
+	logrus.Infof("Try to decompress %s to %s", userInputPath, destDir)
+	if err := decompress.Zstd(userInputPath, mc.Bootable.Image.GetPath()); err != nil {
+		errors := fmt.Errorf("could not decompress %s to %s, %w", userInputPath, destDir, err)
+		return errors
+	}
+	return nil
 }
 
-func (l VFkitStubber) GetDisk(userInputPath string, dirs *define.MachineDirs, imagePath *define.VMFile, vmType define.VMType, name string) error {
-	// mc.ImagePath is the bootable copied from user provided image --boot <bootable.img.xz>
-	// userInputPath is the bootable image user provided
-	// Extract  userInputPath --> imagePath
-	return diskpull.GetDisk(userInputPath, imagePath) //nolint:wrapcheck
+func (l VFkitStubber) SetupProviderNetworking(mc *vmconfig.MachineConfig, gvcmd *gvptypes.GvproxyCommand) error {
+	gvpNetworkBackend, err := mc.GVProxyNetworkBackendSocks()
+	if err != nil {
+		return fmt.Errorf("failed to get gvproxy networking backend socket: %w", err)
+	}
+	// make sure it does not exist before gvproxy is called
+	if err := gvpNetworkBackend.Delete(true); err != nil {
+		return fmt.Errorf("failed to delete gvproxy socket: %w", err)
+	}
+	gvcmd.AddVfkitSocket(fmt.Sprintf("unixgram://%s", gvpNetworkBackend.GetPath()))
+	return nil
 }
 
-func (l VFkitStubber) StartNetworking(mc *vmconfigs.MachineConfig, cmd *gvproxy.GvproxyCommand) error {
-	return StartGenericNetworking(mc, cmd)
+func (l VFkitStubber) MountType() volumes.VolumeMountType {
+	return volumes.VirtIOFS
 }
 
-func (l VFkitStubber) MountType() vmconfigs.VolumeMountType {
-	return vmconfigs.VirtIOFS
+func (l VFkitStubber) VMType() defconfig.VMType {
+	return defconfig.VFkit
 }
 
-const (
-	krunkitBinary = "vfkit"
-	localhostURI  = "http://127.0.0.1"
-)
+func (l VFkitStubber) StartVM(mc *vmconfig.MachineConfig) error {
+	return startVFKit(mc)
+}
 
-func (l VFkitStubber) CreateVM(opts define.CreateVMOpts, mc *vmconfigs.MachineConfig) error {
-	mc.AppleVFkitHypervisor = new(vmconfigs.AppleVFkitConfig)
-	mc.AppleVFkitHypervisor.Vfkit = hvhelper.Helper{}
-
-	bl := vfConfig.NewEFIBootloader(fmt.Sprintf("%s/efi-bl-%s", opts.Dirs.DataDir.GetPath(), opts.Name), true)
+// CreateVMConfig generates VM settings aligned with the krunkit structure,
+// the structure only used to boot krunkit virtual Machine
+func (l VFkitStubber) CreateVMConfig(mc *vmconfig.MachineConfig) error {
+	mc.AppleVFkitHypervisor = new(vmconfig.AppleVFkitConfig)
+	mc.AppleVFkitHypervisor.Vfkit = vmconfig.Helper{}
+	bl := vfConfig.NewEFIBootloader(fmt.Sprintf("%s/efi-bl-%s", mc.Dirs.DataDir.GetPath(), mc.VMName), true)
 	mc.AppleVFkitHypervisor.Vfkit.VirtualMachine = vfConfig.NewVirtualMachine(uint(mc.Resources.CPUs), uint64(mc.Resources.Memory), bl)
-
 	randPort, err := port.GetFree(0)
 	if err != nil {
 		return fmt.Errorf("failed to get random port: %w", err)
 	}
-
-	mc.AppleVFkitHypervisor.Vfkit.Endpoint = fmt.Sprintf("%s:%d", localhostURI, randPort)
+	// Endpoint is a string: http://127.0.0.1/[random_port]
+	mc.AppleVFkitHypervisor.Vfkit.Endpoint = fmt.Sprintf("%s:%s", define.LocalHostURL, strconv.Itoa(randPort))
 	mc.AppleVFkitHypervisor.Vfkit.LogLevel = logrus.InfoLevel
-
 	return nil
-}
-
-func (l VFkitStubber) VMType() define.VMType {
-	return define.VFkit
-}
-
-func (l VFkitStubber) StartVM(mc *vmconfigs.MachineConfig) (*exec.Cmd, func() error, error) {
-	bl := mc.AppleVFkitHypervisor.Vfkit.VirtualMachine.Bootloader
-	if bl == nil {
-		return nil, nil, fmt.Errorf("unable to determine boot loader for this machine")
-	}
-	return StartGenericAppleVM(mc, krunkitBinary, bl, mc.AppleVFkitHypervisor.Vfkit.Endpoint)
 }

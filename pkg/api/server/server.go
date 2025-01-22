@@ -74,7 +74,7 @@ func RestService(ctx context.Context, apiurl *url.URL) error {
 
 	go func() {
 		<-ctx.Done()
-		logrus.Infof("API service is shutting down")
+		logrus.Warnf("API service is shutting down duto error: %s", context.Cause(ctx))
 		if err := server.Shutdown(); err != nil {
 			logrus.Warnf("error when stopping API service: %s", err)
 			_ = server.Close()
@@ -152,7 +152,6 @@ func (s *APIServer) Shutdown() error {
 func (s *APIServer) setupRouter(r *mux.Router) *mux.Router {
 	r.Handle("/apiversion", s.APIHandler(backend.VersionHandler)).Methods(http.MethodGet)
 	r.Handle("/{name}/info", s.APIHandler(backend.GetInfos)).Methods(http.MethodGet)
-	r.Handle("/{name}/vmstat", s.APIHandler(backend.GetVMStat)).Methods(http.MethodGet)
 	r.Handle("/{name}/synctime", s.APIHandler(backend.TimeSync)).Methods(http.MethodGet)
 	r.Handle("/{name}/exec", s.APIHandler(backend.DoExec)).Methods(http.MethodPost)
 

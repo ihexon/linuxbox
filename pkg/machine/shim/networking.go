@@ -4,32 +4,30 @@
 package shim
 
 import (
-	"errors"
-	"os/exec"
+	"fmt"
 	"time"
 
-	"bauklotze/pkg/machine"
-	"bauklotze/pkg/machine/vmconfigs"
-
 	"github.com/sirupsen/logrus"
+
+	"bauklotze/pkg/machine/io"
+	"bauklotze/pkg/machine/vmconfig"
+	"bauklotze/pkg/ssh"
 )
 
 var (
-	defaultBackoff     = 100 * time.Millisecond
-	maxTried           = 200
-	ErrNotRunning      = errors.New("machine not in running state")
-	ErrSSHNotListening = errors.New("machine is not listening on ssh port")
+	defaultBackoff = 100 * time.Millisecond
+	maxTried       = 100
 )
 
 // conductVMReadinessCheck checks to make sure SSH is up and running
-func conductVMReadinessCheck(mc *vmconfigs.MachineConfig) bool {
+func ConductVMReadinessCheck(mc *vmconfig.MachineConfig) bool {
 	for i := range maxTried {
 		if i > 0 {
 			time.Sleep(defaultBackoff)
 		}
 
-		if err := machine.CommonSSHSilent(mc.SSH.RemoteUsername, mc.SSH.IdentityPath, mc.Name, mc.SSH.Port, []string{"echo Hello"}); err != nil {
-			logrus.Warnf("SSH readiness check for machine failed: %v", err)
+		if err := ssh.CommonSSHSilent(mc.SSH.RemoteUsername, mc.SSH.IdentityPath, mc.VMName, mc.SSH.Port, []string{"uname -a"}); err != nil {
+			logrus.Warnf("SSH readiness check for machine failed: %v, try again", err)
 			continue
 		}
 		return true
@@ -37,17 +35,18 @@ func conductVMReadinessCheck(mc *vmconfigs.MachineConfig) bool {
 	return false
 }
 
-func startNetworking(mc *vmconfigs.MachineConfig, provider vmconfigs.VMProvider) (string, machine.APIForwardingState, *exec.Cmd, error) {
-	socksInHost, socksInGuest, err := setupMachineSockets(mc, mc.Dirs)
+// startNetworking return podman socks in host, podman socks in guest, error
+func startNetworking(mc *vmconfig.MachineConfig) (*io.VMFile, *io.VMFile, error) {
+	// socksInHost($workspace/tmp/[machine]-podman-api.socks) <--> socksInGuest(podman server)
+	socksInHost, socksInGuest, err := setupPodmanSocketsPath(mc)
 	if err != nil {
-		return "", machine.NoForwarding, nil, err
+		return nil, nil, fmt.Errorf("failed to setup podman sockets path: %w", err)
 	}
 
-	// forward the IO in socksInHost to socksInGuest
-	gvcmd, err := startHostForwarder(mc, provider, mc.Dirs, socksInHost, socksInGuest)
+	err = startForwarder(mc, socksInHost, socksInGuest)
 	if err != nil {
-		return "", machine.NoForwarding, nil, err
+		return nil, nil, fmt.Errorf("failed to start forwarder: %w", err)
 	}
 
-	return socksInHost, machine.InForwarding, gvcmd, nil
+	return &io.VMFile{Path: socksInHost}, &io.VMFile{Path: socksInGuest}, err
 }

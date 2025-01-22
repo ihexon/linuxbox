@@ -7,22 +7,19 @@ import (
 	"net/url"
 
 	"bauklotze/pkg/httpclient"
+	allFlag "bauklotze/pkg/machine/allflag"
 
 	"github.com/sirupsen/logrus"
 )
 
-var (
-	ReportURL string
-)
-
 // notify sends an event to the report URL
 func notify(e event) {
-	if ReportURL == "" {
+	if allFlag.ReportURL == "" {
 		return
 	}
 
 	client := httpclient.New().
-		SetTransport(httpclient.CreateUnixTransport(ReportURL)).
+		SetTransport(httpclient.CreateUnixTransport(allFlag.ReportURL)).
 		SetBaseURL("http://local").
 		SetHeader("Content-Type", PlainTextContentType).
 		SetQueryParams(map[string]string{
@@ -32,17 +29,18 @@ func notify(e event) {
 		})
 
 	logrus.Infof("Send Event to %s , stage: %s, name: %s, value: %s \n",
-		ReportURL,
+		allFlag.ReportURL,
 		client.QueryParam.Get("stage"),
 		client.QueryParam.Get("name"),
 		client.QueryParam.Get("value"),
 	)
 
 	if err := client.Get("notify"); err != nil {
-		logrus.Warnf("Failed to notify %q: %v\n", ReportURL, err)
+		logrus.Warnf("Failed to notify %q: %v\n", allFlag.ReportURL, err)
 	}
 }
 
+// NotifyInit Generic Notifier for InitStage
 func NotifyInit(name InitStageName, value ...string) {
 	v := ""
 	if len(value) > 0 {
@@ -56,6 +54,7 @@ func NotifyInit(name InitStageName, value ...string) {
 	})
 }
 
+// NotifyRun Generic Notifier for RunStage
 func NotifyRun(name RunStageName, value ...string) {
 	v := ""
 	if len(value) > 0 {
@@ -69,6 +68,7 @@ func NotifyRun(name RunStageName, value ...string) {
 	})
 }
 
+// NotifyExit Generic Notifier for Exit
 func NotifyExit() {
 	switch CurrentStage {
 	case Init:
@@ -80,6 +80,7 @@ func NotifyExit() {
 	}
 }
 
+// NotifyError Generic Notifier for Error
 func NotifyError(err error) {
 	notify(event{
 		Stage: CurrentStage,

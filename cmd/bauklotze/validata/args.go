@@ -21,19 +21,3 @@ func SubCommandExists(cmd *cobra.Command, args []string) error {
 	_ = cmd.Help()
 	return fmt.Errorf("missing command '%[1]s COMMAND'", cmd.CommandPath())
 }
-
-// NoArgs returns an error if any args are included.
-func NoArgs(cmd *cobra.Command, args []string) error {
-	if len(args) > 0 {
-		return fmt.Errorf("`%s` takes no arguments", cmd.CommandPath())
-	}
-	return nil
-}
-
-// AutocompleteDefaultOneArg - Autocomplete path only for the first argument.
-func AutocompleteDefaultOneArg(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-	if len(args) == 0 {
-		return nil, cobra.ShellCompDirectiveDefault
-	}
-	return nil, cobra.ShellCompDirectiveNoFileComp
-}
