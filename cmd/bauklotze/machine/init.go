@@ -18,6 +18,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"os/user"
 
 	"github.com/containers/common/pkg/strongunits"
 
@@ -124,6 +125,14 @@ func initMachine(cmd *cobra.Command, args []string) error {
 }
 
 func updateExistedMachine(mc *vmconfig.MachineConfig) error {
+	u, err := user.Current()
+	if err != nil {
+		return fmt.Errorf("failed to get host user information, %w", err)
+	}
+	mc.HostUser = vmconfig.HostUser{
+		UserName: u.Username,
+	}
+
 	mc.Resources.CPUs = allFlag.CPUS
 	mc.Resources.Memory = strongunits.MiB(allFlag.Memory)
 	mc.Mounts = volumes.CmdLineVolumesToMounts(allFlag.Volumes)
@@ -136,6 +145,7 @@ func updateExistedMachine(mc *vmconfig.MachineConfig) error {
 	return nil
 }
 
+// updateImage update data and boot according to the data-version and boot-version control fields
 func updateImage(mc *vmconfig.MachineConfig) error {
 	if mc.Bootable.Version != allFlag.BootableImageVersion {
 		logrus.Warnf("Bootable image version is not match, try to update boot image")
@@ -169,6 +179,7 @@ func updateBootImage(mc *vmconfig.MachineConfig) error {
 	}
 	return nil
 }
+
 func initializeNewVM(mp vmconfig.VMProvider) error {
 	if err := shim.Init(mp); err != nil {
 		return fmt.Errorf("initialize virtual machine error: %w", err)

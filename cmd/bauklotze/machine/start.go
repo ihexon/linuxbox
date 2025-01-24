@@ -122,13 +122,11 @@ func start(cmd *cobra.Command, args []string) error {
 			return fmt.Errorf("failed start rest api endpoint: %w", err)
 		}
 
-		err = f.Delete(true)
-		if err != nil {
+		if err = f.Delete(true); err != nil {
 			return fmt.Errorf("failed to delete rest api endpoint: %w", err)
 		}
 
 		// make symbolic link to the rest api for compatibility
-
 		dst := &io.VMFile{Path: filepath.Join(filepath.Dir(mc.Dirs.TmpDir.GetPath()), define.RESTAPIEndpointName)}
 		if err := dst.Delete(true); err != nil {
 			return fmt.Errorf("failed to delete rest api endpoint: %w", err)

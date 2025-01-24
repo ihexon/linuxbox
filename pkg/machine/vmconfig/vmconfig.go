@@ -44,9 +44,6 @@ func (mc *MachineConfig) PodmanAPISocketHost() *io.VMFile {
 
 // HostUser describes the host user
 type HostUser struct {
-	// UID is the numerical id of the user that called machine
-	UID      string `json:"UID"`
-	GUID     string `json:"GUID"`
 	UserName string `json:"UserName"`
 }
 
@@ -144,25 +141,15 @@ func NewMachineConfig(dirs *MachineDirs, sshKey *io.VMFile, mtype defconfig.VMTy
 	}
 	mc.Created = time.Now()
 
-	u, err := getCurrentUser()
+	u, err := user.Current()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get host user information for %w, %s", err, mc.ConfigPath.GetPath())
 	}
 	mc.HostUser = HostUser{
-		UID:      u.Uid,
-		GUID:     u.Gid,
 		UserName: u.Username,
 	}
 
 	return mc, nil
-}
-
-func getCurrentUser() (*user.User, error) {
-	u, err := user.Current()
-	if err != nil {
-		return nil, fmt.Errorf("failed to get host user information: %w", err)
-	}
-	return u, nil
 }
 
 func LoadMachinesInDir(dirs *MachineDirs) (map[string]*MachineConfig, error) {

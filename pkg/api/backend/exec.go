@@ -16,7 +16,7 @@ import (
 	"time"
 
 	"bauklotze/pkg/api/utils"
-	provider2 "bauklotze/pkg/machine/provider"
+	"bauklotze/pkg/machine/provider"
 	"bauklotze/pkg/machine/vmconfig"
 
 	"github.com/Code-Hex/go-infinity-channel"
@@ -25,7 +25,7 @@ import (
 )
 
 func getVM(vmName string) (*vmconfig.MachineConfig, error) {
-	providers = provider2.GetAll()
+	providers = provider.GetAll()
 	for _, sprovider := range providers {
 		dirs, err := vmconfig.GetMachineDirs(sprovider.VMType())
 		if err != nil {

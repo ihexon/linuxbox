@@ -8,11 +8,11 @@ import (
 	"net/http"
 
 	"bauklotze/pkg/api/utils"
-	provider2 "bauklotze/pkg/machine/provider"
+	"bauklotze/pkg/machine/provider"
 )
 
 func getPodmanConnection(vmName string) *vmconfig.MachineConfig {
-	providers = provider2.GetAll()
+	providers = provider.GetAll()
 	for _, s := range providers {
 		dirs, err := vmconfig.GetMachineDirs(s.VMType())
 		if err != nil {
@@ -32,6 +32,7 @@ func getPodmanConnection(vmName string) *vmconfig.MachineConfig {
 	return nil
 }
 
+// GetInfos Get machine configures
 func GetInfos(w http.ResponseWriter, r *http.Request) {
 	name := utils.GetName(r)
 	mc := getPodmanConnection(name)

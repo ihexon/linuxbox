@@ -74,6 +74,7 @@ func GetMachineDirs(vmType defconfig.VMType) (*MachineDirs, error) {
 	if err != nil {
 		return nil, fmt.Errorf("unable to eval symlinks: %w", err)
 	}
+
 	binDir := filepath.Dir(execPath)                                                                   // $BINDIR
 	libexecDir, err := io.NewMachineFile(filepath.Join(filepath.Dir(binDir), define.LibexecPrefixDir)) // $BINDIR/../libexec
 	if err != nil {
