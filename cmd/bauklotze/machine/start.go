@@ -4,13 +4,6 @@
 package machine
 
 import (
-	"bauklotze/pkg/api/server"
-	"bauklotze/pkg/machine"
-	allFlag "bauklotze/pkg/machine/allflag"
-	"bauklotze/pkg/machine/define"
-	"bauklotze/pkg/machine/io"
-	"bauklotze/pkg/machine/shim"
-	"bauklotze/pkg/machine/vmconfig"
 	"context"
 	"fmt"
 	"net/url"
@@ -19,6 +12,14 @@ import (
 	"path/filepath"
 	"syscall"
 	"time"
+
+	"bauklotze/pkg/api/server"
+	"bauklotze/pkg/machine"
+	allFlag "bauklotze/pkg/machine/allflag"
+	"bauklotze/pkg/machine/define"
+	"bauklotze/pkg/machine/io"
+	"bauklotze/pkg/machine/shim"
+	"bauklotze/pkg/machine/vmconfig"
 
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -161,7 +162,7 @@ func start(cmd *cobra.Command, args []string) error {
 		}
 
 		// Test the machine ssh connection by consume a string with '\n'
-		if shim.ConductVMReadinessCheck(mc) {
+		if shim.ConductVMReadinessCheck(ctx, mc) {
 			logrus.Infof("Machine %s SSH is ready, using sshkey %s with %s, listen in %d",
 				mc.VMName, mc.SSH.IdentityPath, mc.SSH.RemoteUsername, mc.SSH.Port)
 		} else {

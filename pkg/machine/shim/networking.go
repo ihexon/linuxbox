@@ -4,6 +4,7 @@
 package shim
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -19,9 +20,13 @@ var (
 	maxTried       = 100
 )
 
-// conductVMReadinessCheck checks to make sure SSH is up and running
-func ConductVMReadinessCheck(mc *vmconfig.MachineConfig) bool {
+// ConductVMReadinessCheck checks to make sure SSH is up and running
+func ConductVMReadinessCheck(ctx context.Context, mc *vmconfig.MachineConfig) bool {
 	for i := range maxTried {
+		if ctx.Err() != nil {
+			return false
+		}
+
 		if i > 0 {
 			time.Sleep(defaultBackoff)
 		}
