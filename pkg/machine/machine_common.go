@@ -15,7 +15,7 @@ import (
 const defaultPingTimeout = 5 * time.Second
 const defaultPingInterval = 200 * time.Millisecond
 
-func WaitAndPingAPI(sock string) error {
+func WaitPodmanReady(sock string) error {
 	client := httpclient.New().SetTransport(httpclient.CreateUnixTransport(sock))
 	timeout := time.After(defaultPingTimeout)
 	for {
