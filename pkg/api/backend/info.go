@@ -6,36 +6,18 @@ package backend
 import (
 	"net/http"
 
+	"bauklotze/pkg/api/types"
 	"bauklotze/pkg/machine/vmconfig"
 
 	"bauklotze/pkg/api/utils"
-	"bauklotze/pkg/machine/provider"
 )
-
-func getPodmanConnection(vmName string) *vmconfig.MachineConfig {
-	providers = provider.GetAll()
-	for _, s := range providers {
-		dirs, err := vmconfig.GetMachineDirs(s.VMType())
-		if err != nil {
-			return nil
-		}
-		mcs, err := vmconfig.LoadMachinesInDir(dirs)
-		if err != nil {
-			return nil
-		}
-
-		for name, mc := range mcs {
-			if name == vmName {
-				return mc
-			}
-		}
-	}
-	return nil
-}
 
 // GetInfos Get machine configures
 func GetInfos(w http.ResponseWriter, r *http.Request) {
-	name := utils.GetName(r)
-	mc := getPodmanConnection(name)
+	mc := r.Context().Value(types.McKey).(*vmconfig.MachineConfig)
+	if mc == nil {
+		utils.Error(w, http.StatusInternalServerError, ErrMachineConfigNull)
+		return
+	}
 	utils.WriteResponse(w, http.StatusOK, mc)
 }

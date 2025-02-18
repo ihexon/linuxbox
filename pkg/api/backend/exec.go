@@ -6,7 +6,6 @@ package backend
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -15,32 +14,14 @@ import (
 	"sync"
 	"time"
 
+	"bauklotze/pkg/api/types"
 	"bauklotze/pkg/api/utils"
-	"bauklotze/pkg/machine/provider"
 	"bauklotze/pkg/machine/vmconfig"
 
 	"github.com/Code-Hex/go-infinity-channel"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/crypto/ssh"
 )
-
-func getVM(vmName string) (*vmconfig.MachineConfig, error) {
-	providers = provider.GetAll()
-	for _, sprovider := range providers {
-		dirs, err := vmconfig.GetMachineDirs(sprovider.VMType())
-		if err != nil {
-			return nil, fmt.Errorf("failed to get machine dirs: %w", err)
-		}
-		mcs, err := vmconfig.LoadMachinesInDir(dirs)
-		if err != nil {
-			return nil, fmt.Errorf("failed to load machines in dir: %w", err)
-		}
-		if mc, exists := mcs[vmName]; exists {
-			return mc, nil
-		}
-	}
-	return nil, errors.New("can not find machine")
-}
 
 func exec(ctx context.Context, mc *vmconfig.MachineConfig, command string, outCh *infinity.Channel[string], errCh chan string) error {
 	key, err := os.ReadFile(mc.SSH.IdentityPath)
@@ -85,7 +66,7 @@ func exec(ctx context.Context, mc *vmconfig.MachineConfig, command string, outCh
 	if err := session.Run(command); err != nil {
 		newErr := fmt.Errorf("%s\n%s", stderr.LastRecord(), err) //nolint:errorlint
 		errCh <- newErr.Error()
-		return fmt.Errorf("run command error %w", newErr)
+		return fmt.Errorf("run command error: %w", newErr)
 	}
 	logrus.Infof("exec command finished")
 
@@ -99,15 +80,13 @@ type execBody struct {
 func DoExec(w http.ResponseWriter, r *http.Request) {
 	logrus.Infof("Request /exec")
 
-	name := utils.GetName(r)
-	mc, err := getVM(name)
-	if err != nil {
-		utils.Error(w, http.StatusInternalServerError, err)
+	mc := r.Context().Value(types.McKey).(*vmconfig.MachineConfig)
+	if mc == nil {
+		utils.Error(w, http.StatusInternalServerError, ErrMachineConfigNull)
 		return
 	}
 
 	var body execBody
-
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		utils.Error(w, http.StatusBadRequest, err)
 		return
@@ -118,7 +97,7 @@ func DoExec(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Connection", "keep-alive")
 
 	if _, ok := w.(http.Flusher); !ok {
-		utils.Error(w, http.StatusInternalServerError, errors.New("streaming unsupported"))
+		utils.Error(w, http.StatusInternalServerError, ErrStreamNotSupport)
 		return
 	}
 

@@ -7,10 +7,8 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"net/url"
 	"os"
 
-	"github.com/gorilla/mux"
 	"github.com/sirupsen/logrus"
 )
 
@@ -60,19 +58,4 @@ func WriteResponse(w http.ResponseWriter, code int, value interface{}) {
 	default:
 		WriteJSON(w, code, value)
 	}
-}
-
-func GetVar(r *http.Request, k string) string {
-	val := mux.Vars(r)[k]
-	safeVal, err := url.PathUnescape(val)
-	if err != nil {
-		logrus.Error(fmt.Errorf("failed to unescape mux key %s, value %s: %w", k, val, err))
-		return val
-	}
-	return safeVal
-}
-
-// GetName extracts the name from the mux
-func GetName(r *http.Request) string {
-	return GetVar(r, "name")
 }

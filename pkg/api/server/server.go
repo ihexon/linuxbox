@@ -18,19 +18,18 @@ import (
 	"bauklotze/pkg/api/backend"
 	"bauklotze/pkg/api/internal"
 	"bauklotze/pkg/api/types"
+	"bauklotze/pkg/machine/vmconfig"
 
 	"github.com/gorilla/mux"
 	"github.com/sirupsen/logrus"
 )
 
 type APIServer struct {
-	http.Server
-	net.Listener
-	context.Context
-	context.CancelFunc
+	Server   http.Server
+	Listener net.Listener
 }
 
-func RestService(ctx context.Context, apiurl *url.URL) error {
+func RestService(ctx context.Context, mc *vmconfig.MachineConfig, apiurl *url.URL) error {
 	var (
 		listener net.Listener
 		err      error
@@ -63,8 +62,8 @@ func RestService(ctx context.Context, apiurl *url.URL) error {
 
 	// Set stdin to /dev/null
 	_ = internal.RedirectStdin()
-	server := makeNewServer(listener)
 
+	server := makeNewServer(mc, listener)
 	defer func() {
 		if err := server.Shutdown(); err != nil {
 			logrus.Warnf("error when stopping API service: %s", err)
@@ -98,7 +97,7 @@ func (s *APIServer) Serve() error {
 	return <-errChan
 }
 
-func makeNewServer(listener net.Listener) *APIServer {
+func makeNewServer(mc *vmconfig.MachineConfig, listener net.Listener) *APIServer {
 	logrus.Infof("API service listening on %q.", listener.Addr())
 	router := mux.NewRouter().UseEncodedPath()
 
@@ -110,11 +109,12 @@ func makeNewServer(listener net.Listener) *APIServer {
 	}
 
 	server.Server.BaseContext = func(l net.Listener) context.Context {
-		ctx := context.WithValue(context.Background(), types.DecoderKey, NewAPIDecoder()) // Decoder used in handlers as `decoder := r.Context().Value(api.DecoderKey).(*schema.Decoder)`
+		// Every request will have access to the machineConfig,this is a way to pass the machineConfig to the handlers
+		ctx := context.WithValue(context.Background(), types.McKey, mc)
 		return ctx
 	}
 
-	router.Use(PanicHandler(), ReferenceIDHandler())
+	router.Use(PanicHandler())
 	router.NotFoundHandler = http.HandlerFunc(
 		func(w http.ResponseWriter, r *http.Request) {
 			// We can track user errors...
@@ -125,20 +125,18 @@ func makeNewServer(listener net.Listener) *APIServer {
 
 	server.setupRouter(router)
 
-	if logrus.IsLevelEnabled(logrus.InfoLevel) {
-		_ = router.Walk(func(route *mux.Route, r *mux.Router, ancestors []*mux.Route) error {
-			path, err := route.GetPathTemplate()
-			if err != nil {
-				path = "<N/A>"
-			}
-			methods, err := route.GetMethods()
-			if err != nil {
-				methods = []string{"<N/A>"}
-			}
-			logrus.Infof("Methods: %6s Path: %s", strings.Join(methods, ", "), path)
-			return nil
-		})
-	}
+	_ = router.Walk(func(route *mux.Route, r *mux.Router, ancestors []*mux.Route) error {
+		path, err := route.GetPathTemplate()
+		if err != nil {
+			path = "<N/A>"
+		}
+		methods, err := route.GetMethods()
+		if err != nil {
+			methods = []string{"<N/A>"}
+		}
+		logrus.Infof("Methods: %6s Path: %s", strings.Join(methods, ", "), path)
+		return nil
+	})
 
 	return &server
 }
@@ -152,7 +150,6 @@ func (s *APIServer) Shutdown() error {
 func (s *APIServer) setupRouter(r *mux.Router) *mux.Router {
 	r.Handle("/{name}/info", s.APIHandler(backend.GetInfos)).Methods(http.MethodGet)
 	r.Handle("/{name}/exec", s.APIHandler(backend.DoExec)).Methods(http.MethodPost)
-
 	return r
 }
 

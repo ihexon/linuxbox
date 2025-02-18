@@ -143,7 +143,7 @@ func start(cmd *cobra.Command, args []string) error {
 		if err != nil {
 			return fmt.Errorf("failed to parse api url: %w", err)
 		}
-		return server.RestService(ctx, apiURL) // server.RestService must now subscribe to ctx
+		return server.RestService(ctx, mc, apiURL) // server.RestService must now subscribe to ctx
 	})
 
 	// Start the machine, if catch error, return error

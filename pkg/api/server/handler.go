@@ -6,15 +6,10 @@ package server
 import (
 	"bufio"
 	"fmt"
-	"io"
 	"net/http"
 	"runtime"
 
-	"bauklotze/pkg/api/types"
-
 	"github.com/containers/podman/v5/pkg/errorhandling"
-	"github.com/google/uuid"
-	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	jsoniter "github.com/json-iterator/go"
 	"github.com/sirupsen/logrus"
@@ -24,14 +19,13 @@ type APIContextKey int
 
 var json = jsoniter.ConfigCompatibleWithStandardLibrary
 
-// panicHandler captures panics from endpoint handlers and logs stack trace
+// PanicHandler captures panics from endpoint handlers and logs stack trace
 func PanicHandler() mux.MiddlewareFunc {
 	return func(h http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			// http.Server hides panics from handlers, we want to record them and fix the cause
 			defer func() {
-				err := recover()
-				if err != nil {
+				if err := recover(); err != nil {
 					buf := make([]byte, 1<<20) //nolint:mnd
 					n := runtime.Stack(buf, true)
 					logrus.Warnf("Recovering from API service endpoint handler panic: %v, %s", err, buf[:n])
@@ -47,36 +41,6 @@ func PanicHandler() mux.MiddlewareFunc {
 
 func InternalServerError(w http.ResponseWriter, err error) {
 	Error(w, http.StatusInternalServerError, err)
-}
-
-// A custom middleware
-func ReferenceIDHandler() mux.MiddlewareFunc /* Note type MiddlewareFunc func(http.Handler) http.Handler */ {
-	return func(h http.Handler) http.Handler { // 返回一个 http.Handler，实际上是返回 handlers.CombinedLoggingHandler
-		// Only log Apache access_log-like entries at Info level or below
-		out := io.Discard
-		if logrus.IsLevelEnabled(logrus.InfoLevel) {
-			out = logrus.StandardLogger().Out
-		}
-
-		return handlers.CombinedLoggingHandler(out,
-			http.HandlerFunc(
-				func(w http.ResponseWriter, r *http.Request) {
-					rid := r.Header.Get("X-Reference-Id")
-					if rid == "" {
-						if c := r.Context().Value(types.ConnKey); c == nil {
-							rid = uuid.New().String()
-						} else {
-							rid = fmt.Sprintf("%p", c)
-						}
-					}
-
-					r.Header.Set("X-Reference-Id", rid)
-					w.Header().Set("X-Reference-Id", rid)
-					h.ServeHTTP(w, r)
-				},
-			),
-		)
-	}
 }
 
 func WriteJSON(w http.ResponseWriter, code int, value interface{}) {
@@ -105,23 +69,14 @@ func Error(w http.ResponseWriter, code int, err error) {
 func (s *APIServer) APIHandler(h http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Wrapper to hide some boilerplate
-		s.apiWrapper(h, w, r, false)
+		s.apiWrapper(h, w, r)
 	}
 }
 
-func (s *APIServer) apiWrapper(h http.HandlerFunc, w http.ResponseWriter, r *http.Request, buffer bool) {
+func (s *APIServer) apiWrapper(h http.HandlerFunc, w http.ResponseWriter, r *http.Request) {
 	if err := r.ParseForm(); err != nil {
-		logrus.WithFields(logrus.Fields{
-			"X-Reference-Id": r.Header.Get("X-Reference-Id"),
-		}).Info("Failed Request: unable to parse form: " + err.Error())
+		logrus.Errorf("Failed Request: unable to parse form: " + err.Error())
 	}
-
-	if buffer {
-		bw := newBufferedResponseWriter(w)
-		defer bw.b.Flush()
-		w = bw
-	}
-
 	h(w, r)
 }
 
@@ -130,14 +85,6 @@ type BufferedResponseWriter struct {
 	w http.ResponseWriter
 }
 
-const defaultBufferSize = 8192
-
-func newBufferedResponseWriter(rw http.ResponseWriter) *BufferedResponseWriter {
-	return &BufferedResponseWriter{
-		bufio.NewWriterSize(rw, defaultBufferSize),
-		rw,
-	}
-}
 func (w *BufferedResponseWriter) Header() http.Header {
 	return w.w.Header()
 }
