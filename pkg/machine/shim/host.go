@@ -4,6 +4,11 @@
 package shim
 
 import (
+	"context"
+	"fmt"
+	"runtime"
+	"time"
+
 	allFlag "bauklotze/pkg/machine/allflag"
 	"bauklotze/pkg/machine/callback"
 	"bauklotze/pkg/machine/define"
@@ -15,11 +20,6 @@ import (
 	"bauklotze/pkg/port"
 	"bauklotze/pkg/ssh"
 	"bauklotze/pkg/system"
-	"context"
-	"fmt"
-	"log"
-	"runtime"
-	"time"
 
 	"github.com/prashantgupta24/mac-sleep-notifier/notifier"
 	"github.com/sirupsen/logrus"
@@ -214,7 +214,7 @@ func SleepNotifier(mc *vmconfig.MachineConfig) {
 		select {
 		case activity := <-notifierCh:
 			if activity.Type == notifier.Awake {
-				log.Println("machine awake, dispatch tasks")
+				logrus.Infof("machine awake, dispatch tasks")
 				if err := TimeSync(mc); err != nil {
 					logrus.Errorf("Failed to sync timestamp: %v", err)
 				}

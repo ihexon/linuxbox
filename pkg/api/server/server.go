@@ -10,14 +10,13 @@ import (
 	"net"
 	"net/http"
 	"net/url"
-	"os"
-	"path/filepath"
 	"strings"
 	"time"
 
 	"bauklotze/pkg/api/backend"
 	"bauklotze/pkg/api/internal"
 	"bauklotze/pkg/api/types"
+	"bauklotze/pkg/machine/io"
 	"bauklotze/pkg/machine/vmconfig"
 
 	"github.com/gorilla/mux"
@@ -29,39 +28,29 @@ type APIServer struct {
 	Listener net.Listener
 }
 
-func RestService(ctx context.Context, mc *vmconfig.MachineConfig, apiurl *url.URL) error {
-	var (
-		listener net.Listener
-		err      error
-		path     string
-	)
-
-	switch apiurl.Scheme {
-	case "unix":
-		path, err = filepath.Abs(apiurl.Path)
-		if err != nil {
-			return fmt.Errorf("failed to get absolute path: %s, %w", path, err)
-		}
-		if err = os.RemoveAll(path); err != nil {
-			return fmt.Errorf("failed to remove all: %s, %w", path, err)
-		}
-		listener, err = net.Listen(apiurl.Scheme, path)
-		if err != nil {
-			return fmt.Errorf("failed to listen on %s: %w", path, err)
-		}
-	default:
-		return fmt.Errorf("API Service endpoint scheme %q is not supported", apiurl.Scheme)
-	}
-
-	// Disable leaking the LISTEN_* into containers
-	for _, val := range []string{"LISTEN_FDS", "LISTEN_PID", "LISTEN_FDNAMES", "BAZ_API_LISTEN_DIR"} {
-		if err := os.Unsetenv(val); err != nil {
-			return fmt.Errorf("unsetting %s: %w", val, err)
-		}
-	}
-
+func RestService(ctx context.Context, mc *vmconfig.MachineConfig, endPoint string) error {
 	// Set stdin to /dev/null
 	_ = internal.RedirectStdin()
+	// When deleting files, wrap the path in a `&io.VMFile` so that the file is safely deleted.
+	// The Delete(true) operation will ensure that **only files in the workspace are deleted**
+	UDF := &io.VMFile{Path: endPoint}
+	if err := UDF.Delete(true); err != nil {
+		return fmt.Errorf("failed to delete file %q: %w", UDF.GetPath(), err)
+	}
+
+	u := url.URL{
+		Scheme: "unix",
+		Path:   UDF.GetPath(),
+	}
+
+	listener, err := net.Listen(u.Scheme, u.Path)
+	if err != nil {
+		return fmt.Errorf("failed to listen on %s: %w", u.Path, err)
+	}
+
+	if !UDF.Exist() {
+		return errors.New("UDF file create failed")
+	}
 
 	server := makeNewServer(mc, listener)
 	defer func() {
@@ -98,7 +87,6 @@ func (s *APIServer) Serve() error {
 }
 
 func makeNewServer(mc *vmconfig.MachineConfig, listener net.Listener) *APIServer {
-	logrus.Infof("API service listening on %q.", listener.Addr())
 	router := mux.NewRouter().UseEncodedPath()
 
 	server := APIServer{

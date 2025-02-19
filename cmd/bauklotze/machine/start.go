@@ -6,7 +6,6 @@ package machine
 import (
 	"context"
 	"fmt"
-	"net/url"
 	"os"
 	"os/signal"
 	"path/filepath"
@@ -118,32 +117,9 @@ func start(cmd *cobra.Command, args []string) error {
 
 	// Start a goroutine running api service,if catch error, return error
 	g.Go(func() error {
-		f, err := mc.Dirs.TmpDir.AppendToNewVMFile(define.RESTAPIEndpointName)
-		if err != nil {
-			return fmt.Errorf("failed start rest api endpoint: %w", err)
-		}
-
-		if err = f.Delete(true); err != nil {
-			return fmt.Errorf("failed to delete rest api endpoint: %w", err)
-		}
-
-		// make symbolic link to the rest api for compatibility
-		dst := &io.VMFile{Path: filepath.Join(filepath.Dir(mc.Dirs.TmpDir.GetPath()), define.RESTAPIEndpointName)}
-		if err := dst.Delete(true); err != nil {
-			return fmt.Errorf("failed to delete rest api endpoint: %w", err)
-		}
-		src := f
-		logrus.Infof("Make symbolic link %s -> %s", src.GetPath(), dst.GetPath())
-		if err := os.Symlink(src.GetPath(), dst.GetPath()); err != nil {
-			return fmt.Errorf("failed to make symbolic link: %w", err)
-		}
-
-		logrus.Infof("Starting API Server in %s\n", f.GetPath())
-		apiURL, err := url.Parse(fmt.Sprintf("unix:///%s", f.GetPath()))
-		if err != nil {
-			return fmt.Errorf("failed to parse api url: %w", err)
-		}
-		return server.RestService(ctx, mc, apiURL) // server.RestService must now subscribe to ctx
+		endPoint := filepath.Join(mc.Dirs.TmpDir.GetPath(), define.RESTAPIEndpointName)
+		logrus.Infof("Start rest api service at %q", endPoint)
+		return server.RestService(ctx, mc, endPoint) // server.RestService must now subscribe to ctx
 	})
 
 	// Start the machine, if catch error, return error
