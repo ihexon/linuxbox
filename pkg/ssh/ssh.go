@@ -10,6 +10,8 @@ import (
 	"os"
 	"strings"
 
+	"bauklotze/pkg/machine/define"
+
 	"github.com/sirupsen/logrus"
 	"golang.org/x/crypto/ssh"
 )
@@ -24,7 +26,7 @@ func commonBuiltinSSH(username, identityPath, name string, sshPort int, inputArg
 		return fmt.Errorf("failed to create ssh config: %w", err)
 	}
 
-	client, err := ssh.Dial("tcp", fmt.Sprintf("localhost:%d", sshPort), config)
+	client, err := ssh.Dial("tcp", fmt.Sprintf("%s:%d", define.LocalHostURL, sshPort), config)
 	if err != nil {
 		return fmt.Errorf("failed to dial ssh: %w", err)
 	}

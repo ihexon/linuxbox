@@ -16,6 +16,7 @@ import (
 
 	"bauklotze/pkg/api/types"
 	"bauklotze/pkg/api/utils"
+	"bauklotze/pkg/machine/define"
 	"bauklotze/pkg/machine/vmconfig"
 
 	"github.com/Code-Hex/go-infinity-channel"
@@ -40,7 +41,7 @@ func exec(ctx context.Context, mc *vmconfig.MachineConfig, command string, outCh
 			ssh.PublicKeys(signer),
 		},
 	}
-	conn, err := ssh.Dial("tcp", fmt.Sprintf("127.0.0.1:%d", mc.SSH.Port), connCfg)
+	conn, err := ssh.Dial("tcp", fmt.Sprintf("%s:%d", define.LocalHostURL, mc.SSH.Port), connCfg)
 	if err != nil {
 		errCh <- fmt.Sprintf("dial ssh error %s", err)
 		return fmt.Errorf("dial ssh error %w", err)

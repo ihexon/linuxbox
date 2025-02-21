@@ -13,6 +13,8 @@ import (
 	"strings"
 	"time"
 
+	"bauklotze/pkg/machine/define"
+
 	"github.com/sirupsen/logrus"
 )
 
@@ -30,7 +32,7 @@ type Client struct {
 
 func New() *Client {
 	return &Client{
-		baseURL:    "http://localhost",
+		baseURL:    "http://" + define.LocalHostURL,
 		ctx:        context.Background(),
 		Headers:    make(http.Header),
 		QueryParam: make(url.Values),
