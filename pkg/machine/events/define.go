@@ -17,6 +17,7 @@ const (
 	InitNewMachine   InitStageName = "InitNewMachine"
 	ExtractBootImage InitStageName = "ExtractBootImage"
 	InitUpdateConfig InitStageName = "UpdateConfig"
+	InitSuccess      InitStageName = "Success"
 	InitExit         InitStageName = "Exit"
 )
 

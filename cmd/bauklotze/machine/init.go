@@ -4,6 +4,11 @@
 package machine
 
 import (
+	"errors"
+	"fmt"
+	"os"
+	"os/user"
+
 	"bauklotze/cmd/registry"
 	"bauklotze/pkg/decompress"
 	allFlag "bauklotze/pkg/machine/allflag"
@@ -15,10 +20,6 @@ import (
 	"bauklotze/pkg/machine/vmconfig"
 	"bauklotze/pkg/machine/volumes"
 	"bauklotze/pkg/system"
-	"errors"
-	"fmt"
-	"os"
-	"os/user"
 
 	"github.com/containers/common/pkg/strongunits"
 
@@ -121,6 +122,7 @@ func initMachine(cmd *cobra.Command, args []string) error {
 			return fmt.Errorf("update machine configure error: %w", err)
 		}
 	}
+	events.NotifyInit(events.InitSuccess)
 	return nil
 }
 
