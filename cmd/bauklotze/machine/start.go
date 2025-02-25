@@ -82,7 +82,7 @@ func start(cmd *cobra.Command, args []string) error {
 	logrus.Infof("Check the status of the parent process: %d", allFlag.PPID)
 	isRunning, err := system.IsProcessAliveV4(int(allFlag.PPID))
 	if !isRunning {
-		return fmt.Errorf("PPID[%d] exited, possible error: %w", allFlag.PPID, err)
+		return fmt.Errorf("PPID[ %d ] exited, possible error: %w", allFlag.PPID, err)
 	}
 
 	// Check if the process of the PID passed in via --ppid is active.
@@ -117,7 +117,7 @@ func start(cmd *cobra.Command, args []string) error {
 
 	// Start a goroutine running api service,if catch error, return error
 	g.Go(func() error {
-		endPoint := filepath.Join(mc.Dirs.TmpDir.GetPath(), define.RESTAPIEndpointName)
+		endPoint := filepath.Join(filepath.Dir(mc.Dirs.SocksDir.GetPath()), define.RESTAPIEndpointName)
 		logrus.Infof("Start rest api service at %q", endPoint)
 		return server.RestService(ctx, mc, endPoint) // server.RestService must now subscribe to ctx
 	})

@@ -4,13 +4,14 @@
 package vmconfig
 
 import (
-	"bauklotze/pkg/machine/defconfig"
-	"bauklotze/pkg/machine/define"
-	"bauklotze/pkg/machine/io"
 	"fmt"
 	"os"
 	"path/filepath"
 	"sync"
+
+	"bauklotze/pkg/machine/defconfig"
+	"bauklotze/pkg/machine/define"
+	"bauklotze/pkg/machine/io"
 )
 
 var (
@@ -46,14 +47,14 @@ func GetMachineDirs(vmType defconfig.VMType) (*MachineDirs, error) {
 		return nil, fmt.Errorf("failed to get workspace: %w", err)
 	}
 
-	tmpDir, err := io.NewMachineFile(filepath.Join(d.GetPath(), define.TmpPrefixDir, vmType.String()))
+	socksDir, err := io.NewMachineFile(filepath.Join(d.GetPath(), define.SocksPrefixDir, vmType.String()))
 	if err != nil {
-		return nil, fmt.Errorf("unable to new machine file in %s: %w", tmpDir, err)
+		return nil, fmt.Errorf("unable to new machine file in %s: %w", socksDir, err)
 	}
 
 	dataDir, err := io.NewMachineFile(filepath.Join(d.GetPath(), define.DataPrefixDir, vmType.String()))
 	if err != nil {
-		return nil, fmt.Errorf("unable to new machine file in %s: %w", tmpDir, err)
+		return nil, fmt.Errorf("unable to new machine file in %s: %w", dataDir, err)
 	}
 
 	configDir, err := io.NewMachineFile(filepath.Join(d.GetPath(), define.ConfigPrefixDir, vmType.String()))
@@ -95,10 +96,10 @@ func GetMachineDirs(vmType defconfig.VMType) (*MachineDirs, error) {
 	}
 
 	Dirs = MachineDirs{
-		ConfigDir: configDir, // ${BauklotzeHomePath}/config/{wsl,libkrun,qemu,hyper...}/
-		DataDir:   dataDir,   // ${BauklotzeHomePath}/data/{wsl2,libkrun,qemu,hyper...}/
-		TmpDir:    tmpDir,    // ${BauklotzeHomePath}/tmp/{wsl2,libkrun,qemu,hyper...}/
-		LogsDir:   logsDir,   // ${BauklotzeHomePath}/logs/{wsl2,libkrun,qemu,hyper...}/
+		ConfigDir: configDir,
+		DataDir:   dataDir,
+		SocksDir:  socksDir,
+		LogsDir:   logsDir,
 		Hypervisor: &Hypervisor{
 			Bin:     hypervisorBin,
 			LibsDir: libexecDir,
@@ -109,8 +110,8 @@ func GetMachineDirs(vmType defconfig.VMType) (*MachineDirs, error) {
 		},
 	}
 
-	if err = os.MkdirAll(tmpDir.GetPath(), 0755); err != nil {
-		return nil, fmt.Errorf("unable to create runtime dir: %s: %w", tmpDir.GetPath(), err)
+	if err = os.MkdirAll(socksDir.GetPath(), 0755); err != nil {
+		return nil, fmt.Errorf("unable to create runtime dir: %s: %w", socksDir.GetPath(), err)
 	}
 	if err = os.MkdirAll(configDir.GetPath(), 0755); err != nil {
 		return nil, fmt.Errorf("unable to create config dir: %s: %w", configDir.GetPath(), err)

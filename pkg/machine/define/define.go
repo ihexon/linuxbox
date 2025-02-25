@@ -14,7 +14,7 @@ const (
 	LogPrefixDir     = "logs"
 	LibexecPrefixDir = "libexec"
 	DataPrefixDir    = "data"
-	TmpPrefixDir     = "tmp"
+	SocksPrefixDir   = "socks"
 
 	DefaultIdentityName = "sshkey"
 

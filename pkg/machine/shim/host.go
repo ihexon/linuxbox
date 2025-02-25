@@ -52,7 +52,7 @@ func Init(mp vmconfig.VMProvider) error {
 	}
 	logrus.Infof("ConfigDir:     %s", dirs.ConfigDir.GetPath())
 	logrus.Infof("DataDir:       %s", dirs.DataDir.GetPath())
-	logrus.Infof("TmpDir:    	 %s", dirs.TmpDir.GetPath())
+	logrus.Infof("SocksDir:    	 %s", dirs.SocksDir.GetPath())
 	logrus.Infof("LogsDir:       %s", dirs.LogsDir.GetPath())
 
 	sshKey, err := vmconfig.GetSSHIdentityPath(mp.VMType())

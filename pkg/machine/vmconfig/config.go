@@ -27,10 +27,10 @@ type ResourceConfig struct {
 type MachineDirs struct {
 	ConfigDir       *io.VMFile       `json:"ConfigDir"`
 	DataDir         *io.VMFile       `json:"DataDir"`
-	TmpDir          *io.VMFile       `json:"RuntimeDir"`
 	LogsDir         *io.VMFile       `json:"LogsDir"`
 	Hypervisor      *Hypervisor      `json:"Hypervisor"`
 	NetworkProvider *NetworkProvider `json:"NetworkProvider"`
+	SocksDir        *io.VMFile       `json:"SocksDir"`
 }
 
 type Hypervisor struct {

@@ -48,10 +48,10 @@ func startForwarder(mc *vmconfig.MachineConfig, socksOnHost string, socksOnGuest
 		return fmt.Errorf("%s does not exist", gvpBin.GetPath())
 	}
 
-	tmpDir := mc.Dirs.TmpDir
+	socksDir := mc.Dirs.SocksDir
 	gvproxyCommand := gvproxy.NewGvproxyCommand() // New a GvProxyCommands
 
-	gvpPidFile, _ := tmpDir.AppendToNewVMFile(fmt.Sprintf("%s-%s", mc.VMName, define.GvProxyPidName))
+	gvpPidFile, _ := socksDir.AppendToNewVMFile(fmt.Sprintf("%s-%s", mc.VMName, define.GvProxyPidName))
 	if err := gvpPidFile.Delete(true); err != nil {
 		return fmt.Errorf("failed to delete pid file: %w", err)
 	}

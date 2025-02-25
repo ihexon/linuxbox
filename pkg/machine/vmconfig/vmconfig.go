@@ -37,9 +37,9 @@ type VMProvider interface { //nolint:interfacebloat
 }
 
 func (mc *MachineConfig) PodmanAPISocketHost() *io.VMFile {
-	tmpDir := mc.Dirs.TmpDir
+	socksDir := mc.Dirs.SocksDir
 	s := fmt.Sprintf("%s-podman-api.sock", mc.VMName)
-	podmanAPI, _ := tmpDir.AppendToNewVMFile(s)
+	podmanAPI, _ := socksDir.AppendToNewVMFile(s)
 	return podmanAPI
 }
 
@@ -76,12 +76,12 @@ type MachineConfig struct {
 
 type Bootable struct {
 	Image   *io.VMFile `json:"ImagePath" validate:"required"`
-	Version string     `json:"Version" validate:"required"`
+	Version string     `json:"Version"   validate:"required"`
 }
 
 type DataDisk struct {
 	Image   *io.VMFile `json:"ImagePath" validate:"required"`
-	Version string     `json:"Version" validate:"required"`
+	Version string     `json:"Version"   validate:"required"`
 }
 
 type GvproxyCommand struct {
@@ -218,19 +218,19 @@ func loadMachineFromFQPath(f *io.VMFile) (*MachineConfig, error) {
 }
 
 func (mc *MachineConfig) GVProxyNetworkBackendSocks() (*io.VMFile, error) {
-	tmpDir, err := mc.TmpDir()
+	socksDir, err := mc.SocksDir()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get workspace tmp dir: %w", err)
 	}
-	return tmpDir.AppendToNewVMFile(fmt.Sprintf("%s-gvproxy.sock", mc.VMName)) //nolint:wrapcheck
+	return socksDir.AppendToNewVMFile(fmt.Sprintf("%s-gvproxy.sock", mc.VMName)) //nolint:wrapcheck
 }
 
-// TmpDir is simple helper function to obtain the workspace tmp dir
-func (mc *MachineConfig) TmpDir() (*io.VMFile, error) {
-	if mc.Dirs == nil || mc.Dirs.TmpDir == nil || mc.Dirs.TmpDir.GetPath() == "" {
-		return nil, errors.New("no workspace tmp directory set")
+// SocksDir is simple helper function to obtain the workspace tmp dir
+func (mc *MachineConfig) SocksDir() (*io.VMFile, error) {
+	if mc.Dirs == nil || mc.Dirs.SocksDir.GetPath() == "" {
+		return nil, errors.New("no workspace socks directory set")
 	}
-	return mc.Dirs.TmpDir, nil
+	return mc.Dirs.SocksDir, nil
 }
 
 // write is a non-locking way to write the machine configuration file to disk

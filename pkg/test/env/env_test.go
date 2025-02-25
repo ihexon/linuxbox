@@ -1,12 +1,13 @@
 package env
 
 import (
-	"bauklotze/pkg/machine/provider"
-	"bauklotze/pkg/machine/vmconfig"
 	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
+
+	"bauklotze/pkg/machine/provider"
+	"bauklotze/pkg/machine/vmconfig"
 )
 
 func TestGetSSHIdentityPath(t *testing.T) {
@@ -81,7 +82,7 @@ func TestGetMachineDirs(t *testing.T) {
 		t.Errorf("GetMachineDirs() failed: %v", err)
 	}
 	t.Logf("DataDir: %s", dirs.DataDir.Path)
-	t.Logf("TmpDir: %s", dirs.TmpDir.Path)
+	t.Logf("SocksDir: %s", dirs.SocksDir.Path)
 	t.Logf("LogDir: %s", dirs.LogsDir.Path)
 	t.Logf("ConfigDir: %s", dirs.ConfigDir.Path)
 }
