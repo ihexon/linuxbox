@@ -120,7 +120,9 @@ func startForwarder(mc *vmconfig.MachineConfig, socksOnHost string, socksOnGuest
 func waitForSocket(socketPath string) error {
 	var backoff = 100 * time.Millisecond
 	logrus.Infof("Test that %s socket is created", socketPath)
-	for range 10 {
+	// we wait for the socket to be created, when gvproxy first run on macOS
+	// the Gatekeeper/Notarization will slow done the gvproxy code executed
+	for range 100 {
 		err := fileutils.Exists(socketPath)
 		if err == nil {
 			return nil
