@@ -8,11 +8,12 @@ import (
 	"fmt"
 	"time"
 
+	sshService "bauklotze/pkg/machine/ssh/service"
+
 	"github.com/sirupsen/logrus"
 
 	"bauklotze/pkg/machine/io"
 	"bauklotze/pkg/machine/vmconfig"
-	"bauklotze/pkg/ssh"
 )
 
 var (
@@ -31,7 +32,7 @@ func ConductVMReadinessCheck(ctx context.Context, mc *vmconfig.MachineConfig) bo
 			time.Sleep(defaultBackoff)
 		}
 
-		if err := ssh.CommonSSHSilent(mc.SSH.RemoteUsername, mc.SSH.IdentityPath, mc.VMName, mc.SSH.Port, []string{"uname -a"}); err != nil {
+		if err := sshService.GetKernelInfo(mc); err != nil {
 			logrus.Warnf("SSH readiness check for machine failed: %v, try again", err)
 			continue
 		}

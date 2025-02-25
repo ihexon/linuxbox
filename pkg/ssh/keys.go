@@ -4,7 +4,6 @@
 package ssh
 
 import (
-	"bauklotze/pkg/machine/io"
 	"bytes"
 	"fmt"
 	"os"
@@ -12,6 +11,8 @@ import (
 	"strings"
 
 	"github.com/sirupsen/logrus"
+
+	"bauklotze/pkg/machine/io"
 )
 
 var sshCommand = []string{"ssh-keygen", "-N", "", "-t", "ed25519", "-f"}
@@ -41,7 +42,7 @@ func generatekeys(writeLocation string) error {
 	cmd.Stderr = stdErr
 
 	if err := cmd.Start(); err != nil {
-		return fmt.Errorf("failed to start ssh command: %w", err)
+		return fmt.Errorf("failed to start ssh command:%w", err)
 	}
 	waitErr := cmd.Wait()
 	if waitErr != nil {

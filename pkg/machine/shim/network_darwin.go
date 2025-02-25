@@ -6,20 +6,20 @@
 package shim
 
 import (
-	"bauklotze/pkg/machine/define"
-	"bauklotze/pkg/machine/events"
-	"bauklotze/pkg/machine/vmconfig"
-	"bauklotze/pkg/system"
 	"fmt"
 	"os"
 	"reflect"
 	"time"
 	"unsafe"
 
-	"github.com/containers/storage/pkg/fileutils"
-
 	gvproxy "github.com/containers/gvisor-tap-vsock/pkg/types"
+	"github.com/containers/storage/pkg/fileutils"
 	"github.com/sirupsen/logrus"
+
+	"bauklotze/pkg/machine/define"
+	"bauklotze/pkg/machine/events"
+	"bauklotze/pkg/machine/vmconfig"
+	"bauklotze/pkg/system"
 )
 
 // podmanSockets returns the path to the podman api socket on host/guest

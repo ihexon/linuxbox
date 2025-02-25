@@ -6,19 +6,19 @@
 package vfkit
 
 import (
+	"fmt"
+	"strconv"
+
 	"bauklotze/pkg/decompress"
 	"bauklotze/pkg/machine/defconfig"
 	"bauklotze/pkg/machine/define"
 	"bauklotze/pkg/machine/vmconfig"
 	"bauklotze/pkg/machine/volumes"
 	"bauklotze/pkg/port"
-	"fmt"
-	"strconv"
-
-	vfConfig "github.com/crc-org/vfkit/pkg/config"
-	"github.com/sirupsen/logrus"
 
 	gvptypes "github.com/containers/gvisor-tap-vsock/pkg/types"
+	vfConfig "github.com/crc-org/vfkit/pkg/config"
+	"github.com/sirupsen/logrus"
 )
 
 type VFkitStubber struct {

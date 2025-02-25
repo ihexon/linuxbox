@@ -15,6 +15,7 @@ import (
 	"bauklotze/pkg/machine/events"
 	"bauklotze/pkg/machine/helper"
 	"bauklotze/pkg/machine/io"
+	sshService "bauklotze/pkg/machine/ssh/service"
 	"bauklotze/pkg/machine/vmconfig"
 	"bauklotze/pkg/machine/volumes"
 	"bauklotze/pkg/port"
@@ -224,29 +225,9 @@ func SleepNotifier(mc *vmconfig.MachineConfig) {
 }
 
 func TimeSync(mc *vmconfig.MachineConfig) error {
-	syncTimeCmd := fmt.Sprintf("date -s @%d", time.Now().Unix())
-	if err := ssh.CommonSSHSilent(
-		mc.SSH.RemoteUsername,
-		mc.SSH.IdentityPath,
-		mc.VMName,
-		mc.SSH.Port,
-		[]string{syncTimeCmd},
-	); err != nil {
-		return fmt.Errorf("failed to sync timestamp: %w", err)
-	}
-	return nil
+	return sshService.DoTimeSync(mc) //nolint:wrapcheck
 }
 
 func DiskSync(mc *vmconfig.MachineConfig) error {
-	cmdline := "sync"
-	if err := ssh.CommonSSHSilent(
-		mc.SSH.RemoteUsername,
-		mc.SSH.IdentityPath,
-		mc.VMName,
-		mc.SSH.Port,
-		[]string{cmdline},
-	); err != nil {
-		return fmt.Errorf("failed to sync timestamp: %w", err)
-	}
-	return nil
+	return sshService.DoSync(mc) //nolint:wrapcheck
 }
