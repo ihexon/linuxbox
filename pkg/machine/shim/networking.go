@@ -32,7 +32,7 @@ func ConductVMReadinessCheck(ctx context.Context, mc *vmconfig.MachineConfig) bo
 			time.Sleep(defaultBackoff)
 		}
 
-		if err := sshService.GetKernelInfo(mc); err != nil {
+		if err := sshService.GetKernelInfo(ctx, mc); err != nil {
 			logrus.Warnf("SSH readiness check for machine failed: %v, try again", err)
 			continue
 		}

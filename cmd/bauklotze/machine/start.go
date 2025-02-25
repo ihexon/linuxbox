@@ -155,7 +155,7 @@ func start(cmd *cobra.Command, args []string) error {
 
 		// Start Sleep Notifier and dispatch tasks
 		logrus.Infof("Start Sleep Notifier and dispatch tasks")
-		go shim.SleepNotifier(mc)
+		go shim.SleepNotifier(ctx, mc)
 
 		if err = mc.UpdateLastBoot(); err != nil {
 			logrus.Errorf("failed to update last boot time: %v", err)

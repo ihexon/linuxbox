@@ -209,14 +209,14 @@ func Start(ctx context.Context, mc *vmconfig.MachineConfig) (context.Context, er
 }
 
 // SleepNotifier start Sleep Notifier and dispatch tasks
-func SleepNotifier(mc *vmconfig.MachineConfig) {
+func SleepNotifier(ctx context.Context, mc *vmconfig.MachineConfig) {
 	notifierCh := notifier.GetInstance().Start()
 	for { //nolint:gosimple
 		select {
 		case activity := <-notifierCh:
 			if activity.Type == notifier.Awake {
 				logrus.Infof("machine awake, dispatch tasks")
-				if err := TimeSync(mc); err != nil {
+				if err := TimeSync(ctx, mc); err != nil {
 					logrus.Errorf("Failed to sync timestamp: %v", err)
 				}
 			}
@@ -224,8 +224,8 @@ func SleepNotifier(mc *vmconfig.MachineConfig) {
 	}
 }
 
-func TimeSync(mc *vmconfig.MachineConfig) error {
-	return sshService.DoTimeSync(mc) //nolint:wrapcheck
+func TimeSync(ctx context.Context, mc *vmconfig.MachineConfig) error {
+	return sshService.DoTimeSync(ctx, mc) //nolint:wrapcheck
 }
 
 func DiskSync(mc *vmconfig.MachineConfig) error {
