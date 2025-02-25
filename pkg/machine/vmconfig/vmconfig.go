@@ -4,11 +4,6 @@
 package vmconfig
 
 import (
-	allFlag "bauklotze/pkg/machine/allflag"
-	"bauklotze/pkg/machine/defconfig"
-	"bauklotze/pkg/machine/define"
-	"bauklotze/pkg/machine/io"
-	"bauklotze/pkg/machine/volumes"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -19,9 +14,15 @@ import (
 	"strings"
 	"time"
 
-	"github.com/containers/storage/pkg/ioutils"
+	allFlag "bauklotze/pkg/machine/allflag"
+	"bauklotze/pkg/machine/defconfig"
+	"bauklotze/pkg/machine/define"
+	"bauklotze/pkg/machine/io"
+	"bauklotze/pkg/machine/volumes"
 
 	"github.com/containers/common/pkg/strongunits"
+	"github.com/containers/storage/pkg/ioutils"
+	"github.com/go-playground/validator/v10"
 
 	gvproxy "github.com/containers/gvisor-tap-vsock/pkg/types"
 )
@@ -74,13 +75,13 @@ type MachineConfig struct {
 }
 
 type Bootable struct {
-	Image   *io.VMFile `json:"ImagePath"`
-	Version string     `json:"Version"`
+	Image   *io.VMFile `json:"ImagePath" validate:"required"`
+	Version string     `json:"Version" validate:"required"`
 }
 
 type DataDisk struct {
-	Image   *io.VMFile `json:"ImagePath"`
-	Version string     `json:"Version"`
+	Image   *io.VMFile `json:"ImagePath" validate:"required"`
+	Version string     `json:"Version" validate:"required"`
 }
 
 type GvproxyCommand struct {
@@ -206,8 +207,13 @@ func loadMachineFromFQPath(f *io.VMFile) (*MachineConfig, error) {
 	}
 
 	if err = json.Unmarshal(b, mc); err != nil {
-		return nil, fmt.Errorf("unable to load machine config file: %w", err)
+		return nil, fmt.Errorf("invalid JSON: %w", err)
 	}
+	validate := validator.New()
+	if err = validate.Struct(mc); err != nil {
+		return nil, fmt.Errorf("invalid machine config: %w", err)
+	}
+
 	return mc, nil
 }
 

@@ -106,7 +106,6 @@ func initMachine(cmd *cobra.Command, args []string) error {
 	allFlag.Volumes = append(allFlag.Volumes, cfg.Volumes.Get()...)
 
 	mc, err := shim.GetVMConf(allFlag.VMName, []vmconfig.VMProvider{vmp})
-	// err != nil means the machine config not find and need to initialize the VM
 	if err != nil {
 		logrus.Warnf("Get machine configure error: %v, try to initialize the VM", err)
 		events.NotifyInit(events.InitNewMachine)
