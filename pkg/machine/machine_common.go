@@ -4,6 +4,7 @@
 package machine
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -15,11 +16,13 @@ import (
 const defaultPingTimeout = 5 * time.Second
 const defaultPingInterval = 200 * time.Millisecond
 
-func WaitPodmanReady(sock string) error {
+func WaitPodmanReady(ctx context.Context, sock string) error {
 	client := httpclient.New().SetTransport(httpclient.CreateUnixTransport(sock))
 	timeout := time.After(defaultPingTimeout)
 	for {
 		select {
+		case <-ctx.Done():
+			return fmt.Errorf("cancel WaitPodmanReady, ctx has been done: %w", context.Cause(ctx))
 		case <-timeout:
 			return fmt.Errorf("timeout reached while waiting for Podman API")
 		default:

@@ -146,7 +146,7 @@ func start(cmd *cobra.Command, args []string) error {
 		}
 
 		// Test the podman api which forwarded from host to guest
-		err = machine.WaitPodmanReady(mc.GvProxy.ForwardInfo["forward-sock"][0])
+		err = machine.WaitPodmanReady(ctx, mc.GvProxy.ForwardInfo["forward-sock"][0])
 		if err != nil {
 			return fmt.Errorf("failed to ping podman api: %w", err)
 		}
