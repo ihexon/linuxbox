@@ -85,22 +85,22 @@ func (c *Cmd) RunCtx() error {
 
 	client, err := c.newClient()
 	if err != nil {
-		return fmt.Errorf("failed to create ssh client:%w", err)
+		return fmt.Errorf("failed to create ssh client: %w", err)
 	}
 	defer client.Close()
 
 	c.mySession, err = client.NewSession()
 	if err != nil {
-		return fmt.Errorf("failed to create ssh session:%w", err)
+		return fmt.Errorf("failed to create ssh session: %w", err)
 	}
 
 	outPipe, err := c.mySession.StdoutPipe()
 	if err != nil {
-		return fmt.Errorf("failed to get session.StdoutPipe():%w", err)
+		return fmt.Errorf("failed to get session.StdoutPipe(): %w", err)
 	}
 	errPipe, err := c.mySession.StderrPipe()
 	if err != nil {
-		return fmt.Errorf("failed to get session.StderrPipe():%w", err)
+		return fmt.Errorf("failed to get session.StderrPipe(): %w", err)
 	}
 
 	var wg sync.WaitGroup
@@ -122,7 +122,7 @@ func (c *Cmd) RunCtx() error {
 	}
 
 	if err = c.mySession.Start(c.String()); err != nil {
-		return fmt.Errorf("failed to start ssh command:%w", err)
+		return fmt.Errorf("failed to start ssh command: %w", err)
 	}
 	defer func() {
 		_ = c.mySession.Close()

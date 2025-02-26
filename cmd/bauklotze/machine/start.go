@@ -183,8 +183,6 @@ func startMachine(parentCtx context.Context, mc *vmconfig.MachineConfig) error {
 // cleanUp deletes the temporary socks file and terminates the child process using
 // cmd.Process.Kill()
 func cleanUp(mc *vmconfig.MachineConfig) {
-	events.NotifyRun(events.SyncMachineDisk)
-
 	logrus.Infof("Start clean up files")
 	gvpBackendSocket, _ := mc.GVProxyNetworkBackendSocks()
 	_ = gvpBackendSocket.Delete(true)
@@ -200,6 +198,7 @@ func cleanUp(mc *vmconfig.MachineConfig) {
 }
 
 func SyncDisk(mc *vmconfig.MachineConfig) {
+	events.NotifyRun(events.SyncMachineDisk)
 	if err := shim.DiskSync(mc); err != nil {
 		logrus.Warnf("Failed to sync disk: %v", err)
 		return

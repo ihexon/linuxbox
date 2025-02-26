@@ -4,17 +4,12 @@
 package vfkit
 
 import (
-	"bauklotze/pkg/machine/events"
-	"bauklotze/pkg/machine/helper"
-	"bauklotze/pkg/machine/ignition"
-	"bauklotze/pkg/machine/vmconfig"
-	mypty "bauklotze/pkg/pty"
 	"fmt"
-	"io"
-	"os"
+
+	"bauklotze/pkg/machine/helper"
+	"bauklotze/pkg/machine/vmconfig"
 
 	vfConfig "github.com/crc-org/vfkit/pkg/config"
-	"github.com/sirupsen/logrus"
 )
 
 const applehvMACAddress = "5a:94:ef:e4:0c:ee"
@@ -66,49 +61,4 @@ func setupDevices(mc *vmconfig.MachineConfig) ([]vfConfig.VirtioDevice, error) {
 	devices = append(devices, serial)
 
 	return devices, nil
-}
-
-func startVFKit(mc *vmconfig.MachineConfig) error {
-	bootloader := mc.AppleVFkitHypervisor.Vfkit.VirtualMachine.Bootloader
-	if bootloader == nil {
-		return fmt.Errorf("unable to determine boot loader for this machine")
-	}
-
-	vmc := vfConfig.NewVirtualMachine(uint(mc.Resources.CPUs), uint64(mc.Resources.Memory), bootloader)
-
-	defaultDevices, err := setupDevices(mc)
-	if err != nil {
-		return fmt.Errorf("failed to get default devices: %w", err)
-	}
-	vmc.Devices = append(vmc.Devices, defaultDevices...)
-
-	vfkitBin := mc.Dirs.Hypervisor.Bin.GetPath()
-	logrus.Infof("vfkit binary path is: %s", vfkitBin)
-
-	vfkitCmd, err := vmc.Cmd(vfkitBin)
-	if err != nil {
-		return fmt.Errorf("failed to create vfkit command: %w", err)
-	}
-
-	err = ignition.GenerateIgnScripts(mc)
-	if err != nil {
-		return fmt.Errorf("failed to generate ignition scripts: %w", err)
-	}
-
-	logrus.Infof("FULL VFKIT CMDLINE:%q", vfkitCmd.Args)
-	events.NotifyRun(events.StartVMProvider, "vfkit staring...")
-
-	// Run vfkit in pty, the pty should never close because the vfkit is a background process
-	ptmx, err := mypty.RunInPty(vfkitCmd)
-	if err != nil {
-		return fmt.Errorf("failed to run vfkit in pty: %w", err)
-	}
-	mc.VmmCmd = vfkitCmd
-	go func() {
-		_, _ = io.Copy(os.Stdout, ptmx)
-	}()
-
-	events.NotifyRun(events.StartVMProvider, "vfkit started")
-
-	return nil
 }

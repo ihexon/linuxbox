@@ -8,14 +8,20 @@ package vfkit
 import (
 	"context"
 	"fmt"
+	"io"
+	"os"
+	"os/exec"
 	"strconv"
 
 	"bauklotze/pkg/decompress"
 	"bauklotze/pkg/machine/defconfig"
 	"bauklotze/pkg/machine/define"
+	"bauklotze/pkg/machine/events"
+	"bauklotze/pkg/machine/ignition"
 	"bauklotze/pkg/machine/vmconfig"
 	"bauklotze/pkg/machine/volumes"
 	"bauklotze/pkg/port"
+	mypty "bauklotze/pkg/pty"
 
 	gvptypes "github.com/containers/gvisor-tap-vsock/pkg/types"
 	vfConfig "github.com/crc-org/vfkit/pkg/config"
@@ -58,7 +64,49 @@ func (l VFkitStubber) VMType() defconfig.VMType {
 }
 
 func (l VFkitStubber) StartVM(ctx context.Context, mc *vmconfig.MachineConfig) error {
-	return startVFKit(mc)
+	bootloader := mc.AppleVFkitHypervisor.Vfkit.VirtualMachine.Bootloader
+	if bootloader == nil {
+		return fmt.Errorf("unable to determine boot loader for this machine")
+	}
+
+	vmc := vfConfig.NewVirtualMachine(uint(mc.Resources.CPUs), uint64(mc.Resources.Memory), bootloader)
+
+	defaultDevices, err := setupDevices(mc)
+	if err != nil {
+		return fmt.Errorf("failed to get default devices: %w", err)
+	}
+	vmc.Devices = append(vmc.Devices, defaultDevices...)
+
+	vfkitBin := mc.Dirs.Hypervisor.Bin.GetPath()
+	logrus.Infof("vfkit binary path is: %q", vfkitBin)
+
+	cmd, err := vmc.Cmd(vfkitBin)
+	if err != nil {
+		return fmt.Errorf("failed to create vfkit command: %w", err)
+	}
+
+	if err = ignition.GenerateIgnScripts(mc); err != nil {
+		return fmt.Errorf("failed to generate ignition scripts: %w", err)
+	}
+
+	vfkitCmd := exec.CommandContext(ctx, vfkitBin, cmd.Args[1:]...)
+
+	logrus.Infof("FULL VFKIT CMDLINE: %q", vfkitCmd.Args)
+	events.NotifyRun(events.StartVMProvider, "vfkit staring...")
+
+	// Run vfkit in pty, the pty should never close because the vfkit is a background process
+	ptmx, err := mypty.RunInPty(vfkitCmd)
+	if err != nil {
+		return fmt.Errorf("failed to run vfkit in pty: %w", err)
+	}
+	mc.VmmCmd = vfkitCmd
+	go func() {
+		_, _ = io.Copy(os.Stdout, ptmx)
+	}()
+
+	events.NotifyRun(events.StartVMProvider, "vfkit started")
+
+	return nil
 }
 
 // CreateVMConfig generates VM settings aligned with the krunkit structure,
