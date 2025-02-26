@@ -75,8 +75,12 @@ func (c *Cmd) String() string {
 // RunCtx executes the given callback within session. Sends SIGINT when the context is canceled.
 func (c *Cmd) RunCtx() error {
 	context.AfterFunc(c.context, func() {
-		_ = c.mySession.Signal(c.signal)
-		logrus.Warnf("send signal [ %s ] to [ %q ], cause by %v", c.signal, c.name, context.Cause(c.context))
+		if c.mySession != nil {
+			_ = c.mySession.Signal(c.signal)
+			logrus.Warnf("send signal [ %s ] to [ %q ], cause by %v", c.signal, c.name, context.Cause(c.context))
+		} else {
+			logrus.Infof("ssh [ %q ] session is nil, no signal sent", c.name)
+		}
 	})
 
 	client, err := c.newClient()
@@ -120,7 +124,10 @@ func (c *Cmd) RunCtx() error {
 	if err = c.mySession.Start(c.String()); err != nil {
 		return fmt.Errorf("failed to start ssh command:%w", err)
 	}
-	defer c.mySession.Close()
+	defer func() {
+		_ = c.mySession.Close()
+		c.mySession = nil
+	}()
 
 	go logStdOut(outPipe)
 	go logStdErr(errPipe)

@@ -5,20 +5,9 @@ package system
 
 import (
 	"fmt"
-	"os/exec"
 
 	"github.com/shirou/gopsutil/v3/process"
-	"github.com/sirupsen/logrus"
 )
-
-func KillCmdWithWarn(cmd ...*exec.Cmd) {
-	for _, cmd := range cmd {
-		if cmd != nil {
-			logrus.Warnf("Killing process PID: %d, PATH: %q", cmd.Process.Pid, cmd.Path)
-			_ = cmd.Process.Kill()
-		}
-	}
-}
 
 func GetPPID(pid int32) (int32, error) {
 	proc, err := process.NewProcess(pid)

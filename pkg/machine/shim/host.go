@@ -147,7 +147,38 @@ func getMCsOverProviders(stubs []vmconfig.VMProvider) (map[string]*vmconfig.Mach
 	return mcs, nil
 }
 
-func startNetworkProvider(mc *vmconfig.MachineConfig) error {
+func Wait(ctx context.Context, mc *vmconfig.MachineConfig) error {
+	errChanGvp := make(chan error, 1) //nolint:gomnd
+	go func() {
+		if mc.GvpCmd != nil {
+			logrus.Infoln("Waiting for gvisor network provider to exit")
+			errChanGvp <- mc.GvpCmd.Wait()
+		} else {
+			logrus.Warnf("GvpCmd is nil, gvp network provider is not started")
+		}
+	}()
+
+	errChanVmm := make(chan error, 1) //nolint:gomnd
+	go func() {
+		if mc.VmmCmd != nil {
+			logrus.Infoln("Waiting for hypervisor to exit")
+			errChanVmm <- mc.VmmCmd.Wait()
+		} else {
+			logrus.Warnf("VmmCmd is nil, hypervisor is not started")
+		}
+	}()
+
+	select {
+	case <-ctx.Done():
+		return fmt.Errorf("context done: %w", context.Cause(ctx))
+	case err := <-errChanGvp:
+		return fmt.Errorf("network provider exit: %w", err)
+	case err := <-errChanVmm:
+		return fmt.Errorf("hypervisor exit: %w", err)
+	}
+}
+
+func startNetworkProvider(ctx context.Context, mc *vmconfig.MachineConfig) error {
 	// p is the port maybe changed different from the default port which 6123
 	p, err := port.GetFree(mc.SSH.Port)
 	if err != nil {
@@ -155,7 +186,7 @@ func startNetworkProvider(mc *vmconfig.MachineConfig) error {
 	}
 	// set the port to the machine configure
 	mc.SSH.Port = p
-	podmanAPISocksInHost, podmanAPISocksInGuest, err := startNetworking(mc)
+	podmanAPISocksInHost, podmanAPISocksInGuest, err := startNetworking(ctx, mc)
 	if err != nil {
 		return fmt.Errorf("failed to start network provider: %w", err)
 	}
@@ -173,11 +204,11 @@ func tryKillHyperVisorBeforeRun(mc *vmconfig.MachineConfig) {
 	}
 }
 
-func startVMProvider(mc *vmconfig.MachineConfig) error {
+func startVMProvider(ctx context.Context, mc *vmconfig.MachineConfig) error {
 	tryKillHyperVisorBeforeRun(mc)
 	provider := mc.VMProvider
 	logrus.Infof("Start VM provider: %s", provider.VMType())
-	return provider.StartVM(mc) //nolint:wrapcheck
+	return provider.StartVM(ctx, mc) //nolint:wrapcheck
 }
 
 // Start the machine It will start network provider and hypervisor:
@@ -189,13 +220,13 @@ func startVMProvider(mc *vmconfig.MachineConfig) error {
 // Note: this function is a non-block function, it will return immediately after start the network provider and hypervisor
 func Start(ctx context.Context, mc *vmconfig.MachineConfig) (context.Context, error) {
 	// First start network provider which provided by gvproxy
-	err := startNetworkProvider(mc)
+	err := startNetworkProvider(ctx, mc)
 	if err != nil {
 		return nil, fmt.Errorf("failed to start network provider: %w", err)
 	}
 
 	// Start HyperVisor which provided by krunkit(arm64)/vfkit(x86_64)
-	err = startVMProvider(mc)
+	err = startVMProvider(ctx, mc)
 	if err != nil {
 		return nil, fmt.Errorf("failed to start vm provider: %w", err)
 	}

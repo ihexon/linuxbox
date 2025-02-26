@@ -6,8 +6,10 @@
 package shim
 
 import (
+	"context"
 	"fmt"
 	"os"
+	"os/exec"
 	"reflect"
 	"time"
 	"unsafe"
@@ -40,7 +42,7 @@ func tryKillGvProxyBeforRun(mc *vmconfig.MachineConfig) {
 	}
 }
 
-func startForwarder(mc *vmconfig.MachineConfig, socksOnHost string, socksOnGuest string) error {
+func startForwarder(ctx context.Context, mc *vmconfig.MachineConfig, socksOnHost string, socksOnGuest string) error {
 	tryKillGvProxyBeforRun(mc)
 	gvpBin := mc.Dirs.NetworkProvider.Bin
 	logrus.Infof("Gvproxy binary: %s", mc.Dirs.NetworkProvider.Bin.GetPath())
@@ -81,7 +83,7 @@ func startForwarder(mc *vmconfig.MachineConfig, socksOnHost string, socksOnGuest
 	bArray := reflect.NewAt(v.Type(), unsafe.Pointer(v.UnsafeAddr())).Elem().Interface().(map[string]string)
 	mc.GvProxy.Sockets = bArray
 
-	gvpExecCmd := gvproxyCommand.Cmd(gvpBin.GetPath())
+	gvpExecCmd := exec.CommandContext(ctx, gvpBin.GetPath(), gvproxyCommand.ToCmdline()...)
 	gvpExecCmd.Stdout = os.Stdout
 	gvpExecCmd.Stderr = os.Stderr
 
@@ -90,24 +92,20 @@ func startForwarder(mc *vmconfig.MachineConfig, socksOnHost string, socksOnGuest
 	if err := gvpExecCmd.Start(); err != nil {
 		return fmt.Errorf("unable to execute: %q: %w", gvpExecCmd.Args, err)
 	}
-	mc.GvpCmd = gvpExecCmd
+
 	events.NotifyRun(events.StartGvProxy, "finished")
 
 	mc.GvProxy.HostSocks = []string{socksOnHost}
 	mc.GvProxy.PidFile = gvproxyCommand.PidFile
 	mc.GvProxy.SSHPort = gvproxyCommand.SSHPort
 	mc.GvProxy.MTU = gvproxyCommand.MTU
+	mc.GvpCmd = gvpExecCmd
 
-	// There is a small chance that gvproxy is started but the backend socket is not created(provided by -listen-vfkit),
-	// causing krunkit and vfkit to freeze.
-	socks, err := mc.GVProxyNetworkBackendSocks()
-	if err != nil {
-		return fmt.Errorf("failed to get gvproxy network backend socks: %w", err)
-	}
+	socks, _ := mc.GVProxyNetworkBackendSocks()
 
 	// WaitForSocket when gvproxy started, we also check that the gvproxy socket is created
 	// there is a little chance that the socket is not created, causing krunkit to freeze
-	if err = waitForSocket(socks.GetPath()); err != nil {
+	if err := waitForSocket(ctx, socks.GetPath()); err != nil {
 		return fmt.Errorf("failed to wait for gvproxy network backend socks: %w", err)
 	}
 
@@ -117,18 +115,22 @@ func startForwarder(mc *vmconfig.MachineConfig, socksOnHost string, socksOnGuest
 	return nil
 }
 
-func waitForSocket(socketPath string) error {
+func waitForSocket(ctx context.Context, socketPath string) error {
 	var backoff = 100 * time.Millisecond
 	logrus.Infof("Test that %s socket is created", socketPath)
 	// we wait for the socket to be created, when gvproxy first run on macOS
 	// the Gatekeeper/Notarization will slow done the gvproxy code executed
 	for range 100 {
-		err := fileutils.Exists(socketPath)
-		if err == nil {
+		select {
+		case <-ctx.Done():
+			return fmt.Errorf("cancel waitForSocket,ctx cancelled: %w", context.Cause(ctx))
+		default:
+			if err := fileutils.Exists(socketPath); err != nil {
+				logrus.Warnf("Gvproxy network backend socket not ready, try test %s again....", socketPath)
+				time.Sleep(backoff)
+			}
 			return nil
 		}
-		logrus.Warnf("Gvproxy network backend socket not ready, try test %s again....", socketPath)
-		time.Sleep(backoff)
 	}
 	return fmt.Errorf("gvproxy network backend socket file not created: %s", socketPath)
 }

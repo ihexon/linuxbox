@@ -6,6 +6,7 @@
 package vfkit
 
 import (
+	"context"
 	"fmt"
 	"strconv"
 
@@ -56,7 +57,7 @@ func (l VFkitStubber) VMType() defconfig.VMType {
 	return defconfig.VFkit
 }
 
-func (l VFkitStubber) StartVM(mc *vmconfig.MachineConfig) error {
+func (l VFkitStubber) StartVM(ctx context.Context, mc *vmconfig.MachineConfig) error {
 	return startVFKit(mc)
 }
 

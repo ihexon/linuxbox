@@ -4,6 +4,7 @@
 package vmconfig
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -33,7 +34,7 @@ type VMProvider interface { //nolint:interfacebloat
 	CreateVMConfig(mc *MachineConfig) error
 	MountType() volumes.VolumeMountType
 	SetupProviderNetworking(mc *MachineConfig, cmd *gvproxy.GvproxyCommand) error
-	StartVM(mc *MachineConfig) error
+	StartVM(ctx context.Context, mc *MachineConfig) error
 }
 
 func (mc *MachineConfig) PodmanAPISocketHost() *io.VMFile {
