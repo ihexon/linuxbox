@@ -8,11 +8,14 @@ package shim
 import (
 	"context"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"reflect"
 	"time"
 	"unsafe"
+
+	"bauklotze/pkg/pty"
 
 	gvproxy "github.com/containers/gvisor-tap-vsock/pkg/types"
 	"github.com/containers/storage/pkg/fileutils"
@@ -84,14 +87,17 @@ func startForwarder(ctx context.Context, mc *vmconfig.MachineConfig, socksOnHost
 	mc.GvProxy.Sockets = bArray
 
 	gvpExecCmd := exec.CommandContext(ctx, gvpBin.GetPath(), gvproxyCommand.ToCmdline()...)
-	gvpExecCmd.Stdout = os.Stdout
-	gvpExecCmd.Stderr = os.Stderr
 
 	logrus.Infof("GVPROXY FULL CMDLINE: %q", gvpExecCmd.Args)
 	events.NotifyRun(events.StartGvProxy, "staring...")
-	if err := gvpExecCmd.Start(); err != nil {
+
+	ptmx, err := pty.RunInPty(gvpExecCmd)
+	if err != nil {
 		return fmt.Errorf("unable to execute: %q: %w", gvpExecCmd.Args, err)
 	}
+	go func() {
+		_, _ = io.Copy(os.Stdout, ptmx)
+	}()
 
 	events.NotifyRun(events.StartGvProxy, "finished")
 
