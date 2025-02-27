@@ -7,7 +7,7 @@ import (
 )
 
 // ConfigDir is a simple helper to obtain the machine config dir
-func (mc *MachineConfig) ConfigDir() (*io.VMFile, error) {
+func (mc *MachineConfig) ConfigDir() (*io.FileWrapper, error) {
 	if mc.Dirs == nil || mc.Dirs.ConfigDir == nil {
 		return nil, errors.New("no configuration directory set")
 	}

@@ -17,7 +17,7 @@ func TestNewIgnitionBuilder(t *testing.T) {
 	ign := NewIgnitionBuilder(
 		&DynamicIgnitionV3{
 			CodeBuffer: nil,
-			IgnFile: io.VMFile{
+			IgnFile: io.FileWrapper{
 				Path: filepath.Join("/tmp", "initfs", "ign.sh"),
 			},
 			VMType: defconfig.LibKrun,

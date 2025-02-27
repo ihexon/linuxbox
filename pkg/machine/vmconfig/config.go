@@ -25,20 +25,20 @@ type ResourceConfig struct {
 }
 
 type MachineDirs struct {
-	ConfigDir       *io.VMFile       `json:"ConfigDir"`
-	DataDir         *io.VMFile       `json:"DataDir"`
-	LogsDir         *io.VMFile       `json:"LogsDir"`
+	ConfigDir       *io.FileWrapper  `json:"ConfigDir"`
+	DataDir         *io.FileWrapper  `json:"DataDir"`
+	LogsDir         *io.FileWrapper  `json:"LogsDir"`
 	Hypervisor      *Hypervisor      `json:"Hypervisor"`
 	NetworkProvider *NetworkProvider `json:"NetworkProvider"`
-	SocksDir        *io.VMFile       `json:"SocksDir"`
+	SocksDir        *io.FileWrapper  `json:"SocksDir"`
 }
 
 type Hypervisor struct {
-	LibsDir *io.VMFile `json:"LibsDir"`
-	Bin     *io.VMFile `json:"Bin"`
+	LibsDir *io.FileWrapper `json:"LibsDir"`
+	Bin     *io.FileWrapper `json:"Bin"`
 }
 
 type NetworkProvider struct {
-	LibsDir *io.VMFile `json:"LibsDir"`
-	Bin     *io.VMFile `json:"Bin"`
+	LibsDir *io.FileWrapper `json:"LibsDir"`
+	Bin     *io.FileWrapper `json:"Bin"`
 }

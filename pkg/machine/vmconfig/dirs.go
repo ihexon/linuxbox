@@ -15,12 +15,12 @@ import (
 )
 
 var (
-	workSpace *io.VMFile
+	workSpace *io.FileWrapper
 	Once      sync.Once
 )
 
 // SetWorkSpace is a function given a string, it returns a pointer to a VMDir and an error
-func SetWorkSpace(s string) (*io.VMFile, error) {
+func SetWorkSpace(s string) (*io.FileWrapper, error) {
 	var err error
 	Once.Do(func() {
 		workSpace, err = io.NewMachineFile(s)
@@ -32,7 +32,7 @@ func SetWorkSpace(s string) (*io.VMFile, error) {
 }
 
 // GetWorkSpace is a function that returns the workspace and an error
-func GetWorkSpace() (*io.VMFile, error) {
+func GetWorkSpace() (*io.FileWrapper, error) {
 	if workSpace == nil || workSpace.GetPath() == "" {
 		return nil, fmt.Errorf("workspace is not set")
 	}
@@ -82,16 +82,16 @@ func GetMachineDirs(vmType defconfig.VMType) (*MachineDirs, error) {
 		return nil, fmt.Errorf("unable to new machine file in %s: %w", logsDir, err)
 	}
 
-	var hypervisorBin *io.VMFile
+	var hypervisorBin *io.FileWrapper
 	// If hypervisor is Krunkit, use krunkit binary name
 	if vmType.String() == defconfig.LibKrun.String() {
-		hypervisorBin = &io.VMFile{Path: filepath.Join(libexecDir.GetPath(), define.KrunkitBinaryName)}
+		hypervisorBin = &io.FileWrapper{Path: filepath.Join(libexecDir.GetPath(), define.KrunkitBinaryName)}
 	} else {
 		// If hypervisor is vfkit, use vfkit binary name
-		hypervisorBin = &io.VMFile{Path: filepath.Join(libexecDir.GetPath(), define.VfkitBinaryName)}
+		hypervisorBin = &io.FileWrapper{Path: filepath.Join(libexecDir.GetPath(), define.VfkitBinaryName)}
 	}
 
-	networkProviderBin := &io.VMFile{
+	networkProviderBin := &io.FileWrapper{
 		Path: filepath.Join(libexecDir.GetPath(), define.GvProxyBinaryName),
 	}
 
@@ -124,7 +124,7 @@ func GetMachineDirs(vmType defconfig.VMType) (*MachineDirs, error) {
 }
 
 // GetSSHIdentityPath returns the path to the expected SSH private key
-func GetSSHIdentityPath(vmType defconfig.VMType) (*io.VMFile, error) {
+func GetSSHIdentityPath(vmType defconfig.VMType) (*io.FileWrapper, error) {
 	dirs, err := GetMachineDirs(vmType)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get machine dirs: %w", err)

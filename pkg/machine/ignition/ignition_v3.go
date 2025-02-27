@@ -18,10 +18,10 @@ import (
 )
 
 type DynamicIgnitionV3 struct {
-	IgnFile         io.VMFile
+	IgnFile         io.FileWrapper
 	VMType          defconfig.VMType
 	Mounts          []*volumes.Mount
-	SSHIdentityPath io.VMFile
+	SSHIdentityPath io.FileWrapper
 	TimeZone        string
 	CodeBuffer      *bytes.Buffer
 }

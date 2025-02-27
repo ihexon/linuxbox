@@ -42,7 +42,7 @@ func ConductVMReadinessCheck(ctx context.Context, mc *vmconfig.MachineConfig) bo
 }
 
 // startNetworking return podman socks in host, podman socks in guest, error
-func startNetworking(ctx context.Context, mc *vmconfig.MachineConfig) (*io.VMFile, *io.VMFile, error) {
+func startNetworking(ctx context.Context, mc *vmconfig.MachineConfig) (*io.FileWrapper, *io.FileWrapper, error) {
 	// socksInHost($workspace/tmp/[machine]-podman-api.socks) <--> socksInGuest(podman server)
 	socksInHost, socksInGuest, err := setupPodmanSocketsPath(mc)
 	if err != nil {
@@ -54,5 +54,5 @@ func startNetworking(ctx context.Context, mc *vmconfig.MachineConfig) (*io.VMFil
 		return nil, nil, fmt.Errorf("failed to start forwarder: %w", err)
 	}
 
-	return &io.VMFile{Path: socksInHost}, &io.VMFile{Path: socksInGuest}, err
+	return &io.FileWrapper{Path: socksInHost}, &io.FileWrapper{Path: socksInGuest}, err
 }

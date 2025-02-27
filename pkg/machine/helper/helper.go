@@ -22,7 +22,7 @@ func VirtIOFsToVFKitVirtIODevice(mounts []*volumes.Mount) ([]vfConfig.VirtioDevi
 	return virtioDevices, nil
 }
 
-func CreateAndResizeDisk(f *io.VMFile, newSize strongunits.GiB) error {
+func CreateAndResizeDisk(f *io.FileWrapper, newSize strongunits.GiB) error {
 	if f.Exist() {
 		if err := f.Delete(true); err != nil {
 			return fmt.Errorf("failed to delete disk: %w", err)

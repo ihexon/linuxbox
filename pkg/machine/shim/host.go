@@ -108,7 +108,7 @@ func Init(mp vmconfig.VMProvider) error {
 
 	// set ReportURL into machine configure
 	if allFlag.ReportURL != "" {
-		mc.ReportURL = &io.VMFile{Path: allFlag.ReportURL}
+		mc.ReportURL = &io.FileWrapper{Path: allFlag.ReportURL}
 	}
 
 	// Write the machine configure as json into mc.ConfigPath.GetPath()

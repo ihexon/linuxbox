@@ -17,7 +17,7 @@ import (
 
 var sshCommand = []string{"ssh-keygen", "-N", "", "-t", "ed25519", "-f"}
 
-func CreateSSHKeys(f *io.VMFile) (string, error) {
+func CreateSSHKeys(f *io.FileWrapper) (string, error) {
 	err := f.MakeBaseDir()
 	if err != nil {
 		return "", fmt.Errorf("failed to create ssh key directory: %w", err)
@@ -54,9 +54,9 @@ func generatekeys(writeLocation string) error {
 
 // GetSSHKeys checks to see if there is a ssh key at the provided location.
 // If not, we create the priv and pub keys. The ssh key is then returned.
-func GetSSHKeys(f *io.VMFile) (string, error) {
+func GetSSHKeys(f *io.FileWrapper) (string, error) {
 	if f.Exist() {
-		pubF := io.VMFile{
+		pubF := io.FileWrapper{
 			Path: f.GetPath() + ".pub",
 		}
 		logrus.Infof("SSH key already exists,read the %s", f.GetPath())

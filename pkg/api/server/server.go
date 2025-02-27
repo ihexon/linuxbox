@@ -31,9 +31,9 @@ type APIServer struct {
 func RestService(ctx context.Context, mc *vmconfig.MachineConfig, endPoint string) error {
 	// Set stdin to /dev/null
 	_ = internal.RedirectStdin()
-	// When deleting files, wrap the path in a `&io.VMFile` so that the file is safely deleted.
+	// When deleting files, wrap the path in a `&io.FileWrapper` so that the file is safely deleted.
 	// The Delete(true) operation will ensure that **only files in the workspace are deleted**
-	UDF := &io.VMFile{Path: endPoint}
+	UDF := &io.FileWrapper{Path: endPoint}
 	if err := UDF.Delete(true); err != nil {
 		return fmt.Errorf("failed to delete file %q: %w", UDF.GetPath(), err)
 	}

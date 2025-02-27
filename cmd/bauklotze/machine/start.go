@@ -73,7 +73,7 @@ func start(cmd *cobra.Command, args []string) error {
 
 	// If the user given the report url, then overwrite the report url into mc
 	if allFlag.ReportURL != "" {
-		mc.ReportURL = &io.VMFile{Path: allFlag.ReportURL}
+		mc.ReportURL = &io.FileWrapper{Path: allFlag.ReportURL}
 	}
 
 	g, ctx := errgroup.WithContext(context.Background())
@@ -187,13 +187,13 @@ func cleanUp(mc *vmconfig.MachineConfig) {
 	gvpBackendSocket, _ := mc.GVProxyNetworkBackendSocks()
 	_ = gvpBackendSocket.Delete(true)
 
-	gvpBackendSocket2 := &io.VMFile{Path: fmt.Sprintf("%s-%s", gvpBackendSocket.GetPath(), "krun.sock")}
+	gvpBackendSocket2 := &io.FileWrapper{Path: fmt.Sprintf("%s-%s", gvpBackendSocket.GetPath(), "krun.sock")}
 	_ = gvpBackendSocket2.Delete(true)
 
 	podmanInHost := mc.PodmanAPISocketHost()
 	_ = podmanInHost.Delete(true)
 
-	gvpPidFile := &io.VMFile{Path: mc.GvProxy.PidFile}
+	gvpPidFile := &io.FileWrapper{Path: mc.GvProxy.PidFile}
 	_ = gvpPidFile.Delete(true)
 }
 

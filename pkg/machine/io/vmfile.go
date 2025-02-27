@@ -4,7 +4,6 @@
 package io
 
 import (
-	allFlag "bauklotze/pkg/machine/allflag"
 	"errors"
 	"fmt"
 	"io"
@@ -12,34 +11,36 @@ import (
 	"path/filepath"
 	"strings"
 
+	allFlag "bauklotze/pkg/machine/allflag"
+
 	"github.com/sirupsen/logrus"
 
 	"github.com/containers/common/pkg/strongunits"
 )
 
-type VMFile struct {
+type FileWrapper struct {
 	Path string `json:"path,omitempty"`
 }
 
-// NewMachineFile is a constructor for VMFile
-func NewMachineFile(f string) (*VMFile, error) {
+// NewMachineFile is a constructor for FileWrapper
+func NewMachineFile(f string) (*FileWrapper, error) {
 	if len(f) < 1 {
 		return nil, errors.New("invalid file path, must be at least 1 character")
 	}
 
-	mf := VMFile{Path: f}
+	mf := FileWrapper{Path: f}
 	return &mf, nil
 }
 
 // GetPath returns the working path for a machinefile.  it returns
 // the symlink unless one does not exist
-func (m *VMFile) GetPath() string {
+func (m *FileWrapper) GetPath() string {
 	return m.Path
 }
 
 // Delete dangerous removes a file from the filesystem
 // if safety is true, it will only remove files in the workspace
-func (m *VMFile) Delete(safety bool) error {
+func (m *FileWrapper) Delete(safety bool) error {
 	if safety {
 		workspace := allFlag.WorkSpace
 		if workspace == "" {
@@ -58,17 +59,17 @@ func (m *VMFile) Delete(safety bool) error {
 }
 
 // Read the contents of a given file and return in []bytes
-func (m *VMFile) Read() ([]byte, error) {
+func (m *FileWrapper) Read() ([]byte, error) {
 	return os.ReadFile(m.GetPath()) //nolint:wrapcheck
 }
 
-func (m *VMFile) Exist() bool {
+func (m *FileWrapper) Exist() bool {
 	_, err := os.Stat(m.Path)
 	return err == nil
 }
 
 // DiscardBytesAtBegin discards the first n MB of a file
-func (m *VMFile) DiscardBytesAtBegin(n strongunits.MiB) error {
+func (m *FileWrapper) DiscardBytesAtBegin(n strongunits.MiB) error {
 	fileInfo, err := os.Stat(m.Path)
 	if err != nil {
 		return fmt.Errorf("failed to get file info: %w", err)
@@ -94,15 +95,15 @@ func (m *VMFile) DiscardBytesAtBegin(n strongunits.MiB) error {
 }
 
 // AppendToNewVMFile takes a given path and appends it to the existing vmfile path.  The new
-// VMFile is returned
-func (m *VMFile) AppendToNewVMFile(additionalPath string) (*VMFile, error) {
+// FileWrapper is returned
+func (m *FileWrapper) AppendToNewVMFile(additionalPath string) (*FileWrapper, error) {
 	if additionalPath == "" {
 		return nil, errors.New("invalid additional path")
 	}
 	return NewMachineFile(filepath.Join(m.Path, additionalPath))
 }
 
-func (m *VMFile) MakeBaseDir() error {
+func (m *FileWrapper) MakeBaseDir() error {
 	err := os.MkdirAll(filepath.Dir(m.GetPath()), os.ModePerm)
 	if err != nil {
 		return fmt.Errorf("failed to create base dir: %w", err)

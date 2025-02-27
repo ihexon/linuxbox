@@ -17,12 +17,12 @@ func GenerateIgnScripts(mc *vmconfig.MachineConfig) error {
 	ign := NewIgnitionBuilder(
 		&DynamicIgnitionV3{
 			CodeBuffer: nil,
-			IgnFile: io.VMFile{
+			IgnFile: io.FileWrapper{
 				Path: ignScriptFile,
 			},
 			VMType: defconfig.LibKrun,
 			Mounts: mc.Mounts,
-			SSHIdentityPath: io.VMFile{
+			SSHIdentityPath: io.FileWrapper{
 				Path: mc.SSH.IdentityPath,
 			},
 		})
