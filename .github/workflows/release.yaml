@@ -68,7 +68,7 @@ jobs:
             --endpoint-url ${{ secrets.R2_OOMOL_STATIC_S3_ENDPOINT }} \
             ./out/bin/ \
             s3://oomol-static/ovm-resources/Bauklotze/$RELEASE_VERSION \
-            --recursive --exclude "*" --include "ovm*"
+            --recursive --exclude "*" --include "ovm*" --checksum-algorithm CRC32 --debug
 
       - name: Create Release
         id: create_release
