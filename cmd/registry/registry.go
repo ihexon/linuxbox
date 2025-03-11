@@ -5,6 +5,7 @@ package registry
 
 import (
 	allFlag "bauklotze/pkg/machine/allflag"
+	"bauklotze/pkg/machine/channel"
 	"bauklotze/pkg/machine/define"
 	"bauklotze/pkg/machine/events"
 	"bauklotze/pkg/machine/io"
@@ -41,6 +42,7 @@ func GetExitCode() int {
 
 func NotifyAndExit(code int) {
 	events.NotifyExit()
+	channel.Close()
 	SetExitCode(code)
 	os.Exit(GetExitCode())
 }

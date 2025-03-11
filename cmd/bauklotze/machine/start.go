@@ -4,6 +4,7 @@
 package machine
 
 import (
+	"bauklotze/pkg/machine/channel"
 	"context"
 	"fmt"
 	"os"
@@ -12,20 +13,19 @@ import (
 	"syscall"
 	"time"
 
-	"bauklotze/pkg/api/server"
-	"bauklotze/pkg/machine"
-	allFlag "bauklotze/pkg/machine/allflag"
-	"bauklotze/pkg/machine/define"
-	"bauklotze/pkg/machine/io"
-	"bauklotze/pkg/machine/shim"
-	"bauklotze/pkg/machine/vmconfig"
-
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"golang.org/x/sync/errgroup"
 
 	"bauklotze/cmd/registry"
+	"bauklotze/pkg/api/server"
+	"bauklotze/pkg/machine"
+	allFlag "bauklotze/pkg/machine/allflag"
+	"bauklotze/pkg/machine/define"
 	"bauklotze/pkg/machine/events"
+	"bauklotze/pkg/machine/io"
+	"bauklotze/pkg/machine/shim"
+	"bauklotze/pkg/machine/vmconfig"
 	"bauklotze/pkg/system"
 )
 
@@ -132,6 +132,13 @@ func start(cmd *cobra.Command, args []string) error {
 		return startMachine(ctx, mc)
 	})
 
+	g.Go(func() error {
+		if err := shim.TryStartSSHAuthService(ctx, mc); err != nil {
+			logrus.Warnf("SSH auth service stop: %v", err)
+		}
+		return nil
+	})
+
 	defer cleanUp(mc) // Clean tmp files at the end
 	return g.Wait()   //nolint:wrapcheck
 }
@@ -176,6 +183,7 @@ func startMachine(parentCtx context.Context, mc *vmconfig.MachineConfig) error {
 	}
 
 	logrus.Infof("Machine start successful")
+	channel.NotifyMachineReady()
 
 	return shim.Wait(ctx, mc) //nolint:wrapcheck
 }
@@ -198,9 +206,11 @@ func cleanUp(mc *vmconfig.MachineConfig) {
 }
 
 func SyncDisk(mc *vmconfig.MachineConfig) {
-	events.NotifyRun(events.SyncMachineDisk)
-	if err := shim.DiskSync(mc); err != nil {
-		logrus.Warnf("Failed to sync disk: %v", err)
-		return
+	if channel.IsVMReady() {
+		events.NotifyRun(events.SyncMachineDisk)
+		if err := shim.DiskSync(mc); err != nil {
+			logrus.Warnf("Failed to sync disk: %v", err)
+			return
+		}
 	}
 }

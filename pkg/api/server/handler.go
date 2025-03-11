@@ -75,7 +75,7 @@ func (s *APIServer) APIHandler(h http.HandlerFunc) http.HandlerFunc {
 
 func (s *APIServer) apiWrapper(h http.HandlerFunc, w http.ResponseWriter, r *http.Request) {
 	if err := r.ParseForm(); err != nil {
-		logrus.Errorf("Failed Request: unable to parse form: " + err.Error())
+		logrus.Errorf("Failed Request: unable to parse form: %v", err)
 	}
 	h(w, r)
 }
