@@ -18,7 +18,7 @@ require (
 	github.com/gorilla/mux v1.8.1
 	github.com/json-iterator/go v1.1.12
 	github.com/oomol-lab/ovm-ssh-agent v1.1.1-0.20250307113355-2fe4d500c53c
-	github.com/oomol-lab/ssh-forward v0.0.0-20250311033012-057eea751dd7
+	github.com/oomol-lab/ssh-forward v0.0.0-20250311095617-1689c70ff096
 	github.com/prashantgupta24/mac-sleep-notifier v1.0.1
 	github.com/shirou/gopsutil/v3 v3.24.5
 	github.com/sirupsen/logrus v1.9.3

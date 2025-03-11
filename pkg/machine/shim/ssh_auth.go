@@ -81,9 +81,10 @@ func startSSHAuthServiceAndForward(ctx context.Context, mc *vmconfig.MachineConf
 		logrus.Infof("connect state: %v", state)
 	})
 
-	socketForwarder.SetKeyFile(mc.SSH.IdentityPath)
-	socketForwarder.SetUser(mc.SSH.RemoteUsername)
-	socketForwarder.SetPort(mc.SSH.Port)
+	socketForwarder.
+		SetKeyFile(mc.SSH.IdentityPath).
+		SetUser(mc.SSH.RemoteUsername).
+		SetPort(mc.SSH.Port)
 
 	// We set a callback to know when the tunnel is ready
 	socketForwarder.SetConnState(func(tun *forwarder.ForwardConfig, state forwarder.ConnState) {

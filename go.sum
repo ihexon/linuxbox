@@ -74,6 +74,8 @@ github.com/oomol-lab/ssh-forward v0.0.0-20250310111812-cc1e7c2d1876 h1:9HgxxAcKJ
 github.com/oomol-lab/ssh-forward v0.0.0-20250310111812-cc1e7c2d1876/go.mod h1:/X60uEwaCA1Bt0AJ+6VShkjErRBbkDbzmqwxR8jPpMI=
 github.com/oomol-lab/ssh-forward v0.0.0-20250311033012-057eea751dd7 h1:T+1ULZnf+KeO/w3kTuv5zQwllJjISB0UTKvNR4CHtwc=
 github.com/oomol-lab/ssh-forward v0.0.0-20250311033012-057eea751dd7/go.mod h1:/X60uEwaCA1Bt0AJ+6VShkjErRBbkDbzmqwxR8jPpMI=
+github.com/oomol-lab/ssh-forward v0.0.0-20250311095617-1689c70ff096 h1:Z3cfFAsFY4Moq2Vy7UIqBYZAbEKHaLKHiWidD1WfNKA=
+github.com/oomol-lab/ssh-forward v0.0.0-20250311095617-1689c70ff096/go.mod h1:/X60uEwaCA1Bt0AJ+6VShkjErRBbkDbzmqwxR8jPpMI=
 github.com/pkg/diff v0.0.0-20210226163009-20ebb0f2a09e/go.mod h1:pJLUxLENpZxwdsKMEsNbx1VGcRFpLqf3715MtcvvzbA=
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 h1:Jamvg5psRIccs7FGNTlIRMkT8wgtp5eCXdBlqhYGL6U=
