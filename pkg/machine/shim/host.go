@@ -174,7 +174,10 @@ func Wait(ctx context.Context, mc *vmconfig.MachineConfig) error {
 	case err := <-errChanGvp:
 		return fmt.Errorf("network provider exit: %w", err)
 	case err := <-errChanVmm:
-		return fmt.Errorf("hypervisor exit: %w", err)
+		if err != nil {
+			return fmt.Errorf("hypervisor exit: %w", err)
+		}
+		return define.ErrVMMExitNormally
 	}
 }
 

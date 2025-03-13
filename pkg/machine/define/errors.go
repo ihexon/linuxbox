@@ -9,4 +9,5 @@ var (
 	ErrConstructVMFile  = errors.New("construct VMFile failed")
 	ErrCatchSignal      = errors.New("catch signal")
 	ErrPPIDNotRunning   = errors.New("PPID exited")
+	ErrVMMExitNormally  = errors.New("hypervisor exited normally")
 )

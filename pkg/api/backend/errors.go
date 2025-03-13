@@ -8,4 +8,5 @@ import "errors"
 var (
 	ErrMachineConfigNull = errors.New("machineConfig is null")
 	ErrStreamNotSupport  = errors.New("stream not support")
+	ErrStopVMFailed      = errors.New("stop vm failed")
 )

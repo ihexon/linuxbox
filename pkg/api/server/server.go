@@ -138,6 +138,7 @@ func (s *APIServer) Shutdown() error {
 func (s *APIServer) setupRouter(r *mux.Router) *mux.Router {
 	r.Handle("/{name}/info", s.APIHandler(backend.GetInfos)).Methods(http.MethodGet)
 	r.Handle("/{name}/exec", s.APIHandler(backend.DoExec)).Methods(http.MethodPost)
+	r.Handle("/{name}/stop", s.APIHandler(backend.StopVM)).Methods(http.MethodPost)
 	return r
 }
 

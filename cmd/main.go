@@ -10,6 +10,7 @@ import (
 	"bauklotze/pkg/machine/define"
 	"bauklotze/pkg/machine/events"
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -84,7 +85,9 @@ func RootCmdExecute() {
 	err := rootCmd.ExecuteContext(context.Background())
 	if err != nil {
 		logrus.Errorf("Exit duto error: %v", err)
-		events.NotifyError(err)
+		if errors.Is(err, define.ErrVMAlreadyRunning) {
+			events.NotifyError(err)
+		}
 		registry.NotifyAndExit(1)
 	} else {
 		registry.NotifyAndExit(0)
