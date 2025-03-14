@@ -68,6 +68,8 @@ github.com/oomol-lab/ovm-ssh-agent v1.1.1-0.20250307080813-33a2addd8d70 h1:mwoDZ
 github.com/oomol-lab/ovm-ssh-agent v1.1.1-0.20250307080813-33a2addd8d70/go.mod h1:UiWnuQCSmt3Zta1LctVpp+ETEaJv08OA+Bkp45uyM/M=
 github.com/oomol-lab/ovm-ssh-agent v1.1.1-0.20250307113355-2fe4d500c53c h1:kbYQjlZ0eKNiUPjX99nudcbvh2z86TF3hM0jAvytApo=
 github.com/oomol-lab/ovm-ssh-agent v1.1.1-0.20250307113355-2fe4d500c53c/go.mod h1:UiWnuQCSmt3Zta1LctVpp+ETEaJv08OA+Bkp45uyM/M=
+github.com/oomol-lab/ovm-ssh-agent v1.1.1-0.20250314091944-29493e1eb649 h1:hH436/4waDFFuV7KTDeGNFWv6xw4IDfSNUvCYsM9ANg=
+github.com/oomol-lab/ovm-ssh-agent v1.1.1-0.20250314091944-29493e1eb649/go.mod h1:UiWnuQCSmt3Zta1LctVpp+ETEaJv08OA+Bkp45uyM/M=
 github.com/oomol-lab/ssh-forward v0.0.0-20250306133922-a0a693bfc5f6 h1:uJP1EoqmP88TOqA6PbpJlzt0eyE27WZ6XAefuc3H4T4=
 github.com/oomol-lab/ssh-forward v0.0.0-20250306133922-a0a693bfc5f6/go.mod h1:/X60uEwaCA1Bt0AJ+6VShkjErRBbkDbzmqwxR8jPpMI=
 github.com/oomol-lab/ssh-forward v0.0.0-20250310111812-cc1e7c2d1876 h1:9HgxxAcKJx9U6w8oRTtIIc7Tdp7F55p5yUTJlMqahtc=
