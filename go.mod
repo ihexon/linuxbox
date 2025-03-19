@@ -17,8 +17,8 @@ require (
 	github.com/go-playground/validator/v10 v10.25.0
 	github.com/gorilla/mux v1.8.1
 	github.com/json-iterator/go v1.1.12
-	github.com/oomol-lab/ovm-ssh-agent v1.1.1-0.20250314091944-29493e1eb649
-	github.com/oomol-lab/ssh-forward v0.0.0-20250311095617-1689c70ff096
+	github.com/oomol-lab/ovm-ssh-agent v1.1.1-0.20250319032115-b469155aff8d
+	github.com/oomol-lab/ssh-forward v0.0.0-20250319031711-0a9664c2fc46
 	github.com/prashantgupta24/mac-sleep-notifier v1.0.1
 	github.com/shirou/gopsutil/v3 v3.24.5
 	github.com/sirupsen/logrus v1.9.3
