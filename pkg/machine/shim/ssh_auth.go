@@ -4,21 +4,21 @@
 package shim
 
 import (
-	"bauklotze/pkg/machine/channel"
-	"bauklotze/pkg/machine/define"
-	"bauklotze/pkg/machine/vmconfig"
 	"context"
 	"fmt"
-	"net"
 	"os"
 	"path/filepath"
 
+	"bauklotze/pkg/machine/channel"
+	"bauklotze/pkg/machine/define"
+	"bauklotze/pkg/machine/vmconfig"
+
 	"golang.org/x/sync/errgroup"
 
-	"github.com/oomol-lab/ovm-ssh-agent/pkg/sshagent"
-	"github.com/oomol-lab/ovm-ssh-agent/pkg/system"
+	"github.com/oomol-lab/ovm-ssh-agent/v3/pkg/sshagent"
+	"github.com/oomol-lab/ovm-ssh-agent/v3/pkg/system"
 
-	"github.com/oomol-lab/ovm-ssh-agent/pkg/identity"
+	"github.com/oomol-lab/ovm-ssh-agent/v3/pkg/identity"
 	forwarder "github.com/oomol-lab/ssh-forward"
 
 	"github.com/sirupsen/logrus"
@@ -47,29 +47,20 @@ func startSSHAuthServiceAndForward(ctx context.Context, mc *vmconfig.MachineConf
 		return fmt.Errorf("failed to remove local ssh agent socket: %w", err)
 	}
 
-	listener, err := net.Listen("unix", localSocketFile)
-	if err != nil {
-		return fmt.Errorf("failed to listen unix socket: %w", err)
-	}
-	defer listener.Close()
-
 	upstreamSocket := system.GetSSHAgent()
 	if upstreamSocket == "" {
 		return fmt.Errorf("upstream SSH agent socket empty")
 	}
 	logrus.Infof("upstream ssh agent listened in: %q", upstreamSocket)
 
-	ooSSHAgent, err := sshagent.NewSSHAgent(ctx, upstreamSocket)
-	if err != nil {
-		return fmt.Errorf("failed to create oo ssh agent: %w", err)
-	}
+	ooSSHAgent := sshagent.NewSSHAgent(ctx, upstreamSocket, localSocketFile)
 	defer ooSSHAgent.Close()
 
 	// find local private keys ~/.ssh
 	ooSSHAgent.LoadLocalKeys(identity.FindPrivateKeys()...)
 
 	g.Go(func() error {
-		return ooSSHAgent.Serve(listener)
+		return ooSSHAgent.Serve()
 	})
 
 	remoteSocketFile := "/opt/ssh_auth/oo-ssh-agent.sock"
@@ -106,5 +97,9 @@ func startSSHAuthServiceAndForward(ctx context.Context, mc *vmconfig.MachineConf
 		return socketForwarder.Start(ctx)
 	})
 
-	return g.Wait() //nolint:wrapcheck
+	if err := g.Wait(); err != nil {
+		return fmt.Errorf("failed to start ssh auth service: %w", err)
+	}
+
+	return nil
 }
