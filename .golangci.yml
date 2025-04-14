@@ -1,16 +1,15 @@
----
+version: "2"
 run:
   concurrency: 6
   timeout: 5m
   modules-download-mode: readonly
 
 linters:
-  enable-all: true
+  default: all
   disable:
     # too many reports but requires attention
     - depguard
     - perfsprint
-    - typecheck
     # useful hints that should be addressed
     - nakedret
     - gosmopolitan # usage of time.Local in pkg/k8s.io
@@ -30,8 +29,6 @@ linters:
     - thelper
     - forbidigo
     - exhaustive
-    - gofumpt
-    - gci
     - godot
     - dupl
     - funlen
@@ -53,23 +50,21 @@ linters:
     - nilnil
     - nonamedreturns
     - exhaustruct
-    # deprecated linters
-    - exportloopref
-
-linters-settings:
-  errcheck:
-    check-blank: false
-  nolintlint:
-    allow-unused: true
-    require-specific: true
-  revive:
-    rules:
+    - revive
+  settings:
+    errcheck:
+     check-blank: false
+    nolintlint:
+      allow-unused: true
+      require-specific: true
+    revive:
+      rules:
       - name: unused-parameter
         disabled: true
-  testifylint:
-    enable-all: true
-  mnd:
-    ignored-numbers:
+    testifylint:
+      enable-all: true
+    mnd:
+     ignored-numbers:
       - '0755'
       - '0644'
       - '0744'
@@ -88,7 +83,6 @@ issues:
   # Set to 0 to disable.
   # Default: 3
   max-same-issues: 0
-  exclude-dirs-use-default: true
   fix: true
 
 
