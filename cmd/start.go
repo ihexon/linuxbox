@@ -50,6 +50,10 @@ var startCmd = cli.Command{
 		},
 	},
 	Action: start,
+	Before: func(ctx context.Context, command *cli.Command) (context.Context, error) {
+		events.CurrentStage = events.Run
+		return ctx, nil
+	},
 }
 
 const tickerInterval = 300 * time.Millisecond

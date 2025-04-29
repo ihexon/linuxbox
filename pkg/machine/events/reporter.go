@@ -5,7 +5,6 @@ package events
 
 import (
 	"net/url"
-	"sync"
 
 	"bauklotze/pkg/httpclient"
 
@@ -14,9 +13,7 @@ import (
 
 var (
 	ReportURL    string
-	currentStage string
-
-	stageOnce sync.Once
+	CurrentStage string
 )
 
 type event struct {
@@ -54,9 +51,6 @@ func notify(e event) {
 }
 
 func NotifyInit(name InitStageName, value ...string) {
-	stageOnce.Do(func() {
-		currentStage = Init
-	})
 	v := ""
 	if len(value) > 0 {
 		v = value[0]
@@ -71,9 +65,6 @@ func NotifyInit(name InitStageName, value ...string) {
 
 // NotifyRun Generic Notifier for RunStage
 func NotifyRun(name RunStageName, value ...string) {
-	stageOnce.Do(func() {
-		currentStage = Run
-	})
 	v := ""
 	if len(value) > 0 {
 		v = value[0]
@@ -88,20 +79,20 @@ func NotifyRun(name RunStageName, value ...string) {
 
 // NotifyExit Generic Notifier for Exit
 func NotifyExit() {
-	switch currentStage {
+	switch CurrentStage {
 	case Init:
 		NotifyInit(InitExit)
 	case Run:
 		NotifyRun(RunExit)
 	default:
-		logrus.Warnf("Unknown stage %q", currentStage)
+		logrus.Warnf("Unknown stage %q", CurrentStage)
 	}
 }
 
 // NotifyError Generic Notifier for Error
 func NotifyError(err error) {
 	notify(event{
-		Stage: currentStage,
+		Stage: CurrentStage,
 		Name:  kError,
 		Value: err.Error(),
 	})

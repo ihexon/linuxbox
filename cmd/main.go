@@ -28,6 +28,7 @@ func NotifyAndExit(err error) {
 	retCode := 0
 	if err != nil {
 		retCode = 1
+		logrus.Error(err.Error())
 		events.NotifyError(err)
 	}
 	events.NotifyExit()

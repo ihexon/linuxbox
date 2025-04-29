@@ -24,6 +24,7 @@ var initCmd = cli.Command{
 	Usage:                     "Initialize a new virtual machine",
 	Action:                    initMachine,
 	Before: func(ctx context.Context, command *cli.Command) (context.Context, error) {
+		events.CurrentStage = events.Init
 		return ctx, nil
 	},
 
