@@ -4,7 +4,6 @@
 package events
 
 // CurrentStage Stage is the stage of the lifecycle
-var CurrentStage string
 
 const (
 	Init string = "init"
@@ -34,14 +33,4 @@ const (
 
 const (
 	kError string = "error"
-)
-
-type event struct {
-	Stage string
-	Name  string
-	Value string
-}
-
-const (
-	PlainTextContentType = "text/plain"
 )

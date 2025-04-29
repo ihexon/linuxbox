@@ -11,24 +11,22 @@ import (
 	"bauklotze/pkg/machine/define"
 )
 
-// GetFree returns a free TCP port. If a default port is provided and it is not in use, it returns the default port.
-// Otherwise, it finds and returns an available port.
-func GetFree(defaultPort int) (int, error) {
-	if defaultPort != 0 && !IsListening(defaultPort) {
-		return defaultPort, nil
-	}
+const tcp = "tcp"
 
-	l, err := net.Listen("tcp", fmt.Sprintf("%s:%d", define.LocalHostURL, 0))
+// GetFree returns a free TCP port
+func GetFree() (int, error) {
+	l, err := net.Listen(tcp, fmt.Sprintf("%s:%d", define.LocalHostURL, 0))
 	if err != nil {
 		return 0, fmt.Errorf("unable to get free TCP port: %w", err)
 	}
-	defer l.Close()
+	defer l.Close() //nolint:errcheck
 
 	return l.Addr().(*net.TCPAddr).Port, nil
 }
 
 const defaultDialTimeout = 30 * time.Millisecond
 
+// IsListening test someone listens to the target port
 func IsListening(port int) bool {
 	conn, err := net.DialTimeout("tcp", fmt.Sprintf("%s:%d", define.LocalHostURL, port), defaultDialTimeout)
 	if err != nil {

@@ -76,10 +76,10 @@ func (c *Cmd) String() string {
 func (c *Cmd) RunCtx() error {
 	context.AfterFunc(c.context, func() {
 		if c.mySession != nil {
-			_ = c.mySession.Signal(c.signal)
 			logrus.Warnf("send signal [ %s ] to [ %q ], cause by %v", c.signal, c.name, context.Cause(c.context))
-		} else {
-			logrus.Infof("ssh [ %q ] session is nil, no signal sent", c.name)
+			if err := c.mySession.Signal(c.signal); err != nil {
+				logrus.Errorf("send signal [ %s ] to [ %q ] failed: %v", c.signal, c.name, err)
+			}
 		}
 	})
 
@@ -87,7 +87,7 @@ func (c *Cmd) RunCtx() error {
 	if err != nil {
 		return fmt.Errorf("failed to create ssh client: %w", err)
 	}
-	defer client.Close()
+	defer client.Close() //nolint:errcheck
 
 	c.mySession, err = client.NewSession()
 	if err != nil {
@@ -124,6 +124,7 @@ func (c *Cmd) RunCtx() error {
 	if err = c.mySession.Start(c.String()); err != nil {
 		return fmt.Errorf("failed to start ssh command: %w", err)
 	}
+
 	defer func() {
 		_ = c.mySession.Close()
 		c.mySession = nil
@@ -131,7 +132,12 @@ func (c *Cmd) RunCtx() error {
 
 	go logStdOut(outPipe)
 	go logStdErr(errPipe)
+
 	wg.Wait()
 
-	return c.mySession.Wait() //nolint:wrapcheck
+	if err = c.mySession.Wait(); err != nil {
+		return fmt.Errorf("failed to wait ssh command: %w", err)
+	}
+
+	return nil
 }

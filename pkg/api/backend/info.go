@@ -10,6 +10,8 @@ import (
 	"bauklotze/pkg/machine/vmconfig"
 
 	"bauklotze/pkg/api/utils"
+
+	"github.com/sirupsen/logrus"
 )
 
 type Resp struct {
@@ -19,18 +21,22 @@ type Resp struct {
 	HostEndpoint     string `json:"hostEndpoint"`
 }
 
-// GetInfos Get machine configures
+const hostEndPoint = "host.containers.internal"
+
+// GetInfos GetProvider machine configures
 func GetInfos(w http.ResponseWriter, r *http.Request) {
+	logrus.Infof("Request /info")
+
 	mc := r.Context().Value(types.McKey).(*vmconfig.MachineConfig)
 	if mc == nil {
 		utils.Error(w, http.StatusInternalServerError, ErrMachineConfigNull)
 		return
 	}
 
-	utils.WriteResponse(w, http.StatusOK, &Resp{
-		PodmanSocketPath: mc.GvProxy.HostSocks[0],
+	utils.WriteJSON(w, http.StatusOK, &Resp{
+		PodmanSocketPath: mc.PodmanSocks.InHost,
 		SSHPort:          mc.SSH.Port,
 		SSHUser:          mc.SSH.RemoteUsername,
-		HostEndpoint:     "host.containers.internal",
+		HostEndpoint:     hostEndPoint,
 	})
 }

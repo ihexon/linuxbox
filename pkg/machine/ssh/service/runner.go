@@ -16,7 +16,7 @@ import (
 )
 
 func runCtx(ctx context.Context, mc *vmconfig.MachineConfig, name string, args []string) error {
-	sshConfig, err := ssh.NewConfig(define.LocalHostURL, mc.SSH.RemoteUsername, uint(mc.SSH.Port), mc.SSH.IdentityPath)
+	sshConfig, err := ssh.NewConfig(define.LocalHostURL, mc.SSH.RemoteUsername, uint(mc.SSH.Port), mc.SSH.PrivateKey)
 	if err != nil {
 		return fmt.Errorf("failed to create ssh config: %w", err)
 	}

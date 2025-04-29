@@ -51,6 +51,7 @@ linters:
     - nonamedreturns
     - exhaustruct
     - revive
+    - funcorder
   settings:
     errcheck:
      check-blank: false

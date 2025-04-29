@@ -1,44 +1,30 @@
 // SPDX-FileCopyrightText: 2024-2025 OOMOL, Inc. <https://www.oomol.com>
 // SPDX-License-Identifier: MPL-2.0
+
 package vmconfig
-
-import (
-	"bauklotze/pkg/machine/io"
-
-	"github.com/containers/common/pkg/strongunits"
-)
-
-type CreateVMOpts struct {
-	Name                  string       `json:"Name"`
-	Dirs                  *MachineDirs `json:"Dirs"`
-	UserProvidedImageFile string       `json:"UserImageFile"` // Only used in wsl2
-}
 
 type ResourceConfig struct {
 	// CPUs to be assigned to the VM
-	CPUs uint64 `json:"CPUs,omitempty"`
+	CPUs int64 `json:"cpus,omitempty"`
 	// DataDisk size in gigabytes assigned to the vm
-	DataDiskSizeGB strongunits.GiB `json:"DataDiskSizeGB,omitempty"`
+	DataDiskSizeGB int64 `json:"dataDiskSizeGB,omitempty"`
 	// Memory in megabytes assigned to the vm
-	Memory strongunits.MiB `json:"Memory,omitempty"`
-	// Usbs
+	MemoryInMB int64 `json:"memory,omitempty"`
 }
 
-type MachineDirs struct {
-	ConfigDir       *io.FileWrapper  `json:"ConfigDir"`
-	DataDir         *io.FileWrapper  `json:"DataDir"`
-	LogsDir         *io.FileWrapper  `json:"LogsDir"`
-	Hypervisor      *Hypervisor      `json:"Hypervisor"`
-	NetworkProvider *NetworkProvider `json:"NetworkProvider"`
-	SocksDir        *io.FileWrapper  `json:"SocksDir"`
-}
+type VMOpts struct {
+	VMName      string
+	Workspace   string
+	PPID        int64
+	CPUs        int64
+	MemoryInMiB int64
+	Volumes     []string
+	BootImage   string
+	BootVersion string
+	DataVersion string
+	ReInit      bool
+	ReportURL   string
 
-type Hypervisor struct {
-	LibsDir *io.FileWrapper `json:"LibsDir"`
-	Bin     *io.FileWrapper `json:"Bin"`
-}
-
-type NetworkProvider struct {
-	LibsDir *io.FileWrapper `json:"LibsDir"`
-	Bin     *io.FileWrapper `json:"Bin"`
+	// Inject VMType to reduce the number of args
+	VMType VMType
 }

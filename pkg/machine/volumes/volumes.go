@@ -35,10 +35,10 @@ func extractMountOptions(paths []string) bool {
 		options := paths[2]
 		volopts := strings.Split(options, ",")
 		for _, o := range volopts {
-			switch {
-			case o == "rw":
+			switch o {
+			case "rw":
 				readonly = false
-			case o == "ro":
+			case "ro":
 				readonly = true
 			default:
 				fmt.Printf("Unknown option: %s\n", o)
@@ -65,15 +65,15 @@ type Mount struct {
 	Type     string `json:"Type"`
 }
 
-func CmdLineVolumesToMounts(volumes []string) []*Mount {
-	mounts := []*Mount{}
+func CmdLineVolumesToMounts(volumes []string) []Mount {
+	var mounts []Mount //nolint:prealloc
 	for i, volume := range volumes {
 		if volume == "" {
 			continue
 		}
 		_, source, target, readOnly := SplitVolume(i, volume)
 		m := NewVirtIoFsMount(source, target, readOnly).ToMount()
-		mounts = append(mounts, &m)
+		mounts = append(mounts, m)
 	}
 	return mounts
 }

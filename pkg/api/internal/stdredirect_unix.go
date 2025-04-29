@@ -17,7 +17,7 @@ func RedirectStdin() error {
 	if err != nil {
 		return fmt.Errorf("failed to open /dev/null: %w", err)
 	}
-	defer devNullfile.Close()
+	defer devNullfile.Close() //nolint:errcheck
 
 	if err := unix.Dup2(int(devNullfile.Fd()), int(os.Stdin.Fd())); err != nil {
 		return fmt.Errorf("failed /dev/null to redirect stdin: %w", err)

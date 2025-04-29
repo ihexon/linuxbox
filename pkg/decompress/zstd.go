@@ -10,7 +10,7 @@ import (
 	"github.com/DataDog/zstd"
 )
 
-func Zstd(src, target string) error {
+func UncompressZstFile(src, target string) error {
 	file, err := os.ReadFile(src)
 	if err != nil {
 		return fmt.Errorf("failed to read compressed file: %w", err)

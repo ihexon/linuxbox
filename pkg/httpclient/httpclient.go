@@ -100,7 +100,7 @@ func (c *Client) Get(path string) error {
 		return fmt.Errorf("failed to read response body: %w", err)
 	}
 	logrus.Infof("Response Body: %s", string(body))
-	defer response.Body.Close()
+	defer response.Body.Close() //nolint:errcheck
 	return nil
 }
 

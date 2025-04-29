@@ -5,11 +5,11 @@
 package ignition
 
 import (
-	"bauklotze/pkg/machine/defconfig"
-	"bauklotze/pkg/machine/io"
-	"bauklotze/pkg/machine/vmconfig"
 	"fmt"
 	"path/filepath"
+
+	"bauklotze/pkg/machine/io"
+	"bauklotze/pkg/machine/vmconfig"
 )
 
 func GenerateIgnScripts(mc *vmconfig.MachineConfig) error {
@@ -17,14 +17,13 @@ func GenerateIgnScripts(mc *vmconfig.MachineConfig) error {
 	ign := NewIgnitionBuilder(
 		&DynamicIgnitionV3{
 			CodeBuffer: nil,
-			IgnFile: io.FileWrapper{
-				Path: ignScriptFile,
-			},
-			VMType: defconfig.LibKrun,
-			Mounts: mc.Mounts,
-			SSHIdentityPath: io.FileWrapper{
-				Path: mc.SSH.IdentityPath,
-			},
+			IgnFile:    io.NewFile(ignScriptFile),
+			VMType:     vmconfig.LibKrun,
+			Mounts:     mc.Mounts,
+			//SSHIdentityPath: io.FileWrapper{
+			//	Path: mc.SSH.IdentityPath,
+			// },
+			SSHIdentityPath: io.NewFile(mc.SSH.PrivateKey),
 		})
 
 	err := ign.GenerateIgnitionConfig([]string{""})

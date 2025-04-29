@@ -5,23 +5,36 @@ package events
 
 import (
 	"net/url"
+	"sync"
 
 	"bauklotze/pkg/httpclient"
-	allFlag "bauklotze/pkg/machine/allflag"
 
 	"github.com/sirupsen/logrus"
 )
 
+var (
+	ReportURL    string
+	currentStage string
+
+	stageOnce sync.Once
+)
+
+type event struct {
+	Stage string
+	Name  string
+	Value string
+}
+
 // notify sends an event to the report URL
 func notify(e event) {
-	if allFlag.ReportURL == "" {
+	if ReportURL == "" {
 		return
 	}
 
 	client := httpclient.New().
-		SetTransport(httpclient.CreateUnixTransport(allFlag.ReportURL)).
+		SetTransport(httpclient.CreateUnixTransport(ReportURL)).
 		SetBaseURL("http://local").
-		SetHeader("Content-Type", PlainTextContentType).
+		SetHeader("Content-Type", "text/plain").
 		SetQueryParams(map[string]string{
 			"stage": e.Stage,
 			"name":  e.Name,
@@ -29,19 +42,21 @@ func notify(e event) {
 		})
 
 	logrus.Infof("Send Event to %s , stage: %s, name: %s, value: %s \n",
-		allFlag.ReportURL,
+		ReportURL,
 		client.QueryParam.Get("stage"),
 		client.QueryParam.Get("name"),
 		client.QueryParam.Get("value"),
 	)
 
 	if err := client.Get("notify"); err != nil {
-		logrus.Warnf("Failed to notify %q: %v\n", allFlag.ReportURL, err)
+		logrus.Warnf("Failed to notify %q: %v", ReportURL, err)
 	}
 }
 
-// NotifyInit Generic Notifier for InitStage
 func NotifyInit(name InitStageName, value ...string) {
+	stageOnce.Do(func() {
+		currentStage = Init
+	})
 	v := ""
 	if len(value) > 0 {
 		v = value[0]
@@ -56,6 +71,9 @@ func NotifyInit(name InitStageName, value ...string) {
 
 // NotifyRun Generic Notifier for RunStage
 func NotifyRun(name RunStageName, value ...string) {
+	stageOnce.Do(func() {
+		currentStage = Run
+	})
 	v := ""
 	if len(value) > 0 {
 		v = value[0]
@@ -70,20 +88,20 @@ func NotifyRun(name RunStageName, value ...string) {
 
 // NotifyExit Generic Notifier for Exit
 func NotifyExit() {
-	switch CurrentStage {
+	switch currentStage {
 	case Init:
 		NotifyInit(InitExit)
 	case Run:
 		NotifyRun(RunExit)
 	default:
-		logrus.Warnf("Unknown stage %q", CurrentStage)
+		logrus.Warnf("Unknown stage %q", currentStage)
 	}
 }
 
 // NotifyError Generic Notifier for Error
 func NotifyError(err error) {
 	notify(event{
-		Stage: CurrentStage,
+		Stage: currentStage,
 		Name:  kError,
 		Value: err.Error(),
 	})

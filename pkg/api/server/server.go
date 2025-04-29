@@ -31,9 +31,10 @@ type APIServer struct {
 func RestService(ctx context.Context, mc *vmconfig.MachineConfig, endPoint string) error {
 	// Set stdin to /dev/null
 	_ = internal.RedirectStdin()
-	// When deleting files, wrap the path in a `&io.FileWrapper` so that the file is safely deleted.
+	// When deleting files, wrap the path in a `&io.PathWrapper` so that the file is safely deleted.
 	// The Delete(true) operation will ensure that **only files in the workspace are deleted**
-	UDF := &io.FileWrapper{Path: endPoint}
+	UDF := io.NewFile(endPoint)
+
 	if err := UDF.Delete(true); err != nil {
 		return fmt.Errorf("failed to delete file %q: %w", UDF.GetPath(), err)
 	}
@@ -48,7 +49,7 @@ func RestService(ctx context.Context, mc *vmconfig.MachineConfig, endPoint strin
 		return fmt.Errorf("failed to listen on %s: %w", u.Path, err)
 	}
 
-	if !UDF.Exist() {
+	if !UDF.IsExist() {
 		return errors.New("UDF file create failed")
 	}
 
@@ -113,6 +114,7 @@ func makeNewServer(mc *vmconfig.MachineConfig, listener net.Listener) *APIServer
 
 	server.setupRouter(router)
 
+	// log out all routes
 	_ = router.Walk(func(route *mux.Route, r *mux.Router, ancestors []*mux.Route) error {
 		path, err := route.GetPathTemplate()
 		if err != nil {
@@ -135,14 +137,14 @@ func (s *APIServer) Shutdown() error {
 	return s.Server.Shutdown(ctx) //nolint:wrapcheck
 }
 
-func (s *APIServer) setupRouter(r *mux.Router) *mux.Router {
-	r.Handle("/{name}/info", s.APIHandler(backend.GetInfos)).Methods(http.MethodGet)
-	r.Handle("/{name}/exec", s.APIHandler(backend.DoExec)).Methods(http.MethodPost)
-	r.Handle("/{name}/stop", s.APIHandler(backend.StopVM)).Methods(http.MethodPost)
-	return r
-}
-
 // Close immediately stops responding to clients and exits
 func (s *APIServer) Close() error {
 	return s.Server.Close() //nolint:wrapcheck
+}
+
+func (s *APIServer) setupRouter(r *mux.Router) *mux.Router {
+	r.Handle("/info", s.APIHandler(backend.GetInfos)).Methods(http.MethodGet)
+	r.Handle("/exec", s.APIHandler(backend.DoExec)).Methods(http.MethodPost)
+	r.Handle("/stop", s.APIHandler(backend.StopVM)).Methods(http.MethodPost)
+	return r
 }

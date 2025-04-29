@@ -2,25 +2,28 @@ package define
 
 import (
 	"os"
-
-	"github.com/containers/common/pkg/strongunits"
 )
 
 const (
 	DefaultMachineName = "bugbox-machine-default"
 	DefaultUserInVM    = "root"
 
-	ConfigPrefixDir  = "config"
-	LogPrefixDir     = "logs"
-	LibexecPrefixDir = "libexec"
-	DataPrefixDir    = "data"
-	SocksPrefixDir   = "socks"
+	ConfigPrefixDir = "config"
+	LogPrefixDir    = "logs"
+	Libexec         = "libexec"
+	DataPrefixDir   = "data"
+	SocksPrefixDir  = "socks"
+	PidsPrefixDir   = "pids"
 
 	DefaultIdentityName = "sshkey"
 
 	GvProxyBinaryName = "gvproxy"
 	GvProxyPidName    = "gvproxy.pid"
 	GvProxyLogName    = "gvproxy.log"
+	GvProxyEndPoint   = "gvproxy.sock"
+
+	KrunkitPidFile = "krunkit.pid"
+	VFkitPidFile   = "vfkit.pid"
 
 	VfkitBinaryName   = "vfkit"
 	KrunkitBinaryName = "krunkit"
@@ -30,10 +33,15 @@ const (
 
 	LocalHostURL = "127.0.0.1"
 
-	DefaultSSHPort         = 61234
-	DefaultDataImageSizeGB = 100
+	DefaultSSHPort = 61234
 
-	PodmanGuestSocks = "/run/podman/podman.sock"
+	PodmanHostSocksName = "podman-api.sock"
+	PodmanGuestSocks    = "/run/podman/podman.sock"
+
+	SSHKey = "sshkey"
+
+	IgnMnt               = "/tmp/initfs:/tmp/initfs"
+	SSHAuthLocalSockName = "oo-ssh-agent-host.sock"
 )
 
 var (
@@ -41,6 +49,6 @@ var (
 )
 
 var (
-	DataDiskSize    strongunits.GiB = 100
-	DefaultFilePerm os.FileMode     = 0644
+	DataDiskSizeInGB int64       = 100
+	DefaultFilePerm  os.FileMode = 0644
 )

@@ -1,7 +1,4 @@
-//  SPDX-FileCopyrightText: 2024-2024 OOMOL, Inc. <https://www.oomol.com>
-//  SPDX-License-Identifier: MPL-2.0
-
-package defconfig
+package vmconfig
 
 import (
 	"fmt"
@@ -13,12 +10,14 @@ type VMType int64
 const (
 	LibKrun VMType = iota
 	VFkit
-	UnknownVirt
+	Unknown
 )
 
 const (
 	libkrun = "libkrun"
+	krunkit = "krunkit"
 	vfkit   = "vfkit"
+	unknown = "unknown"
 )
 
 func (v VMType) String() string {
@@ -28,18 +27,18 @@ func (v VMType) String() string {
 	case VFkit:
 		return vfkit
 	default:
+		return unknown
 	}
-	return ""
 }
 
-// ParseVMType covert string to VMType (int64)
+// ParseVMType converts a string to VMType (int64)
 func ParseVMType(input string) (VMType, error) {
 	switch strings.TrimSpace(strings.ToLower(input)) {
-	case libkrun:
+	case libkrun, krunkit:
 		return LibKrun, nil
 	case vfkit:
 		return VFkit, nil
 	default:
-		return UnknownVirt, fmt.Errorf("unknown VMType `%s`", input)
+		return Unknown, fmt.Errorf("unknown VMType %q", input)
 	}
 }

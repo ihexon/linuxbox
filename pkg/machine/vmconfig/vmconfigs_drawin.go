@@ -15,7 +15,7 @@ import (
 type Helper struct {
 	LogLevel       logrus.Level             `json:"LogLevel"`
 	Endpoint       string                   `json:"Endpoint"`
-	BinaryPath     *io.FileWrapper          `json:"BinaryPath"`
+	BinaryPath     *io.PathWrapper          `json:"BinaryPath"`
 	VirtualMachine *vfConfig.VirtualMachine `json:"VirtualMachine"`
 }
 

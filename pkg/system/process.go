@@ -4,38 +4,62 @@
 package system
 
 import (
+	"errors"
 	"fmt"
+	"os"
+	"strconv"
+	"strings"
 
-	"github.com/shirou/gopsutil/v3/process"
+	"github.com/shirou/gopsutil/v4/process"
 )
 
-func GetPPID(pid int32) (int32, error) {
-	proc, err := process.NewProcess(pid)
+var ErrProcessNameNotMatch = errors.New("process name not match")
+
+func FindProcessByPidFile(f string) (*process.Process, error) {
+	b, err := os.ReadFile(f)
 	if err != nil {
-		return -1, fmt.Errorf("failed to get process %d: %w", pid, err)
+		return nil, fmt.Errorf("failed to read pid file: %w", err)
 	}
-	ppid, err := proc.Ppid()
+
+	pidStr := strings.TrimSpace(string(b))
+	pid, err := strconv.Atoi(pidStr)
 	if err != nil {
-		return -1, fmt.Errorf("failed to get parent process id for %d: %w", pid, err)
+		return nil, fmt.Errorf("invalid PID format: %w", err)
 	}
-	return ppid, nil
+
+	return FindProcessByPid(int32(pid))
 }
 
-// FindProcessByPath find process by path, return *process.Process, if it has error return error
-func FindProcessByPath(path string) (*process.Process, error) {
-	procs, err := process.Processes()
+// KillExpectProcNameFromPPIDFile It only kills the process if it matches the expected name
+func KillExpectProcNameFromPPIDFile(f, expectedName string) error {
+	proc, err := FindProcessByPidFile(f)
+	// if pid not running, do nothing
+	if errors.Is(err, process.ErrorProcessNotRunning) {
+		return nil
+	}
+	// other errors must be returned
 	if err != nil {
-		return nil, fmt.Errorf("failed to get processes: %w", err)
+		return fmt.Errorf("failed to find process: %w", err)
 	}
 
-	for _, proc := range procs {
-		exe, err := proc.Exe()
-		if err != nil {
-			continue
-		}
-		if exe == path {
-			return proc, nil
-		}
+	procName, err := proc.Name()
+	if err != nil {
+		return fmt.Errorf("failed to get process name: %w", err)
 	}
-	return nil, fmt.Errorf("process with path %s not found", path)
+
+	// if pid is running but the pid of process name is not name, do nothing
+	if procName != expectedName {
+		return nil
+	}
+
+	return proc.Kill() //nolint:wrapcheck
+}
+
+func FindProcessByPid(pid int32) (*process.Process, error) {
+	proc, err := process.NewProcess(pid)
+	if err != nil {
+		return nil, fmt.Errorf("failed to find process id %d: %w", pid, err)
+	}
+
+	return proc, nil
 }

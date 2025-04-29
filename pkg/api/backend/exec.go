@@ -25,7 +25,7 @@ import (
 )
 
 func exec(ctx context.Context, mc *vmconfig.MachineConfig, command string, outCh *infinity.Channel[string], errCh chan string) error {
-	key, err := os.ReadFile(mc.SSH.IdentityPath)
+	key, err := os.ReadFile(mc.SSH.PrivateKey)
 	if err != nil {
 		return fmt.Errorf("failed to read private key: %w", err)
 	}
@@ -46,7 +46,7 @@ func exec(ctx context.Context, mc *vmconfig.MachineConfig, command string, outCh
 		errCh <- fmt.Sprintf("dial ssh error %s", err)
 		return fmt.Errorf("dial ssh error %w", err)
 	}
-	defer conn.Close()
+	defer conn.Close() //nolint:errcheck
 	context.AfterFunc(ctx, func() {
 		_ = conn.Close()
 	})
@@ -56,7 +56,7 @@ func exec(ctx context.Context, mc *vmconfig.MachineConfig, command string, outCh
 		errCh <- fmt.Sprintf("create session error %s", err)
 		return fmt.Errorf("create session error %w", err)
 	}
-	defer session.Close()
+	defer session.Close() //nolint:errcheck
 
 	w := ch2Writer(outCh)
 	session.Stdout = w

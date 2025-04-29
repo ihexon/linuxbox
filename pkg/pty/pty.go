@@ -22,7 +22,5 @@ func RunInPty(c *exec.Cmd) (*os.File, error) {
 		Rows: rows,
 		X:    rows,
 		Y:    cols,
-	}, &syscall.SysProcAttr{
-		Setpgid: true,
-	})
+	}, &syscall.SysProcAttr{})
 }

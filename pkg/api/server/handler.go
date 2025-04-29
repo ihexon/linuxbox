@@ -9,15 +9,13 @@ import (
 	"net/http"
 	"runtime"
 
-	"github.com/containers/podman/v5/pkg/errorhandling"
+	"bauklotze/pkg/api/utils"
+
 	"github.com/gorilla/mux"
-	jsoniter "github.com/json-iterator/go"
 	"github.com/sirupsen/logrus"
 )
 
 type APIContextKey int
-
-var json = jsoniter.ConfigCompatibleWithStandardLibrary
 
 // PanicHandler captures panics from endpoint handlers and logs stack trace
 func PanicHandler() mux.MiddlewareFunc {
@@ -29,40 +27,13 @@ func PanicHandler() mux.MiddlewareFunc {
 					buf := make([]byte, 1<<20) //nolint:mnd
 					n := runtime.Stack(buf, true)
 					logrus.Warnf("Recovering from API service endpoint handler panic: %v, %s", err, buf[:n])
-					// Try to inform client things went south... won't work if handler already started writing response body
-					InternalServerError(w, fmt.Errorf("%v", err))
+					utils.Error(w, http.StatusInternalServerError, fmt.Errorf("%v", err))
 				}
 			}()
 
 			h.ServeHTTP(w, r)
 		})
 	}
-}
-
-func InternalServerError(w http.ResponseWriter, err error) {
-	Error(w, http.StatusInternalServerError, err)
-}
-
-func WriteJSON(w http.ResponseWriter, code int, value interface{}) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(code)
-
-	coder := json.NewEncoder(w)
-	coder.SetEscapeHTML(true)
-	if err := coder.Encode(value); err != nil {
-		logrus.Errorf("Unable to write json: %q", err)
-	}
-}
-
-func Error(w http.ResponseWriter, code int, err error) {
-	// Log detailed message of what happened to machine running podman service
-	logrus.Infof("Request Failed(%s): %s", http.StatusText(code), err.Error())
-	em := errorhandling.ErrorModel{
-		Because:      errorhandling.Cause(err).Error(),
-		Message:      err.Error(),
-		ResponseCode: code,
-	}
-	WriteJSON(w, code, em)
 }
 
 // APIHandler is a wrapper to enhance HandlerFunc's and remove redundant code
