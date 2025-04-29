@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"bauklotze/pkg/machine/define"
+	"bauklotze/pkg/machine/events"
 	io2 "bauklotze/pkg/machine/io"
 	"bauklotze/pkg/machine/vmconfig"
 	"bauklotze/pkg/registry"
@@ -70,6 +71,7 @@ func startGvproxy(ctx context.Context, mc *vmconfig.MachineConfig) error {
 	}
 
 	logrus.Infof("GVPROXY FULL CMDLINE: %q", cmd.Args)
+	events.NotifyRun(events.StartGvProxy)
 	if err := cmd.Start(); err != nil {
 		return fmt.Errorf("unable to execute: %q: %w", cmd.Args, err)
 	}

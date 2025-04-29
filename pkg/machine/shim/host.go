@@ -11,6 +11,7 @@ import (
 
 	"bauklotze/pkg/decompress"
 	"bauklotze/pkg/machine/define"
+	"bauklotze/pkg/machine/events"
 	"bauklotze/pkg/machine/helper"
 	"bauklotze/pkg/machine/krunkit"
 	"bauklotze/pkg/machine/ssh/service"
@@ -95,6 +96,7 @@ func Start(parentCtx context.Context, mc *vmconfig.MachineConfig, vmp vmconfig.V
 	context.AfterFunc(parentCtx, func() {
 		if vmp.GetVMState().SSHReady {
 			logrus.Infof("Do sync disk before shutdown")
+			events.NotifyRun(events.SyncMachineDisk)
 			if err := service.DoSync(mc); err != nil {
 				logrus.Warnf("sync disk err: %v", err.Error())
 			}

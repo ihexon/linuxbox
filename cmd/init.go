@@ -125,8 +125,10 @@ func initMachine(ctx context.Context, command *cli.Command) error {
 	}
 
 	if reinit {
+		events.NotifyInit(events.InitNewMachine)
 		mc, err = shim.Init(opts)
 	} else {
+		events.NotifyInit(events.InitUpdateConfig)
 		mc, err = shim.Update(mc, opts)
 	}
 

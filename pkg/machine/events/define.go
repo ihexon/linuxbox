@@ -25,7 +25,7 @@ type RunStageName string
 const (
 	LoadMachineConfig RunStageName = "LoadMachineConfig"
 	StartGvProxy      RunStageName = "StartGvProxy"
-	StartVMProvider   RunStageName = "StartVMProvider"
+	StartKrunKit      RunStageName = "StartKrunkit"
 	SyncMachineDisk   RunStageName = "SyncMachineDisk"
 	Ready             RunStageName = "Ready"
 	RunExit           RunStageName = "Exit"

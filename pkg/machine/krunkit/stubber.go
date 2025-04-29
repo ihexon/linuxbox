@@ -15,6 +15,7 @@ import (
 
 	"bauklotze/pkg/machine"
 	"bauklotze/pkg/machine/define"
+	"bauklotze/pkg/machine/events"
 	"bauklotze/pkg/machine/ssh/service"
 	"bauklotze/pkg/system"
 
@@ -73,6 +74,7 @@ func (l LibKrunStubber) StartVMProvider(ctx context.Context, mc *vmconfig.Machin
 		logrus.Infof("vm podman service started")
 	}
 	l.VMState.PodmanReady = true
+	events.NotifyRun(events.Ready)
 
 	return nil
 }
@@ -124,6 +126,7 @@ func startKrunKit(ctx context.Context, mc *vmconfig.MachineConfig) error {
 		Setpgid: true,
 	}
 	logrus.Infof("full cmdline: %q", cmd.Args)
+	events.NotifyRun(events.StartKrunKit)
 	ptmx, err := pty.RunInPty(cmd)
 	if err != nil {
 		return fmt.Errorf("failed to run krunkit in pty: %w", err)
