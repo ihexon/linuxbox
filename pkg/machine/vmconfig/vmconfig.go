@@ -146,7 +146,6 @@ type podmanSocks struct {
 	InGuest string `json:"inGuest" validate:"required"`
 }
 
-// TODO: kill old pid before launch new process
 // pidFiles contains the pid files for gvproxy, krunKit and vfKit
 type pidFiles struct {
 	GvproxyPidFile string `json:"gvproxyPidFile"`

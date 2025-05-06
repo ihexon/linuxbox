@@ -28,7 +28,7 @@ func Init(opts *vmconfig.VMOpts) (*vmconfig.MachineConfig, error) {
 
 	switch opts.VMType {
 	case vmconfig.LibKrun:
-		vmp = new(krunkit.LibKrunStubber)
+		vmp = new(krunkit.Stubber)
 	case vmconfig.VFkit:
 		vmp = new(vfkit.Stubber)
 	default:

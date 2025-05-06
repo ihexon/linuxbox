@@ -116,6 +116,7 @@ func startVFkit(ctx context.Context, mc *vmconfig.MachineConfig) error {
 	}
 
 	cmd.Args = append(cmd.Args, "--log-level", "info")
+	cmd.Args = append(cmd.Args, "--device", "virtio-serial,stdio")
 
 	cmd = exec.CommandContext(ctx, mc.VFKitBin, cmd.Args[1:]...)
 
