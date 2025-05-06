@@ -1,7 +1,7 @@
 //  SPDX-FileCopyrightText: 2024-2025 OOMOL, Inc. <https://www.oomol.com>
 //  SPDX-License-Identifier: MPL-2.0
 
-package krunkit
+package network
 
 import (
 	"context"
@@ -24,7 +24,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-func startGvproxy(ctx context.Context, mc *vmconfig.MachineConfig) error {
+func StartGvproxy(ctx context.Context, mc *vmconfig.MachineConfig) error {
 	if err := system.KillExpectProcNameFromPPIDFile(mc.PIDFiles.GvproxyPidFile, define.GvProxyBinaryName); err != nil {
 		logrus.Warnf("kill old gvproxy from pid process failed: %v", err)
 	}

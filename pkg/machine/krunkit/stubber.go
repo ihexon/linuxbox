@@ -11,16 +11,15 @@ import (
 	"io"
 	"os"
 	"os/exec"
-	"syscall"
 
 	"bauklotze/pkg/machine"
 	"bauklotze/pkg/machine/define"
 	"bauklotze/pkg/machine/events"
+	"bauklotze/pkg/machine/network"
 	"bauklotze/pkg/machine/ssh/service"
 	"bauklotze/pkg/system"
 
 	"bauklotze/pkg/machine/vmconfig"
-	"bauklotze/pkg/machine/volumes"
 	"bauklotze/pkg/pty"
 	"bauklotze/pkg/registry"
 
@@ -28,12 +27,12 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
-type LibKrunStubber struct {
+type Stubber struct {
 	VMState *vmconfig.VMState
 }
 
-func NewProvider() *LibKrunStubber {
-	return &LibKrunStubber{
+func NewProvider() *Stubber {
+	return &Stubber{
 		VMState: &vmconfig.VMState{
 			SSHReady:    false,
 			PodmanReady: false,
@@ -41,16 +40,12 @@ func NewProvider() *LibKrunStubber {
 	}
 }
 
-func (l LibKrunStubber) MountType() volumes.VolumeMountType {
-	return volumes.VirtIOFS
-}
-
-func (l LibKrunStubber) VMType() vmconfig.VMType {
+func (l *Stubber) VMType() vmconfig.VMType {
 	return vmconfig.LibKrun
 }
 
-func (l LibKrunStubber) StartNetworkProvider(ctx context.Context, mc *vmconfig.MachineConfig) error {
-	if err := startGvproxy(ctx, mc); err != nil {
+func (l *Stubber) StartNetworkProvider(ctx context.Context, mc *vmconfig.MachineConfig) error {
+	if err := network.StartGvproxy(ctx, mc); err != nil {
 		return fmt.Errorf("failed to start network stack: %w", err)
 	}
 
@@ -58,12 +53,10 @@ func (l LibKrunStubber) StartNetworkProvider(ctx context.Context, mc *vmconfig.M
 	return nil
 }
 
-func (l LibKrunStubber) StartVMProvider(ctx context.Context, mc *vmconfig.MachineConfig) error {
+func (l *Stubber) StartVMProvider(ctx context.Context, mc *vmconfig.MachineConfig) error {
 	if err := startKrunKit(ctx, mc); err != nil {
 		return fmt.Errorf("failed to start virtual machine: %w", err)
 	}
-
-	logrus.Infof("vm provider started")
 
 	if machine.WaitSSHStarted(ctx, mc) {
 		logrus.Infof("vm ssh service started")
@@ -79,7 +72,7 @@ func (l LibKrunStubber) StartVMProvider(ctx context.Context, mc *vmconfig.Machin
 	return nil
 }
 
-func (l LibKrunStubber) StartSSHAuthService(ctx context.Context, mc *vmconfig.MachineConfig) error {
+func (l *Stubber) StartSSHAuthService(ctx context.Context, mc *vmconfig.MachineConfig) error {
 	sshAuthService := service.NewSSHAuthService(
 		mc.SSHAuthSocks.LocalSocks,
 		mc.SSHAuthSocks.RemoteSocks,
@@ -100,7 +93,7 @@ func (l LibKrunStubber) StartSSHAuthService(ctx context.Context, mc *vmconfig.Ma
 	return g.Wait() //nolint:wrapcheck
 }
 
-func (l LibKrunStubber) StartTimeSyncService(ctx context.Context, mc *vmconfig.MachineConfig) error {
+func (l *Stubber) StartTimeSyncService(ctx context.Context, mc *vmconfig.MachineConfig) error {
 	return machine.SyncTimeOnWake(ctx, mc) //nolint:wrapcheck
 }
 
@@ -122,10 +115,9 @@ func startKrunKit(ctx context.Context, mc *vmconfig.MachineConfig) error {
 	cmd.Args = append(cmd.Args, "--krun-log-level", "3")
 
 	cmd = exec.CommandContext(ctx, mc.KrunKitBin, cmd.Args[1:]...)
-	cmd.SysProcAttr = &syscall.SysProcAttr{
-		Setpgid: true,
-	}
+
 	logrus.Infof("full cmdline: %q", cmd.Args)
+
 	events.NotifyRun(events.StartKrunKit)
 	ptmx, err := pty.RunInPty(cmd)
 	if err != nil {
@@ -144,10 +136,10 @@ func startKrunKit(ctx context.Context, mc *vmconfig.MachineConfig) error {
 	return nil
 }
 
-func (l LibKrunStubber) InitializeVM(opts vmconfig.VMOpts) (*vmconfig.MachineConfig, error) {
+func (l *Stubber) InitializeVM(opts vmconfig.VMOpts) (*vmconfig.MachineConfig, error) {
 	return machine.InitializeVM(opts) //nolint:wrapcheck
 }
 
-func (l LibKrunStubber) GetVMState() *vmconfig.VMState {
+func (l *Stubber) GetVMState() *vmconfig.VMState {
 	return l.VMState
 }

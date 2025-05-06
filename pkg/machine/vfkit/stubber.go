@@ -7,18 +7,31 @@ package vfkit
 
 import (
 	"context"
+	"fmt"
+	"io"
+	"os"
+	"os/exec"
 
 	"bauklotze/pkg/machine"
+	"bauklotze/pkg/machine/define"
+	"bauklotze/pkg/machine/events"
+	"bauklotze/pkg/machine/network"
+	"bauklotze/pkg/machine/ssh/service"
 	"bauklotze/pkg/machine/vmconfig"
-	"bauklotze/pkg/machine/volumes"
+	"bauklotze/pkg/pty"
+	"bauklotze/pkg/registry"
+	"bauklotze/pkg/system"
+
+	"github.com/sirupsen/logrus"
+	"golang.org/x/sync/errgroup"
 )
 
-type VFkitStubber struct {
+type Stubber struct {
 	VMState *vmconfig.VMState
 }
 
-func NewProvider() *VFkitStubber {
-	return &VFkitStubber{
+func NewProvider() *Stubber {
+	return &Stubber{
 		VMState: &vmconfig.VMState{
 			SSHReady:    false,
 			PodmanReady: false,
@@ -26,34 +39,102 @@ func NewProvider() *VFkitStubber {
 	}
 }
 
-func (l VFkitStubber) MountType() volumes.VolumeMountType {
-	return volumes.VirtIOFS
-}
-
-func (l VFkitStubber) InitializeVM(opts vmconfig.VMOpts) (*vmconfig.MachineConfig, error) {
+func (l *Stubber) InitializeVM(opts vmconfig.VMOpts) (*vmconfig.MachineConfig, error) {
 	return machine.InitializeVM(opts) //nolint:wrapcheck
 }
 
-func (l VFkitStubber) VMType() vmconfig.VMType {
+func (l *Stubber) VMType() vmconfig.VMType {
 	return vmconfig.VFkit
 }
 
-func (l VFkitStubber) StartNetworkProvider(ctx context.Context, mc *vmconfig.MachineConfig) error {
+func (l *Stubber) StartNetworkProvider(ctx context.Context, mc *vmconfig.MachineConfig) error {
+	return network.StartGvproxy(ctx, mc)
+}
+
+func (l *Stubber) StartVMProvider(ctx context.Context, mc *vmconfig.MachineConfig) error {
+	if err := startVFkit(ctx, mc); err != nil {
+		return fmt.Errorf("failed to start virtual machine: %w", err)
+	}
+
+	if machine.WaitSSHStarted(ctx, mc) {
+		logrus.Infof("vm ssh service started")
+	}
+	l.VMState.SSHReady = true
+
+	if err := machine.WaitPodmanReady(ctx, mc.PodmanSocks.InHost); err != nil {
+		logrus.Infof("vm podman service started")
+	}
+
+	l.VMState.PodmanReady = true
+	events.NotifyRun(events.Ready)
+
 	return nil
 }
 
-func (l VFkitStubber) StartVMProvider(ctx context.Context, mc *vmconfig.MachineConfig) error {
-	return nil
+func (l *Stubber) StartSSHAuthService(ctx context.Context, mc *vmconfig.MachineConfig) error {
+	sshAuthService := service.NewSSHAuthService(
+		mc.SSHAuthSocks.LocalSocks,
+		mc.SSHAuthSocks.RemoteSocks,
+		mc.SSH.RemoteUsername,
+		mc.SSH.PrivateKey,
+		mc.SSH.Port,
+	)
+
+	g, ctx2 := errgroup.WithContext(ctx)
+	g.Go(func() error {
+		return sshAuthService.StartSSHAuthServiceAndForwardV2(ctx2)
+	})
+
+	g.Go(func() error {
+		return sshAuthService.StartUnixSocketForward(ctx2)
+	})
+
+	return g.Wait() //nolint:wrapcheck
 }
 
-func (l VFkitStubber) StartSSHAuthService(ctx context.Context, mc *vmconfig.MachineConfig) error {
-	return nil
+func (l *Stubber) StartTimeSyncService(ctx context.Context, mc *vmconfig.MachineConfig) error {
+	return machine.SyncTimeOnWake(ctx, mc) //nolint:wrapcheck
 }
 
-func (l VFkitStubber) StartTimeSyncService(ctx context.Context, mc *vmconfig.MachineConfig) error {
-	return nil
-}
-
-func (l VFkitStubber) GetVMState() *vmconfig.VMState {
+func (l *Stubber) GetVMState() *vmconfig.VMState {
 	return l.VMState
+}
+
+func startVFkit(ctx context.Context, mc *vmconfig.MachineConfig) error {
+	if err := system.KillExpectProcNameFromPPIDFile(mc.PIDFiles.VFKitPidFile, define.VfkitBinaryName); err != nil {
+		logrus.Warnf("kill krunkit from pid process failed: %v", err)
+	}
+
+	vmc, err := machine.CreateDynamicConfigure(mc)
+	if err != nil {
+		return fmt.Errorf("failed to create dynamic machine configure: %w", err)
+	}
+
+	cmd, err := vmc.Cmd(mc.VFKitBin)
+	if err != nil {
+		return fmt.Errorf("failed to create krunkit command: %w", err)
+	}
+
+	cmd.Args = append(cmd.Args, "--log-level", "info")
+
+	cmd = exec.CommandContext(ctx, mc.VFKitBin, cmd.Args[1:]...)
+
+	logrus.Infof("full cmdline: %q", cmd.Args)
+
+	events.NotifyRun(events.StartVFKit)
+	ptmx, err := pty.RunInPty(cmd)
+	if err != nil {
+		return fmt.Errorf("failed to run krunkit in pty: %w", err)
+	}
+
+	go func() {
+		_, _ = io.Copy(os.Stdout, ptmx)
+	}()
+
+	if err := os.WriteFile(mc.PIDFiles.VFKitPidFile, []byte(fmt.Sprintf("%d", cmd.Process.Pid)), 0644); err != nil {
+		return fmt.Errorf("unable to write krunkit pid file: %w", err)
+	}
+
+	registry.RegistryCmd(cmd)
+	return nil
 }

@@ -10,9 +10,9 @@ import (
 	"sync"
 
 	"bauklotze/pkg/decompress"
+	"bauklotze/pkg/machine"
 	"bauklotze/pkg/machine/define"
 	"bauklotze/pkg/machine/events"
-	"bauklotze/pkg/machine/helper"
 	"bauklotze/pkg/machine/krunkit"
 	"bauklotze/pkg/machine/ssh/service"
 	"bauklotze/pkg/machine/vfkit"
@@ -30,7 +30,7 @@ func Init(opts *vmconfig.VMOpts) (*vmconfig.MachineConfig, error) {
 	case vmconfig.LibKrun:
 		vmp = new(krunkit.LibKrunStubber)
 	case vmconfig.VFkit:
-		vmp = new(vfkit.VFkitStubber)
+		vmp = new(vfkit.Stubber)
 	default:
 		return nil, fmt.Errorf("invalid VM type: %s", opts.VMType.String())
 	}
@@ -54,7 +54,7 @@ func Update(mc *vmconfig.MachineConfig, opts *vmconfig.VMOpts) (*vmconfig.Machin
 
 	if mc.DataDisk.Version != opts.DataVersion {
 		logrus.Warnf("Data image version is not match, try to update data image")
-		if err := helper.CreateAndResizeDisk(mc.DataDisk.Path, define.DataDiskSizeInGB); err != nil {
+		if err := machine.CreateAndResizeDisk(mc.DataDisk.Path, define.DataDiskSizeInGB); err != nil {
 			return nil, fmt.Errorf("update data image failed: %w", err)
 		}
 		mc.DataDisk.Version = opts.DataVersion

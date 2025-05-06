@@ -14,11 +14,12 @@ import (
 	"bauklotze/pkg/httpclient"
 	"bauklotze/pkg/machine/define"
 	"bauklotze/pkg/machine/events"
-	"bauklotze/pkg/machine/helper"
 	"bauklotze/pkg/machine/ignition"
 	sshService "bauklotze/pkg/machine/ssh/service"
 	"bauklotze/pkg/machine/vmconfig"
+	"bauklotze/pkg/machine/volumes"
 
+	"github.com/containers/common/pkg/strongunits"
 	vfConfig "github.com/crc-org/vfkit/pkg/config"
 	"github.com/prashantgupta24/mac-sleep-notifier/notifier"
 	"github.com/sirupsen/logrus"
@@ -108,7 +109,7 @@ func InitializeVM(opts vmconfig.VMOpts) (*vmconfig.MachineConfig, error) {
 	}
 
 	logrus.Infof("create data disk image %q with sizeInGb %d", mc.DataDisk.Path, define.DataDiskSizeInGB)
-	if err := helper.CreateAndResizeDisk(mc.DataDisk.Path, define.DataDiskSizeInGB); err != nil {
+	if err := CreateAndResizeDisk(mc.DataDisk.Path, define.DataDiskSizeInGB); err != nil {
 		return nil, fmt.Errorf("initialize vm failed: %w", err)
 	}
 
@@ -147,7 +148,7 @@ func SetupDevices(mc *vmconfig.MachineConfig) ([]vfConfig.VirtioDevice, error) {
 	// externalDisk **must** be at the end of the device
 	devices = append(devices, disk, rng, netDevice, externalDisk)
 
-	VirtIOMounts, err := helper.VirtIOFsToVFKitVirtIODevice(mc.Mounts)
+	VirtIOMounts, err := VirtIOFsToVFKitVirtIODevice(mc.Mounts)
 	if err != nil {
 		return nil, fmt.Errorf("failed to convert virtio fs to virtio device: %w", err)
 	}
@@ -190,4 +191,31 @@ func SyncTimeOnWake(ctx context.Context, mc *vmconfig.MachineConfig) error {
 			}
 		}
 	}
+}
+
+func VirtIOFsToVFKitVirtIODevice(mounts []volumes.Mount) ([]vfConfig.VirtioDevice, error) {
+	virtioDevices := make([]vfConfig.VirtioDevice, 0, len(mounts))
+	for _, vol := range mounts {
+		virtfsDevice, err := vfConfig.VirtioFsNew(vol.Source, vol.Tag)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create virtio fs device: %w", err)
+		}
+		virtioDevices = append(virtioDevices, virtfsDevice)
+	}
+	return virtioDevices, nil
+}
+
+// CreateAndResizeDisk create a disk file with sizeInGB, and truncate it to sizeInGB.
+func CreateAndResizeDisk(f string, sizeInGB int64) error {
+	file, err := os.OpenFile(f, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
+	if err != nil {
+		return fmt.Errorf("failed to create disk: %q, %w", f, err)
+	}
+	defer file.Close() //nolint:errcheck
+
+	if err = os.Truncate(f, int64(strongunits.GiB(sizeInGB).ToBytes())); err != nil {
+		return fmt.Errorf("failed to truncate disk: %w", err)
+	}
+
+	return nil
 }

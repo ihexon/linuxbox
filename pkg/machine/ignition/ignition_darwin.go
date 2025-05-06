@@ -13,20 +13,17 @@ import (
 )
 
 func GenerateIgnScripts(mc *vmconfig.MachineConfig) error {
-	var ignScriptFile = filepath.Join("/tmp", "initfs", "ovm_ign.sh")
+	var ignScriptFile = filepath.Join("/", "tmp", "initfs", "ovm_ign.sh")
 	ign := NewIgnitionBuilder(
 		&DynamicIgnitionV3{
-			CodeBuffer: nil,
-			IgnFile:    io.NewFile(ignScriptFile),
-			VMType:     vmconfig.LibKrun,
-			Mounts:     mc.Mounts,
-			//SSHIdentityPath: io.FileWrapper{
-			//	Path: mc.SSH.IdentityPath,
-			// },
+			CodeBuffer:      nil,
+			IgnFile:         io.NewFile(ignScriptFile),
+			VMType:          vmconfig.LibKrun,
+			Mounts:          mc.Mounts,
 			SSHIdentityPath: io.NewFile(mc.SSH.PrivateKey),
 		})
 
-	err := ign.GenerateIgnitionConfig([]string{""})
+	err := ign.GenerateIgnitionConfig()
 	if err != nil {
 		return fmt.Errorf("failed to generate ignition config: %w", err)
 	}

@@ -50,17 +50,12 @@ func (ign *DynamicIgnitionV3) Write() error {
 	return nil
 }
 
-func (ign *DynamicIgnitionV3) GenerateIgnitionConfig(mycode []string) error {
+func (ign *DynamicIgnitionV3) GenerateIgnitionConfig() error {
 	ign.CodeBuffer = new(bytes.Buffer)
 
 	err := ign.GenerateMountScripts()
 	if err != nil {
 		return fmt.Errorf("failed to generate mount scripts: %w", err)
-	}
-
-	err = ign.GenerateUserProvidedScripts(mycode)
-	if err != nil {
-		return fmt.Errorf("failed to generate user provided scripts: %w", err)
 	}
 
 	if ign.SSHIdentityPath.GetPath() != "" {
@@ -78,15 +73,6 @@ func (ign *DynamicIgnitionV3) GenerateIgnitionConfig(mycode []string) error {
 		return fmt.Errorf("failed to generate podman machine config: %w", err)
 	}
 
-	return nil
-}
-
-// GenerateUserProvidedScripts Write the user provided scripts to the DynamicIgnitionV3.CodeBuffer
-func (ign *DynamicIgnitionV3) GenerateUserProvidedScripts(mycode []string) error {
-	for _, code := range mycode {
-		fmt.Fprintln(ign.CodeBuffer, "# User provided script")
-		fmt.Fprintf(ign.CodeBuffer, "%s\n", code)
-	}
 	return nil
 }
 
